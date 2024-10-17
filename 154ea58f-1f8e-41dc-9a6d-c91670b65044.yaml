@@ -1,0 +1,61 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: NSO/Configure
+  id: 154ea58f-1f8e-41dc-9a6d-c91670b65044
+  loglevel: INFO
+  name: '- Deploy NSO release'
+  nodeFilterEditable: false
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'tags: "nso"'
+  nodesSelectedByDefault: false
+  options:
+  - enforced: true
+    label: Deployment type
+    name: type
+    required: true
+    value: nso
+    values:
+    - nso
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Deployment
+    name: deployment
+    required: true
+    valuesUrl: file:/opt/cw/deploy/${option.type.value}-deployments.json
+  - enforced: true
+    label: Copy or Copy and execute
+    name: action
+    required: true
+    value: copy
+    values:
+    - copy
+    - copyandexecute
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - configuration:
+        destinationPath: /tmp
+        echo: 'true'
+        recursive: 'false'
+        sourcePath: /opt/cw/tmp/${option.deployment}
+      description: Copy script
+      nodeStep: true
+      type: copyfile
+    - description: execute if requested
+      script: "if [ \"@option.action@\" == \"copy\" ]\nthen \n   echo not running\
+        \ script [/tmp/@option.deployment@]\nelse \n    echo running script sh /tmp/@option.deployment@\n\
+        \    sudo sh -c '/tmp/@option.deployment@'\nfi "
+    keepgoing: false
+    strategy: node-first
+  uuid: 154ea58f-1f8e-41dc-9a6d-c91670b65044
+

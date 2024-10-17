@@ -1,0 +1,87 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: CNC/Configuration/Credentials
+  id: a2ea98a2-bba4-40ae-bfcb-e9d82b93c740
+  loglevel: INFO
+  name: CNC - Add Credential Profiles
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    name: cnc-vip
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - description: '- Same credential used for all services'
+    label: New Password
+    name: new-password
+    required: true
+    value: cisco!123
+  - description: '- Same credential used for all services'
+    label: user account
+    name: account
+    required: true
+    value: admin
+  - name: cnc-password
+    required: true
+    secure: true
+    storagePath: keys/cw/admin
+    valueExposed: true
+  - label: CNC User Name
+    name: cnc-user
+    required: true
+    value: admin
+  - description: paste data into this field
+    hidden: true
+    label: Credential Data in JSON format
+    name: credentials-file
+    required: true
+    value: '{"data":[{"profile":"ca_device_auth_nso","user_pass":[{"user_name":"cwuser","password":"cisco!123","type":"ROBOT_USERPASS_HTTP"},{"user_name":"cwuser","password":"cisco!123","type":"ROBOT_USERPASS_HTTPS"},{"user_name":"cwuser","password":"cisco!123","type":"ROBOT_USERPASS_NETCONF"}]},{"profile":"nso_creds","user_pass":[{"user_name":"cisco","password":"cisco!123","type":"ROBOT_USERPASS_SSH"},{"user_name":"cisco","password":"cisco!123","type":"ROBOT_USERPASS_TELNET"},{"user_name":"cisco","password":"cisco!123","type":"ROBOT_USERPASS_HTTP"},{"user_name":"cisco","password":"cisco!123","type":"ROBOT_USERPASS_HTTPS"},{"user_name":"cisco","password":"cisco!123","type":"ROBOT_USERPASS_NETCONF"}]},{"profile":"auth_srpce","user_pass":[{"user_name":"admin","password":"cisco!123","type":"ROBOT_USERPASS_HTTP"}]},{"profile":"device_profile","v3_info":{"user_name":"CNC1","auth_type":"AT_HMAC_SHA","auth_password":"cisco!123","priv_type":"PT_CFB_AES_128","priv_password":"cisco!123","security_level":"SL_AUTH_PRIV"},"user_pass":[{"user_name":"cnc_cdg","password":"cisco!123","type":"ROBOT_USERPASS_SSH"},{"user_name":"cnc_cdg_1","password":"cisco!123","type":"ROBOT_USERPASS_NETCONF"}]},{"profile":"Storage","user_pass":[{"user_name":"cisco","password":"cisco!123","type":"ROBOT_USERPASS_SSH"}]},{"profile":"cw_device_auth_nso","user_pass":[{"user_name":"cisco","password":"cisco!123","type":"ROBOT_USERPASS_NETCONF"},{"user_name":"george","password":"cisco!123","type":"ROBOT_USERPASS_SSH"}]}]}'
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: update password
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: cred-profile
+            regex: (.*)
+          type: key-value-data
+      script: |+
+        echo '@option.credentials-file@' > /opt/cw/tmp/@job.execid@.json
+        #jq -c '(..|objects|select(has("password"))).password |= "@option.new-password@"' /opt/cw/tmp/@job.execid@.json
+
+        cred=$(jq -c '(..|objects|select(has("password"))).password |= "@option.new-password@"' /opt/cw/tmp/@job.execid@.json)
+        cred=$(echo $cred | jq -c '(..|objects|select(has("user_name"))).user_name |= "@option.account@"')
+        echo $cred | jq -c
+
+
+    - description: get vars
+      jobref:
+        args: -cnc-pod ${option.cnc-vip}
+        group: CNC/Configuration
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        body: ${data.cred-profile*}
+        checkResponseCode: 'true'
+        headers: '{"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/inventory/v1/credentials
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: add credential profile
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: a2ea98a2-bba4-40ae-bfcb-e9d82b93c740
+

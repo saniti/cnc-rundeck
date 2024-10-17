@@ -1,0 +1,673 @@
+- defaultTab: nodes
+  description: |-
+    OVF Command line builder for Data Gateway deployment
+    ---
+    - Create an OVF command line for deploying a single Data Gateway VM
+  executionEnabled: true
+  group: CNC/Deploy/CDG
+  id: e5f96f49-6154-4cca-9714-ce75b7c58ea4
+  loglevel: INFO
+  name: CDG - Single Node (3 vnic) GOVC version
+  nodeFilterEditable: false
+  options:
+  - description: '> If no options present, create the POD definiting using Job `Create
+      POD`'
+    enforced: true
+    label: CNC POD
+    name: controller-vip
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - description: '> /opt/cw/options/cw-versions.json'
+    enforced: true
+    label: CNC Version
+    name: cw-version
+    valuesUrl: file:/opt/cw/options/cw-versions.json
+  - description: |-
+      Execute command or just generate it.
+      - Generate (default) Show the command line that needs to be run, but the user
+      - Execute - Generate the command line and run it on the local system
+    enforced: true
+    name: Option
+    required: true
+    value: Execute
+    values:
+    - Execute
+    - Generate
+    valuesListDelimiter: ','
+  - description: |-
+      - thin - lab only, meaning disk is thin provisioned
+      - thick - production, meaning disk is fully allocated before usage
+    enforced: true
+    label: Virtual Disk Mode
+    name: disk-mode
+    required: true
+    value: thin
+    values:
+    - thick
+    - thin
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Deployment Type
+    name: deployment-option
+    required: true
+    value: onpremise-extended
+    values:
+    - onpremise-extended
+    - onpremise-standard
+    - onpremise-standard-plus
+    valuesListDelimiter: ','
+  - enforced: true
+    label: vCPU
+    name: deploy-option-cpu
+    required: true
+    valuesUrl: file:/opt/cw/options/${option.deployment-option.value}-cpu.json
+  - enforced: true
+    label: Memory
+    name: deploy-option-mem
+    required: true
+    valuesUrl: file:/opt/cw/options/${option.deployment-option.value}-mem.json
+  - enforced: true
+    label: Disk
+    name: deploy-option-disk
+    required: true
+    valuesUrl: file:/opt/cw/options/${option.deployment-option.value}-disk.json
+  - delimiter: ','
+    multivalued: true
+    name: ovf-options
+    required: true
+    valuesUrl: file:/opt/cw/options/ovf-deploy-options.json
+  - label: OVF Extra Configuration Options
+    name: ovf-extra-config
+    required: true
+    value: default
+    values:
+    - advanced
+    - default
+    valuesListDelimiter: ','
+  - delimiter: ','
+    enforced: true
+    multivalued: true
+    name: ovf-extra-config-options
+    required: true
+    valuesUrl: file:/opt/cw/options/extra-config-options.${option.ovf-extra-config.value}.json
+  - label: CDG hostname
+    name: host-name-1
+    value: cdg01
+  - description: Role for Netbox
+    enforced: true
+    name: vm-role
+    required: true
+    value: '2'
+    valuesUrl: file:/opt/cw/options/roles.json
+  - label: Domain Name
+    name: domain-name
+    required: true
+    value: ntf.local
+    valuesUrl: file:/opt/cw/options/domains.json
+  - label: Description
+    name: description
+    required: true
+    value: Cisco Data Gateway Node
+  - label: CDG Pool
+    name: label
+    value: Pool1
+  - hidden: true
+    label: CDG hostname
+    name: host-name
+    required: true
+    value: ${option.host-name-1}
+  - label: Crossworks port
+    name: controller-port
+    required: true
+    value: '30607'
+  - delimiter: ','
+    label: DNS Server
+    multivalued: true
+    name: dns-server
+    required: true
+    valuesUrl: file:/opt/cw/options/dns-servers.json
+  - delimiter: ','
+    label: NTP Server
+    multivalued: true
+    name: ntp-server
+    required: true
+    valuesUrl: file:/opt/cw/options/ntp-servers.json
+  - delimiter: ','
+    enforced: true
+    label: Virtual Networking Options
+    multivalued: true
+    name: vnic-options
+    required: true
+    valuesUrl: file:/opt/cw/options/vnic-options.json
+  - enforced: true
+    label: VM Datastore
+    name: datastore-1
+    required: true
+    valuesUrl: file:/tmp/datastores.json
+  - enforced: true
+    label: VMware ESX host
+    name: vmware-esx-host
+    required: true
+    valuesUrl: file:/tmp/hosts.json
+  - enforced: true
+    hidden: true
+    label: Number of Network Adapters
+    name: active-vnics
+    value: '2'
+    values:
+    - '2'
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Management Network
+    name: vnic-1-network
+    valuesUrl: file:/tmp/networks.json
+  - enforced: true
+    label: Data Network
+    name: vnic-2-network
+    valuesUrl: file:/tmp/networks.json
+  - enforced: true
+    label: Device Network
+    name: vnic-3-network
+    valuesUrl: file:/tmp/networks.json
+  - hidden: true
+    name: dg-admin-password
+    required: true
+    secure: true
+    storagePath: keys/cw/dg-admin
+    valueExposed: true
+  - hidden: true
+    name: dg-oper-password
+    required: true
+    secure: true
+    storagePath: keys/cw/dg-operator
+    valueExposed: true
+  - hidden: true
+    name: cnc-password
+    required: true
+    secure: true
+    storagePath: keys/cw/cw-admin
+    valueExposed: true
+  - hidden: true
+    name: vcenter-host
+    secure: true
+    storagePath: keys/vmware/vc-address
+    valueExposed: true
+  - hidden: true
+    name: vcenter-password
+    required: true
+    secure: true
+    storagePath: keys/vmware/vc-password
+    valueExposed: true
+  - hidden: true
+    name: vcenter-username
+    required: true
+    secure: true
+    storagePath: keys/vmware/vc-user
+    valueExposed: true
+  - description: |-
+      ***Dynamic*** - IP Addressing from Netbox
+      ***Static*** - IP Addressing entered by user
+    enforced: true
+    label: Network Options for Management Network
+    name: vnic-0-static
+    required: true
+    value: static
+    values:
+    - dynamic
+    - static
+    valuesListDelimiter: ','
+  - description: IP Address for Management Interface
+    label: Management - IP
+    name: vnic-0-ip
+    required: true
+  - description: Subnet Mask
+    label: Management - Mask
+    name: vnic-0-mask
+    required: true
+    value: 255.255.255.0
+  - description: Gateway IP
+    label: Management - Gateway
+    name: vnic-0-gateway
+    required: true
+  - description: |-
+      ***Dynamic*** - IP Addressing from Netbox
+      ***Static*** - IP Addressing entered by user
+    enforced: true
+    label: Network Options for Data Network
+    name: vnic-1-static
+    required: true
+    value: static
+    values:
+    - dynamic
+    - static
+    valuesListDelimiter: ','
+  - description: IP Address for Data Interface
+    label: DATA - IP
+    name: vnic-1-ip
+    required: true
+  - description: Subnet Mask
+    label: DATA - Mask
+    name: vnic-1-mask
+    required: true
+    value: 255.255.255.0
+  - description: Gateway IP
+    label: DATA - Gateway
+    name: vnic-1-gateway
+    required: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: get POD details
+      jobref:
+        args: -cnc-pod ${option.controller-vip}
+        group: CNC/Configuration
+        name: get cnc pod details
+        uuid: 0ea1cf89-2324-4106-a507-e934a732da8e
+    - description: get version properties
+      jobref:
+        args: -cnc-version ${option.cw-version}
+        group: CNC/Configuration
+        name: get version properties
+        uuid: a08c2fb8-746f-4d29-8806-c6564f8c8465
+    - configuration:
+        command: basename "${option.datastore-1}"
+      description: generate datastore name
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: datastore-name
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: echo ${option.host-name}
+      description: generate host name
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: host-name
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: basename '${option.vnic-1-network}'
+      description: generate vnic1 network
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: vnic-1-network
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: basename '${option.vnic-2-network}'
+      description: generate vnic2 network
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: vnic-2-network
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: basename '${option.vnic-3-network}'
+      description: generate vnic3 network
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: vnic-3-network
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: basename '${option.datastore-1}'
+      description: datastore
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: datastore
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: echo cw-admin@${option.controller-ip}:/home/cw-admin/controller.pem
+      description: generate Certchain
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: certchain
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - description: ovf-options
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: ovf-options
+            regex: (.*)
+          type: key-value-data
+      script: |
+        echo @option.ovf-options@ | tr "," " "
+    - description: flatten ovf extra config
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: ovf-extra-config-init
+            regex: (.*)
+          type: key-value-data
+      script: 'echo @option.ovf-extra-config-options@ | tr "," " " | tr "default"
+        " "'
+    - description: flatten ntp servers
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: ntp-servers
+            regex: (.*)
+          type: key-value-data
+      script: 'echo @option.ntp-server@ | tr "," " "'
+    - description: flatten dns servers
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: dns-servers
+            regex: (.*)
+          type: key-value-data
+      script: 'echo @option.dns-server@ | tr "," " "'
+    - description: CPU
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: CPU
+            regex: .*CPU.(\d+).*
+          type: key-value-data
+      script: |+
+        echo @option.deploy-option-values@
+
+
+    - description: MEM
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: RAM
+            regex: .*RAM.(\d+).*
+          type: key-value-data
+      script: |
+        echo @option.deploy-option-values@
+    - description: DISK
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: DISK
+            regex: .*DISK.(\d+).*
+          type: key-value-data
+      script: |
+        echo @option.deploy-option-values@
+    - configuration:
+        command: 'bash -c ''if [ "${option.vnic-0-static}" == "static" ]; then echo
+          ${option.vnic-0-ip},${option.vnic-0-mask},${option.vnic-0-gateway}; else
+          false; fi'''
+      description: '0'
+      errorhandler:
+        jobref:
+          args: -search_tag cnc-mgmt -ifnum 1 -state reserved -description ${data.host-name*}
+          group: Netbox
+          name: GET Next IP
+          uuid: 0ff19321-403f-42bd-9ac1-ed2a4507b496
+        keepgoingOnSuccess: true
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-0-ip
+            regex: '(.+),.*,.*'
+          type: key-value-data
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-0-mask
+            regex: '.*,(.+),.*'
+          type: key-value-data
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-0-gw
+            regex: '.*,.*,(.+)'
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: 'bash -c ''if [ "${option.vnic-1-static}" == "static" ]; then echo
+          ${option.vnic-1-ip},${option.vnic-1-mask},${option.vnic-1-gateway}; else
+          false; fi'''
+      description: '1'
+      errorhandler:
+        jobref:
+          args: -search_tag cnc-data -ifnum 2 -state reserved -description ${data.host-name*}
+          group: Netbox
+          name: GET Next IP
+          uuid: 0ff19321-403f-42bd-9ac1-ed2a4507b496
+        keepgoingOnSuccess: true
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-1-ip
+            regex: '(.+),.*,.*'
+          type: key-value-data
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-1-mask
+            regex: '.*,(.+),.*'
+          type: key-value-data
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-1-gw
+            regex: '.*,.*,(.+)'
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: bash -c 'if [ "${option.vnic-0-static}" != "static" ]; then echo
+          "255.255.255.0"; else true; fi'
+      description: Set netmask when dynamic
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-0-mask
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: bash -c 'if [ "${option.vnic-1-static}" != "static" ]; then echo
+          "255.255.255.0"; else true; fi'
+      description: Set netmask when dynamic
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-1-mask
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - description: create govc command line
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'false'
+            name: command-line
+            regex: (.*)
+          type: key-value-data
+      script: "export GOVC_URL=@option.vcenter-host@ \nexport GOVC_USERNAME=@option.vcenter-username@\
+        \ \nexport GOVC_PASSWORD=@option.vcenter-password@ \nexport GOVC_INSECURE=1\
+        \ \nspec=$(govc import.spec \"@export.cdg-image@\" | jq -c) \n\n# Property\
+        \ Mappings\nchanged=$(echo $spec | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        Hostname\") ).Value|= \"@data.host-name*@\"') \nchanged=$(echo $changed |\
+        \ jq -c '( .PropertyMapping[]|select(.Key==\"ActiveVnics\") ).Value|= \"3\"\
+        ') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        ControllerIP\") ).Value|= \"@export.mgtvip@\"') \nchanged=$(echo $changed\
+        \ | jq -c '( .PropertyMapping[]|select(.Key==\"ControllerPort\") ).Value|=\
+        \ \"30607\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        ControllerSignCertChain\") ).Value|= \"@data.certchain*@\"') \nchanged=$(echo\
+        \ $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ControllerCertChainPwd\"\
+        ) ).Value|= \"@option.cnc-password@\"') \nchanged=$(echo $changed | jq -c\
+        \ '( .PropertyMapping[]|select(.Key==\"DGAppdataDisk\") ).Value|= \"10\"')\
+        \ \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        DGCertChain\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        DGCertChainPwd\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        DGCertKey\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        DNS\") ).Value|= \"@data.dns-servers*@\"') \nchanged=$(echo $changed | jq\
+        \ -c '( .PropertyMapping[]|select(.Key==\"NTP\") ).Value|= \"@data.ntp-servers*@\"\
+        ')\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        NTPAuth\") ).Value|= \"False\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        NTPKey\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        NTPKeyFile\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        NTPKeyFilePwd\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        DNSSEC\") ).Value|= \"False\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        DNSTLS\") ).Value|= \"False\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        Deployment\") ).Value|= \"Crosswork On-Premise\"') \nchanged=$(echo $changed\
+        \ | jq -c '( .PropertyMapping[]|select(.Key==\"Description\") ).Value|= \"\
+        @option.description@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        Domain\") ).Value|= \"@option.domain-name@\"') \nchanged=$(echo $changed |\
+        \ jq -c '( .PropertyMapping[]|select(.Key==\"EnrollmentPassphrase\") ).Value|=\
+        \ \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        EnrollmentURI\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        LLMNR\") ).Value|= \"False\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        Label\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        Profile\") ).Value|= \"Standard\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        ProxyBypass\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        ProxyCertChain\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        ProxyCertChainPwd\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '(\
+        \ .PropertyMapping[]|select(.Key==\"ProxyPassphrase\") ).Value|= \"\"') \n\
+        changed=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ProxyURL\"\
+        ) ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        ProxyUsername\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        SyslogAddress\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        SyslogCertChain\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        SyslogCertChainPwd\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '(\
+        \ .PropertyMapping[]|select(.Key==\"SyslogPeerName\") ).Value|= \"\"') \n\
+        changed=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"SyslogPort\"\
+        ) ).Value|= \"514\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        SyslogProtocol\") ).Value|= \"UDP\"') \nchanged=$(echo $changed | jq -c '(\
+        \ .PropertyMapping[]|select(.Key==\"SyslogTLS\") ).Value|= \"False\"') \n\
+        changed=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"UseRemoteAuditd\"\
+        ) ).Value|= \"False\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        UseRemoteSyslog\") ).Value|= \"False\"') \n\nchanged=$(echo $changed | jq\
+        \ -c '( .PropertyMapping[]|select(.Key==\"Vnic0IPv4Address\") ).Value|= \"\
+        @data.nic-0-ip*@@export.ip-1@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        Vnic0IPv4Gateway\") ).Value|= \"@data.nic-0-gw*@@export.gw-1@\"') \nchanged=$(echo\
+        \ $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic0IPv4Method\"\
+        ) ).Value|= \"Static\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        Vnic0IPv4Netmask\") ).Value|= \"@data.nic-0-mask*@\"') \nchanged=$(echo $changed\
+        \ | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic0IPv4SkipGateway\") ).Value|=\
+        \ \"False\"') \n\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        Vnic1IPv4Address\") ).Value|= \"@data.nic-1-ip*@@export.ip-2@\"') \nchanged=$(echo\
+        \ $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic1IPv4Gateway\"\
+        ) ).Value|= \"@data.nic-1-gw*@@export.gw-2@\"') \nchanged=$(echo $changed\
+        \ | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic1IPv4Method\") ).Value|=\
+        \ \"Static\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        Vnic1IPv4Netmask\") ).Value|= \"@data.nic-1-mask*@\"') \nchanged=$(echo $changed\
+        \ | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic1IPv4SkipGateway\") ).Value|=\
+        \ \"False\"')\n\n# Remove things\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"\
+        Vnic2IPv4Address\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"\
+        Vnic2IPv4Gateway\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"\
+        Vnic2IPv4Method\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"\
+        Vnic2IPv4Netmask\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"\
+        Vnic2IPv4SkipGateway\"))')\n\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"\
+        Vnic2IPv6Method\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"\
+        Vnic2IPv6Address\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"\
+        Vnic2IPv6Netmask\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"\
+        Vnic2IPv6SkipGateway\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"\
+        Vnic2IPv6Gateway\"))')\n\n\n\n#changed=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        Vnic2IPv4Address\") ).Value|= \"0.0.0.0\"') \n#changed=$(echo $changed | jq\
+        \ -c '( .PropertyMapping[]|select(.Key==\"Vnic2IPv4Gateway\") ).Value|= \"\
+        0.0.0.1\"') \n#changed=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        Vnic2IPv4Method\") ).Value|= \"None\"') \n#changed=$(echo $changed | jq -c\
+        \ '( .PropertyMapping[]|select(.Key==\"Vnic2IPv4Netmask\") ).Value|= \"0.0.0.0\"\
+        ') \n\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"\
+        dg-adminPassword\") ).Value|= \"@option.dg-admin-password@\"') \nchanged=$(echo\
+        \ $changed | jq -c '( .PropertyMapping[]|select(.Key==\"dg-operPassword\"\
+        ) ).Value|= \"@option.dg-oper-password@\"') \n\n# Network Mapping Properties\n\
+        changed=$(echo $changed | jq -c '( .NetworkMapping[]|select(.Name==\"vNIC0\"\
+        ) ).Network|= \"@data.vnic-1-network*@\"') \nchanged=$(echo $changed | jq\
+        \ -c '( .NetworkMapping[]|select(.Name==\"vNIC1\") ).Network|= \"@data.vnic-2-network*@\"\
+        ') \nchanged=$(echo $changed | jq -c '( .NetworkMapping[]|select(.Name==\"\
+        vNIC2\") ).Network|= \"@data.vnic-3-network*@\"') \n\n# General Properties\
+        \ thin\nchanged=$(echo $changed | jq -c '.DiskProvisioning=\"@option.disk-mode@\"\
+        ') \nchanged=$(echo $changed | jq -c '.Deployment=\"@option.deployment-option@\"\
+        ') \nchanged=$(echo $changed | jq -c '.IPAllocationPolicy=\"fixedPolicy\"\
+        ') \nchanged=$(echo $changed | jq -c '.Annotation=\"@option.description@\"\
+        ') \nchanged=$(echo $changed | jq -c '.InjectOvfEnv=true') \nchanged=$(echo\
+        \ $changed | jq -c '.Name=\"@data.host-name*@\"') \n\necho $changed > /opt/cw/tmp/@job.execid@\n\
+        \nesxhost=$(basename @option.vmware-esx-host@ )\n\necho govc import.ova -ds='\"\
+        '@data.datastore*@'\"' -host='\"'$esxhost'\"' -name='\"'@data.host-name*@'\"\
+        ' -options='\"'/opt/cw/tmp/@job.execid@'\"' '\"'@export.cdg-image@'\"'\n\n\
+        \n"
+    - description: 'If option is Execute, then run the command'
+      errorhandler:
+        keepgoingOnSuccess: true
+        script: "export GOVC_URL=@option.vcenter-host@ \nexport GOVC_USERNAME=@option.vcenter-username@\
+          \ \nexport GOVC_PASSWORD=@option.vcenter-password@ \nexport GOVC_INSECURE=1\
+          \ \nprintenv | grep -i GOVC\necho @data.command-line*@\n@data.command-line*@\n\
+          govc vm.change -vm \"@data.host-name*@\" -c=@option.deployment-size-cpu@\
+          \ -m=@option.deployment-size-mem@\ngovc vm.change -vm \"@data.host-name*@\"\
+          \ -annotation \"Deployed by rundeck job: @job.execid@. Image file:@export.cdg-image@\"\
+          \ngovc vm.power -on \"@data.host-name*@\""
+      script: bash -c 'if [ "@option.Option@" == "Execute" ]; then false; else true;
+        fi'
+    - jobref:
+        args: '-node-name ${data.host-name*} -hostname ${data.nic-0-ip*}${export.ip-1}
+          -description "${option.description}" -user-name dg-admin -tags "cdg,${option.label}"
+          -password-storage-path keys/cw/dg-admin'
+        group: Rundeck Nodes
+        name: Create a New node
+        uuid: e60e849d-c7c2-430e-a545-a2fb9b0a6c61
+    keepgoing: false
+    strategy: sequential
+  uuid: e5f96f49-6154-4cca-9714-ce75b7c58ea4
+

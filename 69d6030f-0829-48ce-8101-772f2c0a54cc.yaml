@@ -1,0 +1,53 @@
+- defaultTab: nodes
+  description: |-
+    Creates a new customer entry
+    ---
+    - Add new location [Add new location](/job/show/eb42d81d-db58-427a-b379-ca27b00c7c28)
+  executionEnabled: true
+  group: Kafka
+  id: 69d6030f-0829-48ce-8101-772f2c0a54cc
+  loglevel: INFO
+  name: Customer - ADD
+  nodeFilterEditable: false
+  options:
+  - label: Customer Name
+    name: customer-name
+    required: true
+  - enforced: true
+    label: Set Default?
+    name: default
+    required: true
+    value: 'true'
+    values:
+    - 'true'
+    - 'false'
+    valuesListDelimiter: ','
+  - delimiter: ','
+    enforced: true
+    label: Customer List
+    multivalued: true
+    name: existing-customers
+    required: true
+    valuesUrl: file:/opt/cw/options/customers.json
+  - description: '- Add new location [Add new location](/job/show/eb42d81d-db58-427a-b379-ca27b00c7c28)'
+    enforced: true
+    label: Customer Location (DC)
+    name: location
+    required: true
+    valuesUrl: file:/opt/cw/options/locations.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: add customer
+      script: |
+        file=/opt/cw/options/customers.json
+        filetmp=/opt/cw/tmp/customers.tmp
+        if [ ! -f "$file" ]; then echo "[]" > "$file"; fi
+        jq '. += [{"name":"@option.customer-name@","value":"@option.customer-name@","location":"@option.location@","selected":@option.default@}]' $file > $filetmp
+        \cp $filetmp $file
+    keepgoing: false
+    strategy: node-first
+  uuid: 69d6030f-0829-48ce-8101-772f2c0a54cc
+

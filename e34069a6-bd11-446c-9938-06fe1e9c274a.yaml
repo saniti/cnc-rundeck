@@ -1,0 +1,96 @@
+- defaultTab: nodes
+  description: |-
+    Example process of activating a service using Kafka for async processing
+    ---
+    ### Pre-requisites
+    - Create new customer: [Add new Customer](/job/show/69d6030f-0829-48ce-8101-772f2c0a54cc)
+    - Start Listener: [Start Listener](/job/show/69d6030f-0829-48ce-8101-772f2c0a54cc)
+    - Add new Location (DC): [New Location](/job/show/eb42d81d-db58-427a-b379-ca27b00c7c28)
+  executionEnabled: true
+  group: Kafka
+  id: e34069a6-bd11-446c-9938-06fe1e9c274a
+  loglevel: INFO
+  name: Kafka demo
+  nodeFilterEditable: false
+  options:
+  - description: '> Create new customer: [Add new Customer](/job/show/69d6030f-0829-48ce-8101-772f2c0a54cc)'
+    enforced: true
+    label: Customer Name
+    name: customer
+    required: true
+    valuesUrl: file:/opt/cw/options/customers.json
+  - label: Input string for message
+    name: input
+    required: true
+  - hidden: true
+    name: payload
+    required: true
+    value: '{"json":"data"}'
+  - description: '> Typically this should be the action / method taken'
+    label: Kafka Key
+    name: key
+    required: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: xxx
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: output
+            regex: (.*)
+          type: key-value-data
+      script: "#jq -c '.[] | select(.name==\"@option.key@\")' /opt/cw/options/customers.json\n\
+        echo '@option.input@' | jq -c "
+    - description: converge payload
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: converged
+            regex: (.*)
+          type: key-value-data
+      script: echo '{"@option.key@":@data.output*@}' | jq -c
+    - description: escape payload
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: escaped
+            regex: (.*)
+          type: key-value-data
+      script: echo '@data.converged*@' | jq -Rc
+    - description: build final
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: payload
+            regex: (.*)
+          type: key-value-data
+      script: 'echo ''{"partition":"0","key":"@option.key@","content":@data.escaped*@}'''
+    - configuration:
+        authentication: None
+        body: ${data.payload*}
+        checkResponseCode: 'false'
+        headers: '{"Content-Type": "application/json"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: http://198.18.133.102:8080/api/clusters/local/topics/${option.customer}/messages
+        sslVerify: 'false'
+        timeout: '30000'
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: e34069a6-bd11-446c-9938-06fe1e9c274a
+

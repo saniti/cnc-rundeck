@@ -1,0 +1,60 @@
+- defaultTab: nodes
+  description: |-
+    Generate a list of labs within the CML instance
+    [CM Authentication](1960ef3e-ddcc-4400-9012-259267f7399b)
+  executionEnabled: true
+  group: CML
+  id: fcd1eb5a-6669-493b-b7cf-717e50c88157
+  loglevel: INFO
+  name: CML - list labs
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: Existing Labs
+    name: labs
+    valuesUrl: file:/opt/cw/options/cml-labs.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: get auth
+      jobref:
+        group: CML
+        name: CML - Auth
+        uuid: 1960ef3e-ddcc-4400-9012-259267f7399b
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-labs.json
+        headers: |
+          {"accept": "application/json","Authorization": "Bearer ${export.token}"}
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${export.cml-host}/api/v0/populate_lab_tiles
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Get labs
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: create file
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-labs.json
+        jq '[."lab_tiles" | to_entries[] | {"name":(.value."lab_title"+" | "+.value.state),"value":.key,"id":.key,"title":(.value."lab_title"|tostring),"state":.value.state,"description":.value."lab_description","nodes":.value."node_count","interfaces":.value."link_count","history":{"created":(.value.created|split("T")[0]),"last_modified":(.value.modified|split("T")[0])}}]' $file > /opt/cw/options/cml-labs.json
+    - description: show labs
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      script: |-
+        file=/opt/cw/options/cml-labs.json
+        jq . $file
+    keepgoing: false
+    strategy: node-first
+  uuid: fcd1eb5a-6669-493b-b7cf-717e50c88157
+

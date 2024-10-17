@@ -1,0 +1,45 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: TEST/ZTP
+  id: f6d9c4e3-ca2f-4c1d-87c5-7d5edb83004d
+  loglevel: INFO
+  name: SWR Run Command
+  nodeFilterEditable: true
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: true
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'tags: swr'
+  nodesSelectedByDefault: true
+  options:
+  - name: cmd
+    value: sh version
+    values:
+    - sh ip int br
+    - sh version
+    valuesListDelimiter: ','
+  - enforced: true
+    name: device
+    required: true
+    value: SWR4
+    values:
+    - SWR1
+    - SWR2
+    - SWR3
+    - SWR4
+    - SWR5
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - exec: ${unquotedoption.cmd}
+    keepgoing: true
+    strategy: sequential
+  uuid: f6d9c4e3-ca2f-4c1d-87c5-7d5edb83004d
+

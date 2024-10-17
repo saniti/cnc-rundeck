@@ -1,0 +1,71 @@
+- defaultTab: nodes
+  description: Deletes 3 node CNC cluster by powering off and removing from disk.
+    This cannot be reversed
+  executionEnabled: true
+  group: CNC/Delete
+  id: 682792bc-4eca-4826-bad1-fc34f3b98c28
+  loglevel: INFO
+  name: Delete CNC 3 Node
+  nodeFilterEditable: false
+  options:
+  - label: Name of the seed host
+    name: VM-1-Name
+    required: true
+    value: cw01
+  - label: Name of the second host
+    name: VM-2-Name
+    required: true
+    value: cw02
+  - label: Name of third cluster node
+    name: VM-3-Name
+    required: true
+    value: cw03
+  - hidden: true
+    name: vCenter-host
+    required: true
+    secure: true
+    storagePath: keys/vmware/vc-address
+    valueExposed: true
+  - hidden: true
+    name: vCenter-passwd
+    required: true
+    secure: true
+    storagePath: keys/vmware/vc-password
+    valueExposed: true
+  - hidden: true
+    name: vCenter-username
+    required: true
+    secure: true
+    storagePath: keys/vmware/vc-user
+    valueExposed: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - configuration:
+        debugOnly: 'false'
+      nodeStep: false
+      type: log-data-step
+    - description: Stop VM1
+      exec: govc vm.power -k -u ${option.vCenter-username}:${option.vCenter-passwd}@${option.vCenter-host}
+        -off ${option.VM-1-Name}
+    - description: Stop VM2
+      exec: govc vm.power -k -u ${option.vCenter-username}:${option.vCenter-passwd}@${option.vCenter-host}
+        -off ${option.VM-2-Name}
+    - description: Stop VM3
+      exec: govc vm.power -k -u ${option.vCenter-username}:${option.vCenter-passwd}@${option.vCenter-host}
+        -off ${option.VM-3-Name}
+    - description: Kill VM1
+      exec: govc vm.destroy -k -u ${option.vCenter-username}:${option.vCenter-passwd}@${option.vCenter-host}
+        ${option.VM-1-Name}
+    - description: Kill VM2
+      exec: govc vm.destroy -k -u ${option.vCenter-username}:${option.vCenter-passwd}@${option.vCenter-host}
+        ${option.VM-2-Name}
+    - description: Kill VM3
+      exec: govc vm.destroy -k -u ${option.vCenter-username}:${option.vCenter-passwd}@${option.vCenter-host}
+        ${option.VM-3-Name}
+    keepgoing: true
+    strategy: sequential
+  uuid: 682792bc-4eca-4826-bad1-fc34f3b98c28
+

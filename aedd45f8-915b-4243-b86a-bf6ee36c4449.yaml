@@ -1,0 +1,32 @@
+- defaultTab: nodes
+  description: 'Execute the backup script, stop dockers and shut system down'
+  executionEnabled: true
+  group: _SYSTEM
+  id: aedd45f8-915b-4243-b86a-bf6ee36c4449
+  loglevel: INFO
+  name: Backup and shutdown
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Backup
+      jobref:
+        group: _SYSTEM
+        name: System Backup
+        uuid: 0db81f23-c76c-4842-8c9a-cdb08f06f756
+    - description: Stop running instances
+      jobref:
+        group: _SYSTEM
+        name: System Shutdown Prepare
+        uuid: 12ff0dad-10e2-4874-89fa-cf907ab5e3f5
+    - description: Shut system down
+      jobref:
+        group: _SYSTEM
+        name: System Shutdown
+        uuid: 7c3c0e23-00ff-4ca3-9b99-039fb0c7b7da
+    keepgoing: false
+    strategy: node-first
+  uuid: aedd45f8-915b-4243-b86a-bf6ee36c4449
+

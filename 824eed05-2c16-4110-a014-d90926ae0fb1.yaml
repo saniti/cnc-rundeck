@@ -1,0 +1,223 @@
+- defaultTab: nodes
+  description: Restore a service to CNC from Source Control
+  executionEnabled: false
+  group: -DEMO
+  id: 824eed05-2c16-4110-a014-d90926ae0fb1
+  loglevel: INFO
+  name: CNC - Service Restoration
+  nodeFilterEditable: false
+  notification:
+    onsuccess:
+      email:
+        recipients: device-details@necehealthpoc.local
+        subject: ${notification.eventStatus} ${job.name}
+  notifyAvgDurationThreshold: null
+  options:
+  - description: "--- \n## commit options"
+    enforced: true
+    label: Crosswork POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - enforced: true
+    label: Commit Options
+    name: dry-run-options
+    required: true
+    valuesUrl: file:/opt/cw/options/nso-commit-options.json
+  - description: |-
+      ---
+      ## git Repository info
+    enforced: true
+    label: Run Compliance Check first?
+    name: config-compliance
+    required: true
+    value: 'yes'
+    values:
+    - 'yes'
+    - 'no'
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Git Repository
+    name: repo
+    required: true
+    value: simon/demo
+    valuesUrl: file:/opt/cw/options/git/repos.json
+  - description: '> `main`= in production, `develop` = in development'
+    enforced: true
+    label: Git Branch
+    name: branch
+    value: main
+    valuesUrl: file:/opt/cw/options/git/${option.repo.value}/branches.json
+  - description: |-
+      > Takes preceedence over branch
+      ---
+      ## Service Info
+    label: Git TAG
+    name: tag
+  - enforced: true
+    label: Service Type
+    name: service-type
+    required: true
+    valuesUrl: file:/opt/cw/options/nso-service-types.json
+  - description: '> Not listed? [Update List](/job/show/4f9035c3-ed9d-487a-9c3c-4885403b0116)'
+    enforced: true
+    label: Service Instance
+    name: service
+    required: true
+    valuesUrl: file:/opt/cw/options/git/${option.repo.value}/${option.branch.value}-files.json
+  - hidden: true
+    name: git
+    secure: true
+    storagePath: keys/git/repo
+    valueExposed: true
+  - hidden: true
+    name: token
+    required: true
+    secure: true
+    storagePath: keys/gitea/token
+    valueExposed: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Dry run options
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        if [ "@option.dry-run-options@" = "commit" ]
+        then
+            echo DRY_RUN_COMMAND=
+        else
+            echo DRY_RUN_COMMAND="@option.dry-run-options@"
+        fi
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-cnc-service-details.json
+        headers: '{"accept": "application/json","Authorization": "Bearer ${option.token}"}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.service}
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Retrieve file from GIT
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Determine if branch or tag
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        echo tag    : @option.tag@
+        echo branch : @option.branch@
+        if [ ! -z "@option.tag@" ]; then
+            echo BRANCHORTAG=@option.tag@
+        else
+            echo BRANCHORTAG=@option.branch@
+        fi
+    - description: Determine file properties
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-cnc-service-details.json
+        jq -r '. | to_entries[] | (("file-"+.key|tostring)+"="+(.value|tostring))' $file
+        echo @data.file-download_url*@
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-cnc-service-definition.json
+        headers: '{"accept": "application/json","Authorization": "Bearer ${option.token}"}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.git}$/api/v1/repos/${option.repo}/raw/${data.file-name*}?ref=${data.BRANCHORTAG*}
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Retrieve specific version from file
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Create CNC Payload from file
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: cnc-payload
+            regex: (.*)
+          type: key-value-data
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-cnc-service-definition.json
+        jq -c '. | del(.[][]."directly-modified") | del(.[][]."plan-location") | del(.[][]."modified")' $file
+    - description: Check for compliance check
+      errorhandler:
+        jobref:
+          group: -DEMO/2-CNC Device
+          importOptions: true
+          name: NSO - Check Sync all devices
+          nodeStep: 'true'
+          uuid: fc3cd262-a1ec-47e4-8994-04b62bebdbe9
+        keepgoingOnSuccess: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: cnc-payload
+            regex: (.*)
+          type: key-value-data
+      script: if [ "@option.config-compliance@" == "yes" ]; then false; else true;
+        fi
+    - description: Get CNC Authentication
+      jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        body: ${data.cnc-payload*}
+        checkResponseCode: 'false'
+        headers: '{''Authorization'': ''Bearer ${export.cwtoken}'',''Content-Type'':
+          ''application/yang-data+json''}'
+        method: PATCH
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.cwvip}:30603/crosswork/proxy/nso/restconf/data/${option.service-type}${data.DRY_RUN_COMMAND*}
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Restore Service to CNC
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 824eed05-2c16-4110-a014-d90926ae0fb1
+

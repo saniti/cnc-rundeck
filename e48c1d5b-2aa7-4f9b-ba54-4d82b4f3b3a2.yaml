@@ -1,0 +1,77 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: CNC/Configuration/alarms
+  id: e48c1d5b-2aa7-4f9b-ba54-4d82b4f3b3a2
+  loglevel: INFO
+  name: CNC - Add MOCKSERVER response
+  nodeFilterEditable: false
+  options:
+  - label: Host IP
+    name: host-ip
+    required: true
+    value: 198.18.133.102
+  - label: host path
+    name: host-path
+    required: true
+    value: /alarms
+  - label: host port
+    name: host-port
+    required: true
+    value: '9000'
+  - name: response
+    required: true
+    value: worked
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: payload
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: payload
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: |-
+        template='{"httpRequest":{"method":"POST","path":"@option.host-path@"},"httpResponse":{"body":"@option.response@"}}'
+        echo $template | jq -c .
+    - configuration:
+        authentication: None
+        checkResponseCode: 'true'
+        headers: '{"Content-Type": "application/json"}'
+        method: PUT
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: http://198.18.133.102:9000/mockserver/reset
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: clear existing expectations
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        body: ${data.payload*}
+        checkResponseCode: 'true'
+        headers: '{"Content-Type": "application/json"}'
+        method: PUT
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: http://198.18.133.102:9000/expectation
+        responseCode: '201'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Create REST endpoint for alarms
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: e48c1d5b-2aa7-4f9b-ba54-4d82b4f3b3a2
+

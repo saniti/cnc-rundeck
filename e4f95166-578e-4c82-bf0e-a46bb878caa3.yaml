@@ -1,0 +1,37 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: CNC/Deploy/CNC
+  id: e4f95166-578e-4c82-bf0e-a46bb878caa3
+  loglevel: INFO
+  name: SP Home Lab
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - jobref:
+        args: '-controller-vip sp-lab -Option Execute -cw-version 6.0 -overwrite true
+          -deployment-size singleVM -deployment-size-mem 112000 -deployment-size-cpu
+          24 -seed-node True -node-type Hybrid -initial-node-count 1 -initial-master-count
+          1 -disk-mode thin -deployment-option cw_ipv4 -backup-percentage 20 -ovf-options
+          --acceptAllEulas,--skipManifestCheck,--noSSLVerify,--powerOn,--X:injectOvfEnv
+          -ovf-extra-config default -ovf-extra-config-options default,default -host-name
+          cw01 -vm-role 1 -timzone Australia/Brisbane -domain-name snapzilla.local
+          -controller-vip-name ${option.controller-vip} -data-vip-name ${option.controller-vip}
+          -data-vip ${option.controller-vip} -dns-server 10.0.0.138 -ntp-server 10.0.0.138,pool.ntp.org
+          -vnic-options vNIC0,vNIC1 -datastore-1 /dc/datastore/ds4_2TB_SSD -vmware-esx-host
+          /dc/host/c1/10.0.0.111 -vnic-1-network "/dc/network/VM Network" -vnic-2-network
+          /dc/network/data -vnic-0-static static -vnic-0-ip 10.0.0.144 -vnic-0-mask
+          255.255.255.0 -vnic-0-gateway 10.0.0.138 -vnic-1-static static -vnic-1-ip
+          10.1.0.244 -vnic-1-mask 255.255.255.0 -vnic-1-gateway 10.0.0.138 -disclaimer
+          "You are permitted, but only because I let you"'
+        failOnDisable: true
+        group: CNC/Deploy/CNC - Dual vNIC
+        name: CNC - Single Node (2 nic) v2 GOVC Version
+        uuid: b629ff96-8e06-4c24-8993-9559360a0aa9
+    keepgoing: false
+    strategy: node-first
+  uuid: e4f95166-578e-4c82-bf0e-a46bb878caa3
+

@@ -1,0 +1,57 @@
+- defaultTab: nodes
+  description: |-
+    Manage CWM version info.
+    ---
+    ## Expectations
+    ### Images
+    - Relevant images located under `/opt/cw/images` as OVA files
+    ### Applications
+    - Relevant applications located under `/opt/cw/install` as .tar.tz files
+  executionEnabled: true
+  group: CWM/Setup
+  id: 4fa88ca0-3818-4183-84d8-4b3530eb5f8e
+  loglevel: INFO
+  name: CWM Version Management - add
+  nodeFilterEditable: false
+  options:
+  - label: Friendly Name for Release
+    name: friendly-name
+    required: true
+  - description: '> used for the on-disk location of data'
+    label: Internal Name
+    name: cwm-value
+    required: true
+  - description: |-
+      > choose the CNC deployment image
+      > [Update List](3ace6b49-f8c9-46f5-acac-8313ca5aa086)
+    enforced: true
+    label: CWM Deployment Image
+    name: cwm-image-file
+    required: true
+    valuesUrl: file:/opt/cw/options/images-files-ova.json
+  - description: 'Selected by default? `true` = yes, `false` = no.'
+    enforced: true
+    label: Set Default
+    name: default
+    required: true
+    value: 'false'
+    values:
+    - 'false'
+    - 'true'
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Add new entry
+      script: |-
+        file=/opt/cw/options/cwm-versions.json
+        filetmp=/opt/cw/tmp/cwm-versions.tmp
+        if [ ! -f "$file" ]; then echo "[]" > "$file"; fi
+        jq '. += [{"name":"@option.friendly-name@","value":"@option.friendly-name@","friendly":"@option.cwm-value@","cnc-image":"@option.cwm-image-file@","selected":@option.default@}]' $file > $filetmp
+        \cp $filetmp $file
+    keepgoing: false
+    strategy: node-first
+  uuid: 4fa88ca0-3818-4183-84d8-4b3530eb5f8e
+

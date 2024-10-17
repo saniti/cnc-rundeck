@@ -1,0 +1,65 @@
+- defaultTab: nodes
+  description: retrieve NSO deployment details from /opt/cw/nso-versions.json
+  executionEnabled: true
+  group: CNC/Configuration
+  id: 04042c9d-953a-4b79-9e4e-13fa6b7ed601
+  loglevel: INFO
+  name: get nso deployment properties DEV
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: NSO Version
+    name: nso-version
+    required: true
+    valuesUrl: file:/opt/cw/options/nso-versions.json
+  - hidden: true
+    name: file
+    required: true
+    value: /opt/cw/options/nso-versions.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: get vars
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |
+        jq -r '.[] | select(.value=="@option.nso-version@")."nso-image" | "nso-image="+.' @option.file@
+        packages=$(jq -r '.[] | select(.value=="@option.nso-version@")."packages"' @option.file@)
+        #echo $packages
+        #for i in $(echo $packages); do echo '{''"'nso-package'"':'"'$(basename $i)'"''}' ; done
+        for i in $(echo $packages | sed "s/,/ /g"); do echo packages=$i; done
+    - configuration:
+        export: nso-image
+        group: export
+        value: ${data.nso-image*}
+      description: nso-image
+      nodeStep: false
+      type: export-var
+    - configuration:
+        export: nso-packages
+        group: export
+        value: ${data.packages*}
+      description: nso-packages
+      nodeStep: false
+      type: export-var
+    - configuration:
+        debugOnly: 'false'
+      nodeStep: false
+      type: log-data-step
+    - script: |-
+        echo ---
+        echo "@export.nso-packages@"
+        echo ---
+        for i in `echo "@export.nso-packages@"`; do echo "$i"; done
+    keepgoing: false
+    strategy: node-first
+  uuid: 04042c9d-953a-4b79-9e4e-13fa6b7ed601
+

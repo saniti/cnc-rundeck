@@ -1,0 +1,87 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: CNC/Devices
+  id: 8e9af560-1d49-46a6-a900-433e6db9e0aa
+  loglevel: INFO
+  name: CNC - Backup VPN
+  nodeFilterEditable: false
+  notification:
+    onsuccess:
+      email:
+        recipients: device-details@necehealthpoc.local
+        subject: ${notification.eventStatus} ${job.name}
+  notifyAvgDurationThreshold: null
+  options:
+  - enforced: true
+    label: CW POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - label: VPN Name
+    name: vpn-name
+    required: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        body: '{}'
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/vpn-${option.vpn-name}.tmp.json
+        headers: '{"Content-Type": "application/yang-data+json","Authorization": "Bearer
+          ${export.cwtoken}","Accept":"application/yang-data+json"}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data/ietf-l3vpn-ntw:l3vpn-ntw/vpn-services/vpn-service=${option.vpn-name}
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get device list
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: FifthVPN
+      jobref:
+        args: -vpn-name FifthVPN
+        group: CNC/Devices
+        importOptions: true
+        name: CNC - Backup VPN (child)
+        uuid: bd8a7e48-6820-4a67-b076-de62f1a3668c
+    - description: FourthVPN
+      jobref:
+        args: -vpn-name FourthVPN
+        group: CNC/Devices
+        importOptions: true
+        name: CNC - Backup VPN (child)
+        uuid: bd8a7e48-6820-4a67-b076-de62f1a3668c
+    - description: ThirdVPN
+      jobref:
+        args: -vpn-name ThirdVPN
+        group: CNC/Devices
+        importOptions: true
+        name: CNC - Backup VPN (child)
+        uuid: bd8a7e48-6820-4a67-b076-de62f1a3668c
+    - description: git commit
+      script: |-
+        sleep 3
+        jq -c 'del(."ietf-l3vpn-ntw:vpn-service"[]."plan-location") | del (."ietf-l3vpn-ntw:vpn-service"[]."modified")| del (."ietf-l3vpn-ntw:vpn-service"[]."directly-modified") | del (."ietf-l3vpn-ntw:vpn-service"[]."log")' /opt/cw/tmp/vpn-@option.vpn-name@.tmp.json > /opt/cw/tmp/HWAN/vpn-@option.vpn-name@.json
+        now=$(date +"%d-%m-%Y-%M-%S")
+        tag=$(date +"%d-%m-%Y")
+        pushd /opt/cw/tmp/HWAN
+        git add *
+        git commit -m "baseline $now"
+        git push
+        git push origin --tags
+    keepgoing: false
+    strategy: node-first
+  uuid: 8e9af560-1d49-46a6-a900-433e6db9e0aa
+

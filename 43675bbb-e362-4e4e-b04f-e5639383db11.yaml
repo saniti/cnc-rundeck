@@ -1,0 +1,116 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: Verification/CNC
+  id: 43675bbb-e362-4e4e-b04f-e5639383db11
+  loglevel: INFO
+  name: Health Check
+  nodeFilterEditable: false
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'name: gitbox '
+  nodesSelectedByDefault: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Current date time
+      exec: echo $(date +"%Y-%m-%d-%H-%M-%S")
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: now
+            regex: (.*)
+          type: key-value-data
+    - description: Run CNC health check
+      errorhandler:
+        configuration:
+          fail: 'false'
+          halt: 'false'
+          status: failed
+        keepgoingOnSuccess: true
+        nodeStep: false
+        type: flow-control
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'false'
+            hideOutput: 'false'
+            logData: 'true'
+            name: output
+            regex: (.*)
+          type: key-value-data-multilines
+      script: |-
+        sleep 5
+        cd /source/robot/Suites/baseline
+        robot -v ENV:dcloud cnc.robot
+    - description: get result
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            name: output-flat
+            regex: (.*)
+          type: key-value-data-multilines
+      script: |+
+        echo healthcheck failed
+
+
+
+    - configuration:
+        export: result
+        group: export
+        value: ${data.output-flat*}
+      description: export.output
+      nodeStep: false
+      type: export-var
+    - description: Show Log
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      script: |+
+        #xq . /source/robot/Suites/baseline/output.xml | jq '.robot | {"test":.suite."@name","source":.suite."@source","generated":."@generated","pass":.statistics.total.stat."@pass","fail":.statistics.total.stat."@fail"}'
+        file=/tmp/@data.now@.json
+        xq . /source/robot/Suites/baseline/output.xml | jq . > $file
+        jq '.robot.statistics.suite.stat' $file
+        #jq '.robot.statistics.suite.stat | .["name"] = ."@name" | .["pass"] = ."@pass" | .["fail"] = ."@fail" | del(."@name", ."@pass",."@fail",."@skip",."@id",."#text")' $file
+
+
+    - description: Show per Task log
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: summary
+            regex: (.*)
+          type: key-value-data
+      script: |+
+        file=/tmp/@data.now@.json
+        jq -c '.robot.statistics.tag.stat' $file
+
+    - configuration:
+        export: summary
+        group: export
+        value: ${data.summary*}
+      description: export.summary
+      nodeStep: false
+      type: export-var
+    keepgoing: false
+    strategy: sequential
+  uuid: 43675bbb-e362-4e4e-b04f-e5639383db11
+

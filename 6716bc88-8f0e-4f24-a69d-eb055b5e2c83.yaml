@@ -1,0 +1,31 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: Rundeck Nodes
+  id: 6716bc88-8f0e-4f24-a69d-eb055b5e2c83
+  loglevel: INFO
+  name: WIP- Add SUDO properties to a NODE
+  nodeFilterEditable: false
+  options:
+  - description: THe node list from last time this was run. Expect to be updated
+    enforced: true
+    label: List of current nodes
+    name: current-node-list
+    required: true
+    valuesUrl: file:/opt/cw/nodes.json
+  - label: Path to sudo password
+    name: ssh-storage-path
+    required: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: test
+      script: |-
+        jq '.[] += {"sudo-command-enabled":"true","sudo-password-storage-path":"@option.ssh-storage-path@","sudo-command-pattern":"^\[sudo\].*$"}' /opt/cw/nodes/@option.current-node-list@.json > /opt/cw/tmp/@option.current-node-list@.json.tmp
+        \cp /opt/cw/tmp/@option.current-node-list@.json.tmp /opt/cw/nodes/@option.current-node-list@.json
+    keepgoing: false
+    strategy: node-first
+  uuid: 6716bc88-8f0e-4f24-a69d-eb055b5e2c83
+

@@ -1,0 +1,99 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: CNC/Deploy/CNC
+  id: 106d5961-1d6b-45d5-b040-dda5528c7f46
+  loglevel: INFO
+  multipleExecutions: true
+  name: '- Deploy or show CNC release'
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: Deployment type
+    name: type
+    required: true
+    value: cnc
+    values:
+    - cnc
+    - cdg
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Deployment
+    name: deployment
+    required: true
+    valuesUrl: file:/opt/cw/deploy/${option.type.value}-deployments.json
+  - description: '[Refresh](63ea1c17-56d8-4f9e-bb94-e6983f8db3e1)'
+    enforced: true
+    label: VMware Hosting
+    name: hosting
+    required: true
+    valuesUrl: file:/opt/cw/options/vmw-environments.json
+  - enforced: true
+    label: Show deployment but don't deploy
+    name: show
+    required: true
+    value: 'true'
+    values:
+    - 'true'
+    - 'false'
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: deployment properties
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'true'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        infile=/opt/cw/deploy/@option.type@-deployments.json
+
+        jq -r '.[] | select(.value=="@option.hosting@") | to_entries[] | [(("hosting-"+.key)|tostring),(.value|tostring)]|join("=")' /opt/cw/options/vmw-environments.json
+        echo hosting-user=$(cat /backup/keys/keys/vmware/@option.hosting@-vc-user)
+        echo hosting-password=$(cat /backup/keys/keys/vmware/@option.hosting@-vc-password)
+
+        jq --raw-output '..|objects|select(has("value") and .value=="@option.deployment@") | .name as $name | .data | to_entries[] | [(("pod-"+.key)|tostring),(.value|tostring)]|join("=")' $infile
+    - description: deployment specification
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'true'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        spec=$(jq -c . '@data.pod-spec*@')
+        echo $spec | jq --raw-output 'del(..|objects|select(has("PropertyMapping"))."PropertyMapping") | del(..|objects|select(has("NetworkMapping"))."NetworkMapping") | to_entries[] | [(("deploy-"+.key)|tostring),(.value|tostring)]|join("=")'
+        echo $spec | jq --raw-output '..|objects|select(has("PropertyMapping"))."PropertyMapping"| .[] | [.Key,.Value]|join("=")'
+        echo $spec | jq --raw-output '..|objects|select(has("NetworkMapping"))."NetworkMapping"| .[] | [.Name,.Network]|join("=")'
+    - description: deployment properties
+      script: "export GOVC_URL=@data.hosting-vmw-ip*@ \nexport GOVC_USERNAME=@data.hosting-user*@\
+        \ \nexport GOVC_PASSWORD=@data.hosting-password*@ \nexport GOVC_INSECURE=1\
+        \ \n\nif [ \"@option.show@\" == \"false\" ]\nthen \n\n    if [ \"@data.pod-overwrite*@\"\
+        \ == \"true\" ]\n    then\n        echo Destroying existing VM\n        govc\
+        \ vm.destroy \"@data.pod-host-name*@\"\n    fi\n    \n    echo @data.pod-command-line*@\n\
+        \    @data.pod-command-line*@ > /dev/null\n    govc vm.change -vm \"@data.pod-host-name*@\"\
+        \ -c=@data.pod-cpu*@ -m=@data.pod-mem@\n    govc vm.change -vm \"@data.pod-host-name*@\"\
+        \ -e vcpu.hotadd=true -e mem.hotadd=true\n    govc vm.change -vm \"@data.pod-host-name*@\"\
+        \ -annotation \"Deployed by rundeck job: @job.execid@. Image file:@data.pod-image*@\"\
+        , using spec: /opt/cw/tmp/@job.execid@\n    govc vm.power -on \"@data.pod-host-name*@\"\
+        \n\nelse \n    if [ \"@data.pod-overwrite*@\" == \"true\" ]\n    then\n  \
+        \      echo Destroying existing VM\n        echo govc vm.destroy \"@data.pod-host-name*@\"\
+        \n    fi\n    \n    echo @data.pod-command-line*@\n    #@data.pod-command-line*@\
+        \ > /dev/null\n    echo govc vm.change -vm \"@data.pod-host-name*@\" -c=@data.pod-cpu*@\
+        \ -m=@data.pod-mem@\n    echo govc vm.change -vm \"@data.pod-host-name*@\"\
+        \ -e vcpu.hotadd=true -e mem.hotadd=true\n    echo govc vm.change -vm \"@data.pod-host-name*@\"\
+        \ -annotation \"Deployed by rundeck job: @job.execid@. Image file:@data.pod-image*@\"\
+        , using spec: /opt/cw/tmp/@job.execid@\n    echo govc vm.power -on \"@data.pod-host-name*@\"\
+        \nfi "
+    keepgoing: false
+    strategy: node-first
+  uuid: 106d5961-1d6b-45d5-b040-dda5528c7f46
+

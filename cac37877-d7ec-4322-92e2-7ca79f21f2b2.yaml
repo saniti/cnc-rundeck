@@ -1,0 +1,343 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: -DEMO/Slicing
+  id: cac37877-d7ec-4322-92e2-7ca79f21f2b2
+  loglevel: INFO
+  name: recon
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    hidden: true
+    name: infile
+    required: true
+    value: /opt/cw/tmp/reconcile.json
+    values:
+    - /opt/cw/tmp/reconcile.json
+    valuesListDelimiter: ','
+  - name: interfaces
+    required: true
+  - hidden: true
+    name: netbox
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-host
+    valueExposed: true
+  - hidden: true
+    name: netbox-token
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-token
+    valueExposed: true
+  - name: netbox-location
+    required: true
+  - name: netbox-role
+    required: true
+  - name: netbox-site
+    required: true
+  - enforced: true
+    hidden: true
+    name: proxy
+    required: true
+    value: proxy:3001
+    values:
+    - proxy:3001
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Get Device
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: "infile=@option.infile@\ncount=$(jq 'length' $infile)\necho @option.interfaces@\n\
+        echo Device count:$count\nif [ $count == 0 ]\nthen \n    false\nelse\n   \
+        \ jq -r '.[0] | \"key=\"+(.key|tostring),\"device=\"+.value' @option.infile@\n\
+        fi"
+    - description: Get device properties
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |
+        file=@option.interfaces@
+        jq -r '[.[] | select(.name=="@data.device*@")][0] | to_entries[]|("device-"+(.key|tostring)+"="+(.value|tostring))' $file
+    - description: Sanitise device-type
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: device-model-new
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: echo @data.device-model*@ | jq --raw-input -r 'split(" ")|join("-")
+        | ascii_downcase'
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-netbox-devicetype.json
+        headers: '{"Authorization":"${option.netbox-token}"}}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox}/dcim/manufacturers/?name=${data.device-manufacturer*}
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Check to see if manufacturer exists
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Check and create manufacturer
+      errorhandler:
+        configuration:
+          authentication: None
+          body: '{"name":"${data.device-manufacturer*}","slug":"${data.device-manufacturer*}"}'
+          checkResponseCode: 'false'
+          headers: '{"Authorization":"${option.netbox-token}","Content-Type":"application/json"}'
+          method: POST
+          printResponse: 'true'
+          printResponseToFile: 'false'
+          proxySettings: 'false'
+          remoteUrl: ${option.netbox}/dcim/manufacturers/
+          sslVerify: 'true'
+          timeout: '30000'
+        keepgoingOnSuccess: true
+        nodeStep: false
+        type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-netbox-devicetype.json
+        count=$(jq -r '.count' $file)
+        echo count:$count
+
+        if [ "$count" == "0" ];then
+            echo Creating new device type ...
+            false
+        else
+            echo Device type found
+            true
+        fi
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-netbox-devicetype.json
+        headers: '{"Authorization":"${option.netbox-token}"}}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox}/dcim/manufacturers/?name=${data.device-manufacturer*}
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Check to see if manufacturer exists
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Capture Manufacturer ID
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-netbox-devicetype.json
+        jq -r '.results[] | "manufacturer-id="+(.id|tostring)' $file
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-netbox-platform.json
+        headers: '{"Authorization":"${option.netbox-token}"}}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox}/dcim/device-types/?model=${data.device-model-new*}
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Check to see if platform exists
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Check and create platform
+      errorhandler:
+        configuration:
+          authentication: None
+          body: '{"manufacturer":"${data.manufacturer-id*}","slug":"${data.device-model-new*}","model":"${data.device-model-new*}"}'
+          checkResponseCode: 'false'
+          headers: '{"Authorization":"${option.netbox-token}","Content-Type":"application/json"}'
+          method: POST
+          printResponse: 'true'
+          printResponseToFile: 'false'
+          proxySettings: 'false'
+          remoteUrl: ${option.netbox}/dcim/device-types/
+          sslVerify: 'true'
+          timeout: '30000'
+        keepgoingOnSuccess: true
+        nodeStep: false
+        type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-netbox-platform.json
+        count=$(jq -r '.count' $file)
+        echo count:$count
+
+        if [ "$count" == "0" ];then
+            echo Creating new device type ...
+            false
+        else
+            echo Device type found
+            true
+        fi
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-netbox-platform.json
+        headers: '{"Authorization":"${option.netbox-token}"}}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox}/dcim/device-types/?model=${data.device-model-new*}
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Check to see if platform exists
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Capture Platform ID
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-netbox-platform.json
+        jq -r '.results[] | "platform-id="+(.id|tostring)' $file
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-netbox-device.json
+        headers: '{"Content-Type":"application/json","Authorization":"${option.netbox-token}"}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox}/dcim/devices?name=${data.device*}
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Check for device
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Check and create device
+      errorhandler:
+        configuration:
+          authentication: None
+          body: '{"name": "${data.device*}","device_type": "${data.platform-id*}",  "device_role":
+            "${option.netbox-role*}","site": "${option.netbox-site}",  "location":
+            "${option.netbox-location}","status": "active"}'
+          checkResponseCode: 'false'
+          file: /opt/cw/tmp/${job.execid}-netbox-device.json
+          headers: '{"Content-Type":"application/json","Authorization":"${option.netbox-token}"}'
+          method: POST
+          printResponse: 'true'
+          printResponseToFile: 'true'
+          proxySettings: 'false'
+          remoteUrl: ${option.netbox}/dcim/devices/
+          sslVerify: 'true'
+          timeout: '30000'
+        keepgoingOnSuccess: true
+        nodeStep: false
+        type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+      script: "file=/opt/cw/tmp/@job.execid@-netbox-device.json\ncount=$(jq '.count'\
+        \ $file)\necho count:$count\n\nif [ $count -gt 0 ]\nthen\n    true\nelse \n\
+        \    false\nfi \n"
+    - description: Capture Device ID
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-netbox-device.json
+        jq -r '"device-id="+([..|objects|select(has("id")).id][0]|tostring)' $file
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-nso-device-interfaces.json
+        headers: '{"Content-Type":"application/json","Authorization":"${option.netbox-token}"}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: http://${option.proxy}/interfaces/${data.device*}
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Get Device interfaces
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Build interface payload
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: interface-payload
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-nso-device-interfaces.json
+        jq -cr '[.[] | (.speed|fromjson|type) as $type |{"name":.value,"type":"other","device":"@data.device-id*@","description":.description,"speed":(if $type == "null" then 0 elif $type == "number" then .speed|tonumber*100 else (.speed|fromjson|to_entries[].value*10) end)}]' $file
+    - configuration:
+        authentication: None
+        body: ${data.interface-payload*}
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-nso-device-interfaces.json
+        headers: '{"Content-Type":"application/json","Authorization":"${option.netbox-token}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox}/dcim/interfaces/
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Attach Interfaces to device
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Delete device
+      script: |
+        infile=@option.infile@
+        infiletmp=@option.infile@.tmp
+
+        jq 'del(..|objects|select(has("key") and .key==@data.key*@))' $infile > $infiletmp
+        \cp $infiletmp $infile
+    - description: recursive
+      errorhandler:
+        jobref:
+          group: -DEMO/Slicing
+          importOptions: true
+          name: recon
+          uuid: cac37877-d7ec-4322-92e2-7ca79f21f2b2
+        keepgoingOnSuccess: true
+      script: 'false'
+    keepgoing: false
+    strategy: sequential
+  uuid: cac37877-d7ec-4322-92e2-7ca79f21f2b2
+

@@ -1,0 +1,34 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  id: 60880c2d-2116-49dc-81ee-34e62e62b77f
+  loglevel: INFO
+  name: fctest
+  nodeFilterEditable: false
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'tags: "nso"'
+  nodesSelectedByDefault: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - configuration:
+        destinationPath: /tmp/software
+        echo: 'true'
+        pattern: '*.*'
+        recursive: 'true'
+        sourcePath: /opt/cw/install/nso/6.0
+      description: copy nso
+      nodeStep: true
+      type: copyfile
+    keepgoing: false
+    strategy: node-first
+  uuid: 60880c2d-2116-49dc-81ee-34e62e62b77f
+

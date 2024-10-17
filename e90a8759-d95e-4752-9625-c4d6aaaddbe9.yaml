@@ -1,0 +1,104 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: CNC/Configuration/Providers
+  id: e90a8759-d95e-4752-9625-c4d6aaaddbe9
+  loglevel: INFO
+  name: CNC - Add Providers - SRPCE
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: CNC POD
+    name: cnc-vip
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - description: '- VIP or single IP'
+    label: PCE IP Address
+    name: pce-ip
+    required: true
+  - label: PCE SSH Port
+    name: pce-ssh-port
+    required: true
+    value: '22'
+  - enforced: true
+    label: Auto Onboard
+    name: auto-onobard
+    required: true
+    value: 'on'
+    values:
+    - 'off'
+    - 'on'
+    valuesListDelimiter: ','
+  - label: Outgoing Interface
+    name: outgoing-interface
+    required: true
+    value: eth0
+  - label: PCE HTTP Port
+    name: pce-http-port
+    required: true
+    value: '8080'
+  - hidden: true
+    name: cnc-password
+    required: true
+    secure: true
+    storagePath: keys/cw/admin
+    valueExposed: true
+  - hidden: true
+    label: CNC User Name
+    name: cnc-user
+    required: true
+    value: admin
+  - description: This should be hidden
+    hidden: true
+    name: provider-schema
+    value: '{"providers":[{"name":"SRPCE","connectivity_info":[{"type":"ROBOT_MSVC_TRANS_HTTP","ipaddrs":[{"inet_af":"ROBOT_INET_ADDR_TYPE_v4","inet_addr":"192.168.226.167","mask":"24"}],"port":8080,"timeout":"2"},{"type":"ROBOT_MSVC_TRANS_SSH","ipaddrs":[{"inet_af":"ROBOT_INET_ADDR_TYPE_v4","inet_addr":"192.168.226.167","mask":"24"}],"port":22,"timeout":"2"}],"profile":"auth_srpce","supported_models":[{}],"family":"ROBOT_PROVIDER_XTC","properties":{"auto-onboard":"off","outgoing-interface":"eth0"}}]}'
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: reconfigure JSON object
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: payload
+            regex: (.*)
+          type: key-value-data
+      script: |-
+        file=/tmp/@job.execid@.json
+        tmpfile=/tmp/@job.execid@.json.tmp
+        echo '@option.provider-schema@' > $file
+        jq '(..|objects|select(has("inet_addr")))."inet_addr"|= "@option.pce-ip@"' $file > $tmpfile
+        jq '(..|objects|select(has("auto-onobard")))."auto-onobard"|= "@option.auto-onobard@"' $tmpfile > $file
+        jq '(..|objects|select(has("outgoing-interface")))."outgoing-interface"|= "@option.outgoing-interface@"' $file > $tmpfile
+        jq '( .providers[].connectivity_info[]|select(.type=="ROBOT_MSVC_TRANS_HTTP") ).port|= @option.pce-http-port@' $tmpfile > $file
+        jq '( .providers[].connectivity_info[]|select(.type=="ROBOT_MSVC_TRANS_SSH") ).port|= @option.pce-ssh-port@' $file > $tmpfile
+        jq -c . $tmpfile
+    - description: get key variables
+      jobref:
+        args: -cnc-pod ${option.cnc-vip}
+        group: CNC/Configuration
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        body: ${data.payload*}
+        checkResponseCode: 'true'
+        headers: '{"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.cwvip}:30603/crosswork/inventory/v1/providers
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: add providers
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: e90a8759-d95e-4752-9625-c4d6aaaddbe9
+

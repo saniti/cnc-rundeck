@@ -1,0 +1,20 @@
+- defaultTab: nodes
+  description: "do this\n## If this is a version - create the definition \n[1. CNC\
+    \ Version Management -add](/project/CNC/job/show/1feb2b38-194d-4427-b9e9-b3c1a031a9b6)\n\
+    ## Map the applications\n[2. CNC Application Management - add](/project/CNC/job/show/0775b79b-5e36-4a1a-bfd5-68b76864c8bc)"
+  executionEnabled: true
+  group: CNC/Setup
+  id: 0854120b-0e1f-429d-8883-da92aa3210be
+  loglevel: INFO
+  name: Start Here for new build
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - exec: echo ${node.sudo-command-enabled}
+    keepgoing: true
+    strategy: sequential
+  uuid: 0854120b-0e1f-429d-8883-da92aa3210be
+

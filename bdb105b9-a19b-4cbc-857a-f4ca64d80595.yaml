@@ -1,0 +1,43 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: SWR/CLI
+  id: bdb105b9-a19b-4cbc-857a-f4ca64d80595
+  loglevel: INFO
+  name: SWR Serial Numbers
+  nodeFilterEditable: true
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: true
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'tags: swr'
+  nodesSelectedByDefault: true
+  options:
+  - name: cmd
+    value: sh inventory | include FOC
+    values:
+    - sh ip int br
+    - sh version
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - exec: ${unquotedoption.cmd}
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: serial
+            regex: ^.*(FOC.*\n).*
+          type: key-value-data
+    keepgoing: true
+    strategy: node-first
+  timeout: 20s
+  uuid: bdb105b9-a19b-4cbc-857a-f4ca64d80595
+

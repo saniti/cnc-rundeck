@@ -1,0 +1,504 @@
+- defaultTab: nodes
+  description: Creates a dedicated 5G network slice
+  executionEnabled: true
+  group: -DEMO/Slicing
+  id: 451e7efd-cca1-4aed-b68b-a2fb30b9ac66
+  loglevel: INFO
+  name: CREATE Dedicated Slice v3
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    hidden: true
+    name: proxy
+    required: true
+    value: proxy:3001
+    values:
+    - proxy:3001
+    valuesListDelimiter: ','
+  - hidden: true
+    name: netbox
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-host
+    valueExposed: true
+  - hidden: true
+    name: netbox-token
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-token
+    valueExposed: true
+  - description: '[Authenticate](96e872a2-5704-4af6-96dc-47758e6049d9)'
+    enforced: true
+    label: CNC POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - description: '> `kafka` - use asynchronous Kafka queue `direct` - commit directly
+      to CNC'
+    enforced: true
+    label: Release Method
+    name: release-method
+    required: true
+    value: direct
+    values:
+    - direct
+    - kafka
+    valuesListDelimiter: ','
+  - description: |-
+      > `commit` - make changes. `dry-run` options - model the changes without committing.`dry-run-reverse` - show the rollback commands to be used *IF* the commit were to take place.
+      ## Source Template selection in Source Control
+    enforced: true
+    label: CNC Commit Options
+    name: dry-run-options
+    required: true
+    valuesUrl: file:/opt/cw/options/nso-commit-options.json
+  - description: '[New](7f369ee7-88e3-439d-98f5-c109aac5376a)|[Remove](eec83222-22a5-46b9-9712-0b869442c27d)'
+    enforced: true
+    label: Customer
+    name: service-customer
+    required: true
+    valuesUrl: file:/opt/cw/options/customers.json
+  - enforced: true
+    label: git owner
+    name: git-owners
+    required: true
+    value: dcloud
+    valuesUrl: http://${option.proxy.value}/git/owners
+  - description: '> GIT Repositories'
+    enforced: true
+    label: git repository
+    name: git-repos
+    required: true
+    value: slice-data
+    valuesUrl: http://${option.proxy.value}/git/myrepos/${option.git-owners.value}
+  - description: '> Branch within GIT repository'
+    enforced: true
+    label: Git Branch
+    name: git-branch
+    required: true
+    value: master
+    valuesUrl: http://${option.proxy.value}/git/branches/${option.git-owners.value}/${option.git-repos.value}
+  - description: '> Folders/directories within the Repo/Branch'
+    enforced: true
+    label: Repo directories
+    name: git-dirs
+    required: true
+    value: --select--
+    valuesUrl: http://${option.proxy.value}/git/content/dir/${option.git-owners.value}/${option.git-repos.value}/${option.git-branch.value}
+  - description: '## Slicing Data'
+    enforced: true
+    label: Template
+    name: git-template
+    required: true
+    value: --select--
+    valuesUrl: http://${option.proxy.value}/git/files/${option.git-owners.value}/${option.git-repos.value}/${option.git-branch.value}/${option.git-dirs.value}
+  - description: '> NSST Templates stored in CNC'
+    enforced: true
+    label: Slice Type
+    name: slice-type
+    required: true
+    valuesUrl: http://${option.proxy.value}/nso/slicetemplates
+  - description: '> Key of the slice (unique)'
+    label: Slice Name
+    name: slice-name
+    required: true
+  - description: '> `eMBB` 1/\<nssai\> `URLCC` 2/\<nssai\>'
+    label: S-NSSAI
+    name: nssai
+    required: true
+  - description: |-
+      > `L2`, `L3`
+      ## Netbox Allocations
+    enforced: true
+    label: Slice VPN Underlay Type
+    name: slice-vpn-type
+    required: true
+    value: L3
+    values:
+    - L3
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Allocation (netbox)
+    name: scope
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/tags
+  - enforced: true
+    label: vlan groups
+    name: scope_1
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/vlangroups/${option.scope.value}
+  - enforced: true
+    label: IP Prefix and Subnet
+    name: ip-network
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/prefixes/${option.scope.value}
+  - description: |-
+      > Next Available from Netbox pool
+      ## Service Demarcation Point(s)
+      > [Reconcile Network to Inventory](34683f66-c826-46e2-8531-9eb3b67dfb44)
+      ### Endpoint 1
+    enforced: true
+    label: VLAN
+    name: slice-vlan
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/vlans/${option.scope_1.value}
+  - enforced: true
+    label: Sites (netbox)
+    name: netbox-site
+    required: true
+    value: --select--
+    valuesUrl: http://${option.proxy.value}/netbox/siteswithdevices
+  - enforced: true
+    label: Location (netbox)
+    name: netbox-location
+    required: true
+    value: --select--
+    valuesUrl: http://${option.proxy.value}/netbox/locationswithdevices/${option.netbox-site.value}
+  - enforced: true
+    label: Device (netbox)
+    name: netbox-device-1
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/devices/${option.netbox-location.value}
+  - enforced: true
+    label: Device Interface (netbox)
+    name: netbox-device-1-interface
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/deviceinterfaces/${option.netbox-device-1.value}
+  - delimiter: ','
+    label: Neighbours (endpoint 1)
+    multivalued: true
+    name: neighbours-1
+    required: true
+  - description: '### Endpoint 2'
+    enforced: true
+    label: IP for endpoint 1
+    name: netbox-device-1-ip
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/ips/${option.ip-network.value}
+  - enforced: true
+    label: Sites for Endpoint 2 (netbox)
+    name: netbox-site_2
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/siteswithdevices
+  - enforced: true
+    label: Location for Endpoint 2 (netbox)
+    name: netbox-location_2
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/locationswithdevices/${option.netbox-site_2.value}
+  - enforced: true
+    label: Device 2 (netbox)
+    name: netbox-device-2
+    required: true
+    value: --select--
+    valuesUrl: http://${option.proxy.value}/netbox/devices/${option.netbox-location_2.value}
+  - enforced: true
+    label: Device 2 Interface (netbox)
+    name: netbox-device-2-interface
+    required: true
+    value: --select--
+    valuesUrl: http://${option.proxy.value}/netbox/deviceinterfaces/${option.netbox-device-2.value}
+  - delimiter: ','
+    label: Neighbours (endpoint 2)
+    multivalued: true
+    name: neighbours-2
+    required: true
+  - description: '### Endpoint 3'
+    enforced: true
+    label: IP for endpoint 2
+    name: netbox-device-2-ip
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/ips/${option.ip-network.value}
+  - enforced: true
+    label: Sites for Endpoint 3 (netbox)
+    name: netbox-site_3
+    required: true
+    value: --select--
+    valuesUrl: http://${option.proxy.value}/netbox/siteswithdevices
+  - enforced: true
+    label: Location for Endpoint 3 (netbox)
+    name: netbox-location_3
+    required: true
+    value: --select--
+    valuesUrl: http://${option.proxy.value}/netbox/locationswithdevices/${option.netbox-site_3.value}
+  - enforced: true
+    label: Device 3 (netbox)
+    name: netbox-device-3
+    required: true
+    value: --select--
+    valuesUrl: http://${option.proxy.value}/netbox/devices/${option.netbox-location_3.value}
+  - enforced: true
+    label: Device 3 Interface (netbox)
+    name: netbox-device-3-interface
+    required: true
+    value: --select--
+    valuesUrl: http://${option.proxy.value}/netbox/deviceinterfaces/${option.netbox-device-3.value}
+  - delimiter: ','
+    label: Neighbours (endpoint 3)
+    multivalued: true
+    name: neighbours-3
+    required: true
+  - enforced: true
+    label: IP for endpoint 3
+    name: netbox-device-3-ip
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/ips/${option.ip-network.value}
+  - hidden: true
+    name: git
+    required: true
+    secure: true
+    storagePath: keys/git/repo
+    valueExposed: true
+  - hidden: true
+    name: git-token
+    required: true
+    secure: true
+    storagePath: keys/gitea/token
+    valueExposed: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: dry run options
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: "if [ \"@option.dry-run-options@\" == \"implementation-plan\" ]\nthen\n\
+        \    echo DRY_RUN_COMMAND=\"?dry-run=native\"\n    echo RUN_IMPLEMENTATION_PLAN=false\n\
+        elif [ \"@option.dry-run-options@\" == \"commit\" ]\n    then\n        echo\
+        \ DRY_RUN_COMMAND=\nelse\n    echo DRY_RUN_COMMAND=\"@option.dry-run-options@\"\
+        \n    \nfi"
+    - description: configure neighbours
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        echo '@option.neighbours-1@' | jq --raw-input --raw-output -c 'split(",") | ["neighbours-1",.|tostring]|join("=")'
+        echo '@option.neighbours-2@' | jq --raw-input --raw-output -c 'split(",") | ["neighbours-2",.|tostring]|join("=")'
+        echo '@option.neighbours-3@' | jq --raw-input --raw-output -c 'split(",") | ["neighbours-3",.|tostring]|join("=")'
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-netbox-devices.json
+        headers: '{"accept": "application/json"}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: http://${option.proxy}/netbox/devices
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Get netbox devices
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Filter netbox devices
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-netbox-devices.json
+        jq -r '.[] | select(.value=="@option.netbox-device-1@")."device-name" | "device-1="+.' $file
+        jq -r '.[] | select(.value=="@option.netbox-device-2@")."device-name" | "device-2="+.' $file
+        jq -r '.[] | select(.value=="@option.netbox-device-3@")."device-name" | "device-3="+.' $file
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-git-template-blob.json
+        headers: '{"accept": "application/json","Authorization":"Bearer ${option.git-token}"}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.git-template}
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Get Template git blob
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Decode JSON
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: git-json
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-git-template-blob.json
+        jq -cr '.content' $file | base64 --decode | jq -c
+    - description: create slice payload
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: slice-payload
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: |-
+        res=$(echo '@data.git-json*@')
+
+        res=$(echo $res | jq '.[][][]."service-id"|="slice-"+"@option.service-customer@"+"-"+"@option.slice-vpn-type@"')
+        res=$(echo $res | jq '.[][][]."slo-sle-template" |="@option.slice-type@"')
+        res=$(echo $res | jq '.[][][]."service-description"|="@option.slice-vpn-type@"+" slice "+"@option.service-customer@"+"@option.service-description@"')
+        res=$(echo $res | jq -c '(..|select("slice-service"?)."slice-service"[]."slo-sle-template") |="@option.slice-type@"' )
+        res=$(echo $res | jq '(.. |select(type == "object" and ."tag-type"?==("ietf-network-slice-service:service-tag-customer")).value[]) |="@option.service-customer@"')
+        res=$(echo $res | jq '(.. |select(type == "object" and has("service-tags"))."service-tags"."tag-type"[] | select(."tag-type"=="ietf-network-slice-service:service-tag-service").value)[0]|="@option.slice-vpn-type@"')
+        res=$(echo $res | jq '(..|select(has("ac-tag-type")?).value) |= [@option.slice-vlan@]')
+
+        # SDP info
+        res=$(echo $res | jq '(.. |select(type == "object" and ."sdp-id"?==("1"))."node-id")|="@data.device-1*@"')
+        res=$(echo $res | jq -c '(.. |select(type == "object" and ."sdp-id"?==("1"))."attachment-circuits"."attachment-circuit"[]."ac-tp-id")|="@option.netbox-device-1-interface@"' )
+        res=$(echo $res | jq -c '(.. |select(type == "object" and ."sdp-id"?==("1"))."attachment-circuits"."attachment-circuit"[]."ac-ip-address")|="@option.netbox-device-1-ip@"' )
+        res=$(echo $res | jq -c '(..|objects|select(has("sdp")) | .[][0] | (..|objects|select(has("neighbor")))."neighbor" ) |= @data.neighbours-1*@')
+
+        res=$(echo $res | jq '(.. |select(type == "object" and ."sdp-id"?==("2"))."node-id")|="@data.device-2*@"')
+        res=$(echo $res | jq -c '(.. |select(type == "object" and ."sdp-id"?==("2"))."attachment-circuits"."attachment-circuit"[]."ac-tp-id")|="@option.netbox-device-2-interface@"' )
+        res=$(echo $res | jq -c '(.. |select(type == "object" and ."sdp-id"?==("2"))."attachment-circuits"."attachment-circuit"[]."ac-ip-address")|="@option.netbox-device-2-ip@"' )
+        res=$(echo $res | jq -c '(..|objects|select(has("sdp")) | .[][1] | (..|objects|select(has("neighbor")))."neighbor" ) |= @data.neighbours-2*@')
+
+        res=$(echo $res | jq '(.. |select(type == "object" and ."sdp-id"?==("3"))."node-id")|="@data.device-3*@"')
+        res=$(echo $res | jq -c '(.. |select(type == "object" and ."sdp-id"?==("3"))."attachment-circuits"."attachment-circuit"[]."ac-tp-id")|="@option.netbox-device-3-interface@"' )
+        res=$(echo $res | jq -c '(.. |select(type == "object" and ."sdp-id"?==("3"))."attachment-circuits"."attachment-circuit"[]."ac-ip-address")|="@option.netbox-device-3-ip@"' )
+        res=$(echo $res | jq -c '(..|objects|select(has("sdp")) | .[][2] | (..|objects|select(has("neighbor")))."neighbor" ) |= @data.neighbours-3*@')
+
+
+        echo $res | jq -c
+    - description: find data
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |
+        res=$(echo '@data.slice-payload*@')
+        echo $res | jq -r 'keys[0] | "service-model="+.|tostring'
+        #echo $res | jq -r 'to_entries[].value | objects | (if .|type=="object" then "yes" else "no" end) as $x |if $x=="yes" then (.| leaf_paths as $path | ($path|join("|")|tostring)+"="+(getpath($path)|tostring) ) else (.| leaf_paths as $path | ($path|join("|")|tostring)+"="+(getpath($path)|tostring) ) end'
+    - description: create object list
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'true'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        res=$(echo '@data.slice-payload*@')
+        echo $res | jq -r 'keys[0] | "service-model="+.|tostring'
+
+        #echo $res | jq -cr '([to_entries[].value | objects | .| leaf_paths as $path | {($path|join("-")|tostring):(getpath($path)|tostring)}  ])'
+        #echo $res | jq -r 'to_entries[].value | objects | (if .|type=="object" then "yes" else "no" end) as $x |if $x=="yes" then (.| leaf_paths as $path | ($path|join("|")|tostring)+"="+(getpath($path)|tostring) ) else (.| leaf_paths as $path | ($path|join("|")|tostring)+"="+(getpath($path)|tostring) ) end'
+
+        echo $res | jq -r '(to_entries[].value | objects | .| leaf_paths as $path | ($path|join("|")|tostring)+"="+(getpath($path)|tostring))'
+    - description: find properties of interest
+      script: |+
+        echo @data.slice-service|0|service-description@
+
+    - description: generate implementation plan?
+      errorhandler:
+        jobref:
+          args: -friendly-name slice -endpoint "" -payload ${data.slice-payload*}
+            -service-type slice -name ${data.slice-service|0|service-id*}
+          group: -DEMO
+          importOptions: true
+          name: Create dry run exports v2
+          nodeStep: 'true'
+          uuid: 959f81c1-3640-4765-a15c-e1f2a300f0f2
+      script: |+
+        @data.RUN_IMPLEMENTATION_PLAN*@
+
+    - description: get CNC vars
+      jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars v3
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        body: ${data.slice-payload*}
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-netbox-device.json
+        headers: '{''Authorization'': ''Bearer ${export.cwtoken}'',''Content-Type'':
+          ''application/yang-data+json''}'
+        method: PATCH
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.cwvip}:30603/crosswork/proxy/nso/restconf/data${data.DRY_RUN_COMMAND*}
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Create or Test Creation of slice in CNC
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Reserve VLAN
+      jobref:
+        args: -customer ${option.service-customer} -name ${option.slice-name} -status
+          "reserved" -vlan ${option.slice-vlan} -group ${option.scope_1}
+        group: -DEMO/Slicing
+        name: NETBOX - Reserve VLAN [Kafka]
+        nodeStep: 'true'
+        uuid: 59c76172-0154-4c3c-8139-2b1ed50fae58
+    - description: Reserve IP 1
+      jobref:
+        args: -customer ${option.service-customer} -name ${option.slice-name} -status
+          "reserved" -ip "${option.netbox-device-1-ip}/24"
+        group: -DEMO/Slicing
+        name: NETBOX - Reserve IP [Kafka]
+        nodeStep: 'true'
+        uuid: 588d214d-eac6-474d-b5b4-1d51f8e06ead
+    - description: Reserve IP 2
+      jobref:
+        args: -customer ${option.service-customer} -name ${option.slice-name} -status
+          "reserved" -ip "${option.netbox-device-2-ip}/24"
+        group: -DEMO/Slicing
+        name: NETBOX - Reserve IP [Kafka]
+        nodeStep: 'true'
+        uuid: 588d214d-eac6-474d-b5b4-1d51f8e06ead
+    - description: Reserve IP 3
+      jobref:
+        args: -customer ${option.service-customer} -name ${option.slice-name} -status
+          "reserved" -ip "${option.netbox-device-3-ip}/24"
+        group: -DEMO/Slicing
+        name: NETBOX - Reserve IP [Kafka]
+        nodeStep: 'true'
+        uuid: 588d214d-eac6-474d-b5b4-1d51f8e06ead
+    - configuration:
+        fail: 'false'
+        halt: 'false'
+        status: done
+      description: finish
+      nodeStep: false
+      type: flow-control
+    keepgoing: false
+    strategy: sequential
+  uuid: 451e7efd-cca1-4aed-b68b-a2fb30b9ac66
+

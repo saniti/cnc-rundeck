@@ -1,0 +1,177 @@
+- defaultTab: nodes
+  description: |-
+    modify the latency on a specific interface and device
+    ---
+    ## Demo Setup
+    For L2VPN, routing should look like `Node-4` -> `Node-3` -> `Node-1` -> `Node-5`
+
+    We will inject latency between `Node-3` interface `GigabitEthernet0/0/0/3` and `Node-4` interface `GigabitEthernet0/0/0/2` of 30ms
+
+    We expect to see path transition in about 30 seconds
+  executionEnabled: false
+  group: -DEMO/2-CNC Device
+  id: 0710d89a-d4d0-4cb8-ac97-cdf51154783e
+  loglevel: INFO
+  name: NSO - Change Latency
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: CW POD
+    name: cnc-pod
+    required: true
+    value: R1R2
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - enforced: true
+    name: device-1
+    required: true
+    valuesUrl: file:/opt/cw/options/${option.cnc-pod.value}-devices.json
+  - enforced: true
+    label: Interface
+    name: interface-1
+    required: true
+    value: GigabitEthernet0/0/0/3
+    values:
+    - GigabitEthernet0/0/0/0
+    - GigabitEthernet0/0/0/1
+    - GigabitEthernet0/0/0/2
+    - GigabitEthernet0/0/0/3
+    - GigabitEthernet0/0/0/4
+    - GigabitEthernet0/0/0/5
+    - GigabitEthernet0/0/0/6
+    - GigabitEthernet0/0/0/7
+    - Gi2
+    valuesListDelimiter: ','
+  - enforced: true
+    name: device-2
+    required: true
+    valuesUrl: file:/opt/cw/options/${option.cnc-pod.value}-devices.json
+  - enforced: true
+    label: Interface
+    name: interface-2
+    required: true
+    value: GigabitEthernet0/0/0/3
+    values:
+    - GigabitEthernet0/0/0/0
+    - GigabitEthernet0/0/0/1
+    - GigabitEthernet0/0/0/2
+    - GigabitEthernet0/0/0/3
+    - GigabitEthernet0/0/0/4
+    - GigabitEthernet0/0/0/5
+    - GigabitEthernet0/0/0/6
+    - GigabitEthernet0/0/0/7
+    - Gi2
+    valuesListDelimiter: ','
+  - description: '> default is 1'
+    label: Delay Metric (in mS)
+    name: delay-metric
+    required: true
+    value: '100'
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: get cnc token
+      jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - description: xx
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        echo 'https://@export.mgtvip@:30603/crosswork/proxy/nso/restconf/data/tailf-ncs:devices'
+        echo '{"devices":{"device":{"name":"@option.device@","config":{"performance-measurement":{"interface":{"name":"GigabitEthernet0/0/0/3","delay-measurement":{"advertise-delay":@option.delay-metric@}}}}}}}'
+    - description: dry run
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |+
+        for i in `echo $RD_OPTION_DRY_RUN`
+        do
+            echo processing
+            echo $i
+            export "$i"
+            echo finished
+        done
+
+        if [ "$xml" ]; then echo "XML"; fi
+        if [ "$cli" ]; then echo "CLI"; fi
+        if [ "$cli-c" ]; then echo "CLI-C"; fi
+        if [ "$reverse" ]; then echo "REVERSE"; fi
+        if [ "$native" ]; then echo "NATIVE"; fi
+
+
+        #if [ "@option.dry-run@" = "true" ]
+        #then
+        #    echo DRY_RUN_COMMAND="?dry-run=@option.dry-run_format@"
+        #else
+        #    echo DRY_RUN_COMMAND=""
+        #fi
+
+    - configuration:
+        authentication: None
+        body: |-
+          {
+            "devices": [
+              {
+                "device": {
+                  "name": "${option.device-1}",
+                  "config": {
+                    "tailf-ned-cisco-ios-xr:performance-measurement": {
+                      "interface": {
+                        "name": "${option.interface-1}",
+                        "delay-measurement": {
+                          "advertise-delay": ${option.delay-metric}
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "device": {
+                  "name": "${option.device-2}",
+                  "config": {
+                    "tailf-ned-cisco-ios-xr:performance-measurement": {
+                      "interface": {
+                        "name": "${option.interface-2}",
+                        "delay-measurement": {
+                          "advertise-delay": ${option.delay-metric}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        checkResponseCode: 'false'
+        headers: '{"Content-Type": "application/yang-data+json","Authorization": "Bearer
+          ${export.cwtoken}"}'
+        method: PATCH
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data/tailf-ncs:devices
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Modify Service
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 0710d89a-d4d0-4cb8-ac97-cdf51154783e
+

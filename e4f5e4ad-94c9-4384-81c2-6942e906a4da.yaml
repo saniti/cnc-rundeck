@@ -1,0 +1,197 @@
+- defaultTab: nodes
+  description: |-
+    Deploy ODN (on demand next hop) policy templates
+    ---
+    1. do this
+    2. do that
+    3. do the other thing
+    4. use this ip 10.11.12.23
+    5. generate traffic on this interface
+  executionEnabled: true
+  group: -DEMO
+  id: e4f5e4ad-94c9-4384-81c2-6942e906a4da
+  loglevel: INFO
+  name: CNC - L3 Service [Service Designer] (step 3) deploy policy
+  nodeFilterEditable: false
+  notification:
+    onsuccess:
+      email:
+        recipients: autoamtion@microlab.dcloud.cisco.com
+        subject: '${notification.eventStatus} :[${job.name}]: New VPN Definition :
+          ${option.customer}-${option.vpn-name}.json'
+  notifyAvgDurationThreshold: null
+  options:
+  - enforced: true
+    label: CNC POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - description: '> New customer? [Add new customer](/job/show/8e3b0a1a-421c-4d0d-bb2c-c7d0af07116c)'
+    enforced: true
+    label: Customer
+    name: customer
+    required: true
+    valuesUrl: file:/opt/cw/options/customers.json
+  - description: '> Git repository that maintains the VPN templates, policies and
+      ODNs'
+    enforced: true
+    label: Template Respository
+    name: repo
+    required: true
+    value: simon/service_templates
+    valuesUrl: file:/opt/cw/options/git/repos.json
+  - description: '> Git branch within repository'
+    enforced: true
+    label: Branch
+    name: branch
+    required: true
+    value: develop
+    values:
+    - develop
+    - master
+    - main
+    valuesListDelimiter: ','
+  - enforced: true
+    name: service-type
+    required: true
+    value: odn-template
+    values:
+    - l3vpn
+    - l2vpn
+    - sr-policy
+    - odn-template
+    valuesListDelimiter: ','
+  - description: '> Files missing? [Update List](/job/show/4f9035c3-ed9d-487a-9c3c-4885403b0116)'
+    enforced: true
+    label: Template
+    name: files
+    valuesUrl: file:/opt/cw/options/git/${option.repo.value}/${option.service-type.value}/${option.branch.value}-files.json
+  - enforced: true
+    hidden: true
+    label: Customer Repo
+    name: dest-repo
+    required: true
+    value: simon/customer
+    valuesUrl: file:/opt/cw/options/git/repos.json
+  - hidden: true
+    name: token
+    required: true
+    secure: true
+    storagePath: keys/gitea/token
+    valueExposed: true
+  - hidden: true
+    name: git
+    required: true
+    secure: true
+    storagePath: keys/git/repo
+    valueExposed: true
+  - hidden: true
+    name: now
+    required: true
+    value: ${DATE:yyyy-MM-dd-HH-mm-ss}
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - configuration:
+        authentication: None
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}-gitblob.json
+        headers: |
+          {"accept": "application/json","Authorization":"Bearer ${option.token}"}
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.files}
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get VPN Template
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: retrieve file names of Template and Policy
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |+
+        file=/opt/cw/tmp/@job.execid@-gitblob.json
+        jq -r '"template-file="+(.name|tostring)' $file
+
+
+    - configuration:
+        authentication: None
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}-servicedesign.json
+        headers: |
+          {"accept": "application/json","Authorization":"Bearer ${option.token}"}
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.git}$/api/v1/repos/${option.repo}/raw/${option.service-type}/${data.template-file*}?ref=${option.branch}
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get template file as JSON
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: create payload from JSON
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: cnc-payload
+            regex: (.*)
+          type: key-value-data
+      script: |+
+        file=/opt/cw/tmp/@job.execid@-servicedesign.json
+        jq -c . $file
+
+
+    - jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        project: CNC
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        body: ${data.cnc-payload*}
+        checkResponseCode: 'false'
+        headers: '{''Authorization'': ''Bearer ${export.cwtoken}'',''Content-Type'':
+          ''application/yang-data+json''}'
+        method: PATCH
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.cwvip}:30603/crosswork/proxy/nso/restconf/data
+        sslVerify: 'false'
+        timeout: '3000000'
+      description: Create Service
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        fail: 'false'
+        halt: 'true'
+      description: success
+      nodeStep: false
+      type: flow-control
+    keepgoing: false
+    strategy: node-first
+  uuid: e4f5e4ad-94c9-4384-81c2-6942e906a4da
+

@@ -1,0 +1,40 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: -DEMO/Kafka
+  id: 8254e6a0-a938-401c-aa0e-609de4e9af0d
+  loglevel: INFO
+  multipleExecutions: true
+  name: Kill taiga Consumers - all
+  nodeFilterEditable: false
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'name: gitbox '
+  nodesSelectedByDefault: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: kill consumers (all)
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'true'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |
+        ps ax | awk -v p='COMMAND' 'NR==1 {n=index($0, p); next} {print "consumer=" substr($0, n)}' | grep -i consumer-v | grep -iv grep
+        kill $(ps aux | grep -i  consumer-v | grep -iv grep | awk '{print $2}')
+        ps ax | awk -v p='COMMAND' 'NR==1 {n=index($0, p); next} {print "consumer=" substr($0, n)}' | grep -i consumer-v | grep -iv grep
+    keepgoing: false
+    strategy: parallel
+  uuid: 8254e6a0-a938-401c-aa0e-609de4e9af0d
+

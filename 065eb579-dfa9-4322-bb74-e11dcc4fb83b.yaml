@@ -1,0 +1,52 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: -DEMO/.working
+  id: 065eb579-dfa9-4322-bb74-e11dcc4fb83b
+  loglevel: INFO
+  name: CNC - register
+  nodeFilterEditable: false
+  notification:
+    onsuccess:
+      email:
+        recipients: device-details@necehealthpoc.local
+        subject: ${notification.eventStatus} ${job.name}
+  notifyAvgDurationThreshold: null
+  options:
+  - enforced: true
+    label: CW POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        body: '{"force":true,"token":"ZjBhMWUwNTAtOWI0OS00NjE1LWFiM2QtZmU1OGI3OWVlZWE5LTE2MzQwNTM3%0AMjU5MjZ8SWdyWk1mQ2svQVU3LzdrZER4TEpNM3d3RUc0UGRRNlRML1c2L200%0AbVZHdz0%3D%0A","product_id":"CW_INFRA"}'
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}.json
+        headers: |2+
+           {"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}
+
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/clms/v1/register
+        sslVerify: 'false'
+        timeout: '30000'
+      description: register
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 065eb579-dfa9-4322-bb74-e11dcc4fb83b
+

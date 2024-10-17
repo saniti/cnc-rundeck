@@ -1,0 +1,95 @@
+- defaultTab: nodes
+  description: "CNC - Get Device Details\n---\n# Overview\nDiscovers device data from\
+    \ CNC \n## Returns\n- UUID\n- Device Config"
+  executionEnabled: true
+  group: CNC/Services
+  id: 23d13185-8891-4031-9eea-580f733a346c
+  loglevel: INFO
+  name: CNC - Get Device Details
+  nodeFilterEditable: false
+  notification:
+    onstart:
+      email:
+        recipients: siprice@cisco.com
+        subject: siprice@cisco.com
+  notifyAvgDurationThreshold: null
+  options:
+  - enforced: true
+    label: Crosswork Deployment VIP
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - label: Device Name
+    name: device-name
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: get key vars
+      jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        body: '{"filter":{"host_name":"${option.device-name}"},"filterData":{"PageSize":30,"PageNum":0,"Criteria":""}}'
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}.json
+        headers: |
+          {'Authorization': 'Bearer ${export.cwtoken}','Content-Type': 'application/json'}
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.cwvip}:30603/crosswork/inventory/v1/nodes/query
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Get device
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        command: jq -r '.data[].uuid' /opt/cw/tmp/${job.execid}.json
+      description: device uuid
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: device-uuid
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: jq -c . /opt/cw/tmp/${job.execid}.json
+      description: get device data - full
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: device-data
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        export: device-uuid
+        group: export
+        value: ${data.device-uuid*}
+      description: export
+      nodeStep: false
+      type: export-var
+    - configuration:
+        export: device-data
+        group: export
+        value: ${data.device-data*}
+      nodeStep: false
+      type: export-var
+    keepgoing: false
+    strategy: node-first
+  uuid: 23d13185-8891-4031-9eea-580f733a346c
+

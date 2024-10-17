@@ -1,0 +1,34 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: Kafka
+  id: 09e3cbd4-3a00-4ebc-afde-372787017f5a
+  loglevel: INFO
+  multipleExecutions: true
+  name: Restart and clean Kafka
+  nodeFilterEditable: false
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'name: gitbox '
+  nodesSelectedByDefault: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: restart kafka
+      script: |-
+        pushd /source/kafka-docker-master/kafka > /dev/null
+        echo Stopping Kafka and Kafka-UI
+        docker-compose down
+        echo Starting Kafka and Kafka-UI
+        docker-compose up -d
+    keepgoing: false
+    strategy: node-first
+  uuid: 09e3cbd4-3a00-4ebc-afde-372787017f5a
+

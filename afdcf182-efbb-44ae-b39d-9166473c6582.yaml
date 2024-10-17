@@ -1,0 +1,125 @@
+- defaultTab: nodes
+  description: |-
+    Changes the geo location data of the device
+    ---
+    ### Update device list from CNC
+    <a href="/project/CNC/job/show/fe7a67f3-81bf-44c0-9361-fd2d7afb3cab">Device Details</a>
+    ### Add new locations to list
+    <a href="/project/CNC/job/show/eb42d81d-db58-427a-b379-ca27b00c7c28">CNC - Locations - ADD </a>
+  executionEnabled: true
+  group: CNC/Configuration
+  id: afdcf182-efbb-44ae-b39d-9166473c6582
+  loglevel: INFO
+  name: CNC - Modify Device Geographic Location Data
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: CNC POD
+    name: cnc-vip
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - description: '> required'
+    label: Device Name (short)
+    name: device-name
+    required: true
+    sortValues: true
+    valuesUrl: file:/opt/cw/options/${option.cnc-vip.value}-devices.json
+  - description: '> required'
+    enforced: true
+    name: location-data
+    required: true
+    valuesUrl: file:/opt/cw/options/locations.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: get device details
+      jobref:
+        args: -cnc-pod ${option.cnc-vip}
+        group: CNC/Services
+        importOptions: true
+        name: CNC - Get Device Details
+        uuid: 23d13185-8891-4031-9eea-580f733a346c
+    - configuration:
+        debugOnly: 'true'
+      description: log data in debug mode
+      nodeStep: false
+      type: log-data-step
+    - configuration:
+        command: jq '.[] | select(.name=="${option.location-data}")."Longitude"' /opt/cw/options/locations.json
+      description: get long
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: longitude
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: jq '.[] | select(.name=="${option.location-data}")."Latitude"' /opt/cw/options/locations.json
+      description: get lat
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: latitude
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: jq '.[] | select(.name=="${option.location-data}")."Country"' /opt/cw/options/locations.json
+      description: get country
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: country
+            regex: '.([A-Z,a-z]+).+'
+          type: key-value-data
+      type: localexec
+    - description: reconfigure JSON object
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: payload
+            regex: (.*)
+          type: key-value-data
+      script: |-
+        file=/tmp/@job.execid@.json
+        tmpfile=/tmp/@job.execid@.json.tmp
+
+        echo '@export.device-data@' > $file
+        jq '( .data[].geo_info.coordinates.longitude.value)|="@data.longitude*@"' $file > $tmpfile
+        jq '( .data[].geo_info.coordinates.latitude.value)|="@data.latitude*@"' $tmpfile > $file
+        jq '( .data[].geo_info.country)|="@data.country*@"' $file > $tmpfile
+        jq -c . $tmpfile
+    - configuration:
+        authentication: None
+        body: ${data.payload*}
+        checkResponseCode: 'true'
+        headers: '{"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}'
+        method: PUT
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.cwvip}:30603/crosswork/inventory/v1/nodes
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: update device ${option.device-name}
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: afdcf182-efbb-44ae-b39d-9166473c6582
+

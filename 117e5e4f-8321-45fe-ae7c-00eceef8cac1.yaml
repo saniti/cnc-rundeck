@@ -1,0 +1,302 @@
+- defaultTab: nodes
+  description: |-
+    Adds a new VM to netbox
+    ## Features
+    - Creates Device with 3 interfaces. IPs can only be assigned to interfaces, not devices/VMs in Netbox.
+    `primary`
+    `secondary`
+    `ternary`
+  executionEnabled: true
+  group: Netbox
+  id: 117e5e4f-8321-45fe-ae7c-00eceef8cac1
+  loglevel: INFO
+  name: Add Device to NetBox
+  nodeFilterEditable: false
+  options:
+  - hidden: true
+    label: Netbox Server
+    name: netbox-server
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-host
+    valueExposed: true
+  - hidden: true
+    label: API Token
+    name: api-token
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-token
+    valueExposed: true
+  - label: Device
+    name: device-name
+    required: true
+  - enforced: true
+    label: device role
+    name: device-role
+    valuesUrl: file:/opt/cw/options/roles.json
+  - enforced: true
+    label: Device Types
+    name: device-type
+    valuesUrl: file:/opt/cw/options/netbox-device-types.json
+  - enforced: true
+    label: Netbox Sites
+    name: site
+    valuesUrl: file:/opt/cw/options/netbox-sites.json
+  - enforced: true
+    label: Location
+    name: location
+    valuesUrl: file:/opt/cw/options/netbox-locations.json
+  - enforced: true
+    label: IP Pool
+    name: ip-pool
+    required: true
+    value: arista
+    values:
+    - customer
+    - arista
+    - other
+    valuesListDelimiter: ','
+  - enforced: true
+    name: interface
+    value: virtual
+    values:
+    - 10gbase-t
+    - virtual
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Device State
+    name: state
+    required: true
+    value: active
+    values:
+    - active
+    - offline
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - configuration:
+        command: 'echo {"name":"${option.VM}","status":"active","cluster":${option.ClusterID},"role":${option.vm-role}}'
+      nodeStep: true
+      type: localexec
+    - configuration:
+        authentication: None
+        body: |-
+          {
+            "name": "${option.device-name}",
+            "device_type": ${option.device-type},
+            "device_role": ${option.device-role},
+            "site": ${option.site},
+            "location": ${option.location},
+            "status": "${option.state}"
+          }
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}.json
+        headers: '{"Content-Type":"application/json","Authorization":"${option.api-token}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox-server}/dcim/devices/
+        responseCode: '201'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Create device
+      errorhandler:
+        configuration:
+          command: echo true
+        nodeStep: true
+        type: localexec
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            hideOutput: 'false'
+            logData: 'false'
+            name: vmid
+            regex: ^[^\d]*(\d+).*
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: find device ID
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: device-id
+            regex: (.*)
+          type: key-value-data
+      script: |-
+        file=/opt/cw/tmp/@job.execid@.json
+        jq '.id' $file
+    - configuration:
+        authentication: None
+        body: |-
+          {
+            "name": "Loopback0",
+            "device": "${data.device-id*}",
+            "type": "${option.interface}"
+          }
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}.json
+        headers: '{"Content-Type":"application/json","Authorization":"${option.api-token}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox-server}/dcim/interfaces/
+        responseCode: '201'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Create interface
+      errorhandler:
+        configuration:
+          command: echo true
+        nodeStep: true
+        type: localexec
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            hideOutput: 'false'
+            logData: 'false'
+            name: vmid
+            regex: ^[^\d]*(\d+).*
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: find interface ID
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: interface-id
+            regex: (.*)
+          type: key-value-data
+      script: |-
+        file=/opt/cw/tmp/@job.execid@.json
+        jq '.id' $file
+    - description: Allocate IP
+      jobref:
+        args: -search_tag ${option.ip-pool}
+        group: Netbox
+        name: GET Next IP
+        project: Live-2022
+        uuid: 143a3064-d5bf-4bee-864c-7269da2db03f
+    - configuration:
+        debugOnly: 'false'
+      nodeStep: false
+      type: log-data-step
+    - configuration:
+        authentication: None
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}.json
+        headers: '{"Content-Type":"application/json","Authorization":"${option.api-token}"}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox-server}/ipam/ip-addresses/${export.ipid}
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get IP details
+      errorhandler:
+        configuration:
+          command: echo true
+        nodeStep: true
+        type: localexec
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            hideOutput: 'false'
+            logData: 'false'
+            name: vmid
+            regex: ^[^\d]*(\d+).*
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: format IPAM data
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: ipam-payload
+            regex: (.*)
+          type: key-value-data
+      script: |-
+        file=/opt/cw/tmp/@job.execid@.json
+        jq -c '{"id":.id,"url":.url,"display":.display,"family":.family.value,"address":.address}' $file
+    - exec: 'echo ''{   "name": "${option.device-name}",   "primary_ip": ${data.ipam-payload*},   "primary_ip4":
+        ${data.ipam-payload*} }'''
+    - configuration:
+        authentication: None
+        body: |-
+          {
+          "assigned_object_id": ${data.interface-id*},
+          "assigned_object_type": "dcim.interface"
+          }
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}.json
+        headers: '{"Content-Type":"application/json","Authorization":"${option.api-token}"}'
+        method: PATCH
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox-server}/ipam/ip-addresses/${export.ipid}/
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: assign IP to interface
+      errorhandler:
+        configuration:
+          command: echo true
+        nodeStep: true
+        type: localexec
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            hideOutput: 'false'
+            logData: 'false'
+            name: vmid
+            regex: ^[^\d]*(\d+).*
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        body: '{"primary_ip4":${export.ipid}}'
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}.json
+        headers: '{"Content-Type":"application/json","Authorization":"${option.api-token}"}'
+        method: PATCH
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox-server}/dcim/devices/${data.device-id*}/
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: update device to match IP
+      errorhandler:
+        configuration:
+          command: echo true
+        nodeStep: true
+        type: localexec
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            hideOutput: 'false'
+            logData: 'false'
+            name: vmid
+            regex: ^[^\d]*(\d+).*
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 117e5e4f-8321-45fe-ae7c-00eceef8cac1
+

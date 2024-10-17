@@ -1,0 +1,17 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  id: 4c1acecc-7bd5-4cb0-b097-649c74e4c693
+  loglevel: INFO
+  name: test
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - script: whoami
+    keepgoing: false
+    strategy: node-first
+  uuid: 4c1acecc-7bd5-4cb0-b097-649c74e4c693
+

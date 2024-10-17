@@ -1,0 +1,20 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  id: 1cbf98af-28dc-4011-8ffc-8906354297ee
+  loglevel: INFO
+  name: test
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - configuration:
+        adhocRemoteString: whoami
+      nodeStep: true
+      type: exec-command
+    keepgoing: false
+    strategy: node-first
+  uuid: 1cbf98af-28dc-4011-8ffc-8906354297ee
+

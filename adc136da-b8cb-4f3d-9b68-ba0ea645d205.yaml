@@ -1,0 +1,38 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  id: adc136da-b8cb-4f3d-9b68-ba0ea645d205
+  loglevel: INFO
+  name: test
+  nodeFilterEditable: true
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'tags: nso'
+  nodesSelectedByDefault: true
+  options:
+  - name: controller-vip
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: pod-name
+            regex: (.*)
+          type: key-value-data
+      script: jq '.[] | select(.value=="@option.controller-vip@") | .tag' /opt/cw/options/cw-environments.json
+        | tr -d '"'
+    keepgoing: false
+    strategy: node-first
+  uuid: adc136da-b8cb-4f3d-9b68-ba0ea645d205
+

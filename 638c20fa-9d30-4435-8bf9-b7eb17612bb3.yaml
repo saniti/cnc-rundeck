@@ -1,0 +1,67 @@
+- defaultTab: nodes
+  description: '> Remove tag(s) from a node'
+  executionEnabled: true
+  group: Rundeck Nodes
+  id: 638c20fa-9d30-4435-8bf9-b7eb17612bb3
+  loglevel: INFO
+  name: node tags - DELETE
+  nodeFilterEditable: false
+  options:
+  - description: THe node list from last time this was run. Expect to be updated
+    enforced: true
+    label: List of current nodes
+    name: current-node-list
+    required: true
+    valuesUrl: file:/opt/cw/nodes.json
+  - delimiter: '|'
+    label: New tags
+    multivalued: true
+    name: tags
+    required: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: xx
+      script: |-
+        echo '@option.tags@'
+        file=/opt/cw/nodes/@option.current-node-list@.json
+        tagscurrent=$(jq -r '.[].tags' $file)
+        echo $targscurrent | sed -r 's/\@option.tags@\b,//g' | sed 's/,\{2,\}/,/g' | sed 's/^,//'
+    - description: add tags
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: tagsnew
+            regex: (.*)
+          type: key-value-data
+      script: |-
+        file=/opt/cw/nodes/@option.current-node-list@.json
+        tagscurrent=$(jq -r '.[].tags' $file)
+        tagsnew=$(echo $tagscurrent | sed -r 's/@unquotedoption.tags@\b,//g' | sed 's/,\{2,\}/,/g' | sed 's/^,//' | sed 's/,*$//g'
+        )
+        echo $tagsnew
+    - description: update reference
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      script: |
+        file=/opt/cw/nodes/@option.current-node-list@.json
+        #jq '.[] | .tags="@data.tagsnew@"' $file
+        updated=$(jq -c '. | .[].tags="@data.tagsnew@"' $file)
+        echo $updated | jq . > $file
+        jq . $file
+    - description: refresh node list
+      nodeStep: false
+      type: source-refresh-plugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 638c20fa-9d30-4435-8bf9-b7eb17612bb3
+

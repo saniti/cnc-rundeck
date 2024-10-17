@@ -1,0 +1,49 @@
+- defaultTab: nodes
+  description: Add new DOMAIN entries
+  executionEnabled: true
+  group: CNC/Setup
+  id: 6efb3fef-2883-4fc8-b78a-3661bad4fca3
+  loglevel: INFO
+  name: DOMAIN - Add Option
+  nodeFilterEditable: false
+  options:
+  - label: User friendly name of DOMAIN  entry
+    name: domain-name
+    required: true
+  - label: DNS name of Domain
+    name: domain-server
+    required: true
+  - description: 'Selected by default? `true` = yes, `false` = no.'
+    enforced: true
+    label: Set Default
+    name: default
+    required: true
+    value: 'false'
+    values:
+    - 'false'
+    - 'true'
+    valuesListDelimiter: ','
+  - delimiter: ','
+    description: '> Current Domain list, as shown in provisioning screens'
+    enforced: true
+    label: Current Domain Entries
+    multivalueAllSelected: true
+    multivalued: true
+    name: domains-current
+    valuesUrl: file:/opt/cw/options/domains.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Add new entry
+      script: |-
+        file=/opt/cw/options/domains.json
+        filetmp=/opt/cw/tmp/domains.tmp
+        if [ ! -f "$file" ]; then echo "[]" > "$file"; fi
+        jq '. += [{"name":"@option.domain-name@","value":"@option.domain-server@","selected":@option.default@}]' $file > $filetmp
+        \cp $filetmp $file
+    keepgoing: false
+    strategy: node-first
+  uuid: 6efb3fef-2883-4fc8-b78a-3661bad4fca3
+

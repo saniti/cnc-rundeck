@@ -1,0 +1,574 @@
+- defaultTab: nodes
+  description: |-
+    Deploys OVF files for Cisco Crosswork
+    ## Features
+    - Create an OVF command line for deploying a single Crosswork VM
+  executionEnabled: true
+  group: CNC/Deploy/CNC - Dual vNIC
+  id: 8a3d6b5a-34d3-49e1-a187-4371fb9815ac
+  loglevel: INFO
+  maxMultipleExecutions: '0'
+  multipleExecutions: true
+  name: CNC - Single Node (2 nic) v2
+  nodeFilterEditable: false
+  options:
+  - description: '> If no options present, create the POD definiting using Job `Create
+      POD`'
+    enforced: true
+    label: Controller VIP
+    name: controller-vip
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - description: |-
+      Execute command or just generate it.
+      - Generate (default) Show the command line that needs to be run, but the user
+      - Execute - Generate the command line and run it on the local system
+    enforced: true
+    name: Option
+    required: true
+    value: Execute
+    values:
+    - Execute
+    - Generate
+    valuesListDelimiter: ','
+  - description: '> /opt/cw/options/cw-versions.json'
+    enforced: true
+    name: cw-version
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-versions.json
+  - enforced: true
+    label: Deployment Size
+    name: deployment-size
+    required: true
+    value: small
+    values:
+    - large
+    - small
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Memory
+    name: deployment-size-mem
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-deployment-${option.deployment-size.value}-mem.json
+  - enforced: true
+    label: CPU
+    name: deployment-size-cpu
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-deployment-${option.deployment-size.value}-cpu.json
+  - description: '`True` if this is first node, `False` for all other nodes'
+    enforced: true
+    label: Seed Node?
+    name: seed-node
+    required: true
+    value: 'True'
+    values:
+    - 'False'
+    - 'True'
+    valuesListDelimiter: ','
+  - description: '`Hybrid`, Master or Worker'
+    enforced: true
+    name: node-type
+    required: true
+    value: Hybrid
+    values:
+    - Hybrid
+    - Master
+    - Standalone
+    - Worker
+    valuesListDelimiter: ','
+  - description: |-
+      - thin - lab only, meaning disk is thin provisioned
+      - thick - production, meaning disk is fully allocated before usage
+    enforced: true
+    label: Virtual Disk Mode
+    name: disk-mode
+    required: true
+    value: thin
+    values:
+    - thick
+    - thin
+    valuesListDelimiter: ','
+  - description: |-
+      - IPv4 Network (2 vNIC)
+      - IPv4 Network on a Single Interface (1 vNIC) - LAB only.
+    enforced: true
+    label: Deployment Type
+    name: deployment-option
+    required: true
+    value: cw-ipv4
+    valuesUrl: file:/opt/cw/options/cw-deployment-option.json
+  - description: default is `50`
+    label: '% Reserved for backup'
+    name: backup-percentage
+    required: true
+    value: '50'
+    values:
+    - '20'
+    - '50'
+    valuesListDelimiter: ','
+  - delimiter: ','
+    description: 'If planning to change the VM resources, ensure "PowerON" is not
+      selected. After deployment, govc will modify the resources.'
+    multivalued: true
+    name: ovf-options
+    required: true
+    valuesUrl: file:/opt/cw/options/ovf-deploy-options.json
+  - label: OVF Extra Configuration Options
+    name: ovf-extra-config
+    required: true
+    value: default
+    values:
+    - advanced
+    - default
+    valuesListDelimiter: ','
+  - delimiter: ','
+    enforced: true
+    multivalued: true
+    name: ovf-extra-config-options
+    required: true
+    valuesUrl: file:/opt/cw/options/extra-config-options.${option.ovf-extra-config.value}.json
+  - label: CNC hostname
+    name: host-name
+    value: cw01
+  - enforced: true
+    label: Role for Netbox
+    name: vm-role
+    required: true
+    value: '1'
+    valuesUrl: file:/opt/cw/options/roles.json
+  - description: DNS Domain name as defined in DNS. This should be pre-existing
+    label: Domain Name
+    name: domain-name
+    required: true
+    valuesUrl: file:/opt/cw/options/domains.json
+  - description: |-
+      If present, it must be existing and resolvable. Otherwise keep blank to use by IP
+      > If it does not exist then the deployment will fail.
+    hidden: true
+    label: Controller IP DNS Name
+    name: controller-vip-name
+    required: true
+    value: ${option.controller-vip}
+  - description: |-
+      If present, it must be existing and resolvable. Otherwise keep blank to use by IP
+      > If it does not exist then the deployment will fail.
+    hidden: true
+    label: Data VIP DNS Name
+    name: data-vip-name
+    required: true
+    value: ${option.controller-vip}
+  - hidden: true
+    label: Data VIP
+    name: data-vip
+    required: true
+    value: ${option.controller-vip}
+  - delimiter: ','
+    description: |-
+      > /opt/cw/dns-server.json
+      Select `new value` to add entry
+    label: DNS Server
+    multivalued: true
+    name: dns-server
+    required: true
+    valuesUrl: file:/opt/cw/options/dns-servers.json
+  - delimiter: ','
+    description: |-
+      > /opt/cw/ntp-servers.json
+      Select `new value` to add entry
+    label: NTP Server
+    multivalued: true
+    name: ntp-server
+    required: true
+    valuesUrl: file:/opt/cw/options/ntp-servers.json
+  - delimiter: ','
+    enforced: true
+    label: Virtual Networking Options
+    multivalued: true
+    name: vnic-options
+    required: true
+    valuesUrl: file:/opt/cw/options/vnic-options.json
+  - label: VM Datastore
+    name: datastore-1
+    required: true
+    valuesUrl: file:/tmp/datastores.json
+  - label: VMware ESX host
+    name: vmware-esx-host
+    required: true
+    valuesUrl: file:/tmp/hosts.json
+  - label: Management Network
+    name: vnic-1-network
+    value: /HX-cluster/network/vm-network-411
+    valuesUrl: file:/tmp/networks.json
+  - label: Data / Device Network
+    name: vnic-2-network
+    valuesUrl: file:/tmp/networks.json
+  - hidden: true
+    name: cw-admin-password
+    required: true
+    secure: true
+    storagePath: keys/cw/cw-admin
+    valueExposed: true
+  - hidden: true
+    name: admin-password
+    required: true
+    secure: true
+    storagePath: keys/cw/admin
+    valueExposed: true
+  - hidden: true
+    name: vcenter-host
+    secure: true
+    storagePath: keys/vmware/vc-address
+    valueExposed: true
+  - hidden: true
+    name: vcenter-password
+    required: true
+    secure: true
+    storagePath: keys/vmware/vc-password
+    valueExposed: true
+  - hidden: true
+    name: vcenter-username
+    required: true
+    secure: true
+    storagePath: keys/vmware/vc-user
+    valueExposed: true
+  - description: |-
+      ***Dynamic*** - IP Addressing from Netbox
+      ***Static*** - IP Addressing entered by user
+    enforced: true
+    label: Network Options for Management Network
+    name: vnic-0-static
+    required: true
+    value: static
+    values:
+    - dynamic
+    - static
+    valuesListDelimiter: ','
+  - description: IP Address for Management Interface
+    label: Management - IP
+    name: vnic-0-ip
+    required: true
+  - description: Subnet Mask
+    label: Management - Mask
+    name: vnic-0-mask
+    required: true
+    value: 255.255.255.0
+  - description: Gateway IP
+    label: Management - Gateway
+    name: vnic-0-gateway
+    required: true
+  - description: |-
+      ***Dynamic*** - IP Addressing from Netbox
+      ***Static*** - IP Addressing entered by user
+    enforced: true
+    label: Network Options for Data Network
+    name: vnic-1-static
+    required: true
+    value: static
+    values:
+    - dynamic
+    - static
+    valuesListDelimiter: ','
+  - description: IP Address for Data Interface
+    label: DATA - IP
+    name: vnic-1-ip
+    required: true
+  - description: Subnet Mask
+    label: DATA - Mask
+    name: vnic-1-mask
+    required: true
+    value: 255.255.255.0
+  - description: Gateway IP
+    label: DATA - Gateway
+    name: vnic-1-gateway
+    required: true
+  - label: User Disclaimer
+    name: disclaimer
+    required: true
+    valuesUrl: file:/opt/cw/options/disclaimers.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: get POD details
+      jobref:
+        args: -cnc-pod ${option.controller-vip}
+        group: CNC/Configuration
+        name: get cnc pod details
+        uuid: 0ea1cf89-2324-4106-a507-e934a732da8e
+    - description: get version properties
+      jobref:
+        args: -cnc-version ${option.cw-version}
+        group: CNC/Configuration
+        name: get version properties
+        uuid: a08c2fb8-746f-4d29-8806-c6564f8c8465
+    - configuration:
+        command: cat /tmp/vmwaretype.json
+      description: VM type
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: vmware-type
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: basename "${option.datastore-1}"
+      description: generate datastore name
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: datastore-name
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: echo ${option.host-name}
+      description: generate host name
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: host-name
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: basename '${option.vnic-1-network}'
+      description: generate vnic1 network
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: vnic-1-network
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: basename '${option.vnic-2-network}'
+      description: generate vnic2 network
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: vnic-2-network
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: basename "${option.datastore-1}"
+      description: datastore
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: datastore
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - description: ovf-options
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: ovf-options
+            regex: (.*)
+          type: key-value-data
+      script: |
+        echo @option.ovf-options@ | tr "," " "
+    - description: flatten ovf extra config
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: ovf-extra-config-init
+            regex: (.*)
+          type: key-value-data
+      script: 'echo @option.ovf-extra-config-options@ | tr "," " " | tr "default"
+        " "'
+    - description: flatten ntp servers
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: ntp-servers
+            regex: (.*)
+          type: key-value-data
+      script: 'echo @option.ntp-server@ | tr "," " "'
+    - description: flatten dns servers
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: dns-servers
+            regex: (.*)
+          type: key-value-data
+      script: 'echo @option.dns-server@ | tr "," " "'
+    - description: DISK
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: DISK
+            regex: .*DISK.(\d+).*
+          type: key-value-data
+      script: |
+        echo @option.deploy-option-values@
+    - configuration:
+        command: 'bash -c ''if [ "${option.vnic-0-static}" == "static" ]; then echo
+          ${option.vnic-0-ip},${option.vnic-0-mask},${option.vnic-0-gateway}; else
+          false; fi'''
+      description: '0'
+      errorhandler:
+        jobref:
+          args: -search_tag cnc-mgmt -ifnum 1 -state reserved -description ${option.host-name}
+          group: Netbox
+          name: GET Next IP
+          uuid: 0ff19321-403f-42bd-9ac1-ed2a4507b496
+        keepgoingOnSuccess: true
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-0-ip
+            regex: '(.+),.*,.*'
+          type: key-value-data
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-0-mask
+            regex: '.*,(.+),.*'
+          type: key-value-data
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-0-gw
+            regex: '.*,.*,(.+)'
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: bash -c 'if [ "${option.vnic-0-static}" != "static" ]; then echo
+          "255.255.255.0"; else true; fi'
+      description: Set netmask when dynamic
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-0-mask
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: bash -c 'if [ "${option.vnic-1-static}" != "static" ]; then echo
+          "255.255.255.0"; else true; fi'
+      description: Set netmask when dynamic
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: nic-1-mask
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: bash -c 'if [ "${option.vmware-esx-host}" == "-ESXHOST-" ]; then
+          echo ""; else echo "${option.vmware-esx-host}"; fi'
+      description: Set host type - ESX or vCenter
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: esx-host
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: 'echo ovftool ${data.ovf-options*} --deploymentOption=''${option.deployment-option}''
+          --allowExtraConfig ${data.ovf-extra-config*} -n=''${data.host-name*}'' --numberOfCpus:''*''=${option.deployment-size-cpu}
+          --memorySize:''*''=${option.deployment-size-mem} -ds=''${data.datastore*}''
+          --diskMode=''${option.disk-mode}'' --net:''Management Network''=''${data.vnic-1-network*}''
+          --net:''Data Network''=''${data.vnic-2-network*}'' --prop:VMType=''${option.node-type}''
+          --prop:IsSeed=''${option.seed-node}'' --prop:Domain=''${option.domain-name}''
+          --prop:NTP=''${data.ntp-servers*}'' --prop:DNSv4=''${data.dns-servers*}''
+          --prop:ManagementVIPName=''${export.mgtdns}'' --prop:ManagementVIP=''${export.mgtvip}''
+          --prop:ManagementIPv4Address=''${data.nic-0-ip*}${export.ip-1}'' --prop:ManagementIPv4Netmask=''${data.nic-0-mask*}''
+          --prop:ManagementIPv4Gateway=''${data.nic-0-gw*}${export.gw-1}'' --prop:DataVIPName=''${export.datadns}''
+          --prop:DataVIP=''${export.datavip}'' --prop:DataIPv4Address=''${option.vnic-1-ip}${export.ip-2}''
+          --prop:DataIPv4Netmask=''${option.vnic-1-mask}'' --prop:Disclaimer=''${option.disclaimer}''
+          --prop:DataIPv4Gateway=''${option.vnic-1-gateway}${export.gw-2}'' --prop:CWPassword=''${option.cw-admin-password}''
+          --prop:CwInstaller=''False'' --prop:bckup_min_percent=''${option.backup-percentage}''  ''${option.image-file}''
+          ''''''vi://${option.vcenter-username}:${option.vcenter-password}@${option.vcenter-host}${data.esx-host*}'''''' '
+      description: Generate Command Line
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: command-line
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        debugOnly: 'false'
+      nodeStep: false
+      type: log-data-step
+    - configuration:
+        command: bash -c 'if [ "${option.Option}" == "Execute" ]; then false; else
+          true; fi'
+      description: 'If option is Execute, then run the command'
+      errorhandler:
+        keepgoingOnSuccess: true
+        script: '@data.command-line@'
+      nodeStep: true
+      type: localexec
+    - description: Find the POD name from IP
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: pod-name
+            regex: (.*)
+          type: key-value-data
+      script: jq '.[] | select(.value=="@option.controller-vip@") | .tag' /opt/cw/options/cw-environments.json
+        | tr -d '"'
+    - description: create node
+      jobref:
+        args: '-node-name ${data.host-name*} -hostname ${data.nic-0-ip*} -description
+          "CNC node" -user-name cw-admin -tags "cnc,${data.pod-name*}" -password-storage-path
+          keys/cw/cw-admin'
+        group: Rundeck Nodes
+        name: Create a New node
+        uuid: e60e849d-c7c2-430e-a545-a2fb9b0a6c61
+    keepgoing: false
+    strategy: sequential
+  uuid: 8a3d6b5a-34d3-49e1-a187-4371fb9815ac
+

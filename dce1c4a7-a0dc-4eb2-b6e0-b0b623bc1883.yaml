@@ -1,0 +1,32 @@
+- defaultTab: nodes
+  description: Remove an existing definition
+  executionEnabled: true
+  group: CNC/Setup
+  id: dce1c4a7-a0dc-4eb2-b6e0-b0b623bc1883
+  loglevel: INFO
+  name: VMware REMOVE environment
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: List Current Environments
+    name: environments-current
+    required: true
+    valuesUrl: file:/opt/cw/options/vmw-environments.json
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - configuration:
+        debugOnly: 'false'
+      nodeStep: false
+      type: log-data-step
+    - description: remove entry
+      script: "file=/opt/cw/options/vmw-environments.json\nreadin=$(jq -c . $file)\n\
+        echo Looking for entry:@option.environments-current@\n\nreadout=$(echo $readin\
+        \ | jq 'del(..|objects|select(has(\"value\") and .value==\"@option.environments-current@\"\
+        ))')\n\necho $readout | jq . > $file \n\n\n"
+    keepgoing: false
+    strategy: node-first
+  uuid: dce1c4a7-a0dc-4eb2-b6e0-b0b623bc1883
+

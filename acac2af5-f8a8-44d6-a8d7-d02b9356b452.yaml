@@ -1,0 +1,237 @@
+- defaultTab: nodes
+  description: |-
+    Adds a new VM to netbox
+    ## Features
+    - Creates VM with 3 interfaces. IPs can only be assigned to interfaces, not devices/VMs in Netbox.
+    `primary`
+    `secondary`
+    `ternary`
+  executionEnabled: true
+  group: Netbox
+  id: acac2af5-f8a8-44d6-a8d7-d02b9356b452
+  loglevel: INFO
+  name: Add VM to NetBox
+  nodeFilterEditable: false
+  options:
+  - hidden: true
+    label: Netbox Server
+    name: netbox-server
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-host
+    valueExposed: true
+  - hidden: true
+    label: API Token
+    name: api-token
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-token
+    valueExposed: true
+  - description: 1 = Hyperflex Cluster in Calo Lab
+    enforced: true
+    name: ClusterID
+    required: true
+    value: '2'
+    values:
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    valuesListDelimiter: ','
+  - description: |-
+      ## Behaviour
+      if VM exists then `fail`
+      if VM does not exist then `create` with 3 new interfaces `primary`,`secondary` and `ternary`
+    name: VM
+    required: true
+  - name: vm-role
+    valuesUrl: file:/opt/cw/options/roles.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - configuration:
+        command: 'echo {"name":"${option.VM}","status":"active","cluster":${option.ClusterID},"role":${option.vm-role}}'
+      nodeStep: true
+      type: localexec
+    - configuration:
+        authentication: None
+        body: '{"name":"${option.VM}","status":"active","cluster":${option.ClusterID},"role":${option.vm-role}}'
+        checkResponseCode: 'true'
+        headers: '{"Content-Type":"application/json","Authorization":"${option.api-token}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox-server}/virtualization/virtual-machines/
+        responseCode: '201'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Create VM
+      errorhandler:
+        configuration:
+          command: echo true
+        nodeStep: true
+        type: localexec
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            hideOutput: 'false'
+            logData: 'false'
+            name: vmid
+            regex: ^[^\d]*(\d+).*
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        body: '{"virtual_machine":${data.vmid},"name":"primary","cluster":${option.ClusterID}}'
+        checkResponseCode: 'true'
+        headers: '{"Content-Type":"application/json","Authorization":"${option.api-token}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox-server}/virtualization/interfaces/
+        responseCode: '201'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: add primary interface
+      errorhandler:
+        configuration:
+          command: echo true
+        keepgoingOnSuccess: true
+        nodeStep: true
+        type: localexec
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            hideOutput: 'false'
+            logData: 'false'
+            name: interface-1-id
+            regex: ^[^\d]*(\d+).*
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        body: '{"virtual_machine":${data.vmid},"name":"secondary","cluster":${option.ClusterID}}'
+        checkResponseCode: 'true'
+        headers: '{"Content-Type":"application/json","Authorization":"${option.api-token}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox-server}/virtualization/interfaces/
+        responseCode: '201'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: add secondary interface
+      errorhandler:
+        configuration:
+          command: echo true
+        keepgoingOnSuccess: true
+        nodeStep: true
+        type: localexec
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            hideOutput: 'false'
+            logData: 'false'
+            name: interface-2-id
+            regex: ^[^\d]*(\d+).*
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        body: '{"virtual_machine":${data.vmid},"name":"ternary","cluster":${option.ClusterID}}'
+        checkResponseCode: 'true'
+        headers: '{"Content-Type":"application/json","Authorization":"${option.api-token}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox-server}/virtualization/interfaces/
+        responseCode: '201'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: add ternary interface
+      errorhandler:
+        configuration:
+          command: echo true
+        keepgoingOnSuccess: true
+        nodeStep: true
+        type: localexec
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            hideOutput: 'false'
+            logData: 'false'
+            name: interface-3-id
+            regex: ^[^\d]*(\d+).*
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - fileExtension: .sh
+      interpreterArgsQuoted: false
+      plugins:
+        LogFilter:
+        - config:
+            hideOutput: 'false'
+            logData: 'true'
+            name: vmdata
+            regex: ^(.*)
+          type: key-value-data-multilines
+      script: |-
+        echo @data.vmid@
+        echo @data.interface-3-id@
+        echo @data.interface-2-id@
+        echo @data.interface-1-id@
+      scriptInterpreter: /bin/bash
+    - configuration:
+        debugOnly: 'false'
+      nodeStep: false
+      type: log-data-step
+    - exec: echo ${data.vmdata}
+    - configuration:
+        export: vmid
+        group: export
+        value: ${data.vmid}
+      errorhandler:
+        exec: echo failed
+        keepgoingOnSuccess: true
+      nodeStep: false
+      type: export-var
+    - configuration:
+        export: interface-1-id
+        group: export
+        value: ${data.interface-1-id}
+      errorhandler:
+        exec: echo failed
+        keepgoingOnSuccess: true
+      nodeStep: false
+      type: export-var
+    - configuration:
+        export: interface-2-id
+        group: export
+        value: ${data.interface-2-id}
+      errorhandler:
+        exec: echo failed
+        keepgoingOnSuccess: true
+      nodeStep: false
+      type: export-var
+    - configuration:
+        export: interface-3-id
+        group: export
+        value: ${data.interface-3-id}
+      errorhandler:
+        exec: echo failed
+        keepgoingOnSuccess: true
+      nodeStep: false
+      type: export-var
+    keepgoing: false
+    strategy: node-first
+  uuid: acac2af5-f8a8-44d6-a8d7-d02b9356b452
+

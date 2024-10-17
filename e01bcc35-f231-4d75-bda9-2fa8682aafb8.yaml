@@ -1,0 +1,30 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  id: e01bcc35-f231-4d75-bda9-2fa8682aafb8
+  loglevel: INFO
+  name: testvars
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    name: crosswork
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - jobref:
+        args: -cnc-pod ${option.crosswork}
+        group: ''
+        name: get key vars
+        useName: 'true'
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        debugOnly: 'false'
+      nodeStep: false
+      type: log-data-step
+    keepgoing: false
+    strategy: node-first
+  uuid: e01bcc35-f231-4d75-bda9-2fa8682aafb8
+

@@ -1,0 +1,78 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: -DEMO/Slicing
+  id: 21f49178-ccbf-43e2-b16b-8c6103c704cf
+  loglevel: INFO
+  name: NETBOX - Reserve VLAN
+  nodeFilterEditable: false
+  options:
+  - hidden: true
+    name: netbox-server
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-host
+    valueExposed: true
+  - hidden: true
+    name: api-token
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-token
+    valueExposed: true
+  - name: customer
+    required: true
+  - name: name
+    required: true
+  - name: vlan
+    required: true
+  - name: group
+    required: true
+  - name: status
+    required: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: now
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: now
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: echo $(date +"%Y-%m-%d-%H-%M-%S")
+    - description: payload
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: payload
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: 'echo ''{"vid":@option.vlan@,"name":"@option.customer@ [@data.now*@]","status":"@option.status@","group":@option.group@,"description":"@option.customer@|@option.name@|@data.now*@"}''
+        | jq -c .'
+    - configuration:
+        authentication: None
+        body: ${data.payload*}
+        checkResponseCode: 'false'
+        headers: '{"Content-Type":"application/json","Authorization":"${option.api-token}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: ${option.netbox-server}/ipam/vlans/
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Reserve VLAN
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 21f49178-ccbf-43e2-b16b-8c6103c704cf
+

@@ -1,0 +1,62 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: -DEMO/L3VPN
+  id: 2cba6887-08bb-4574-b8f6-a95ca6cefbee
+  loglevel: INFO
+  name: test
+  nodeFilterEditable: false
+  options:
+  - name: '1'
+  - name: '2'
+  - name: '3'
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: OPTIONS
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: env | grep -i RD_OPTION_ | jq --raw-input --raw-output '(split("=")
+        | map(.) | to_entries[1]) | .value' | jq -c --raw-input -s 'split("\n")|.[0:-1]'
+    - description: a
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: a
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: 'echo ''[{"id":"24","value":"4003"},{"id":"26","value":"4002"},{"id":"25","value":"4001"}]''
+        | jq -c .'
+    - description: b
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: b
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: 'echo ''[{"id":"24","prefix":"30.1.1.0/24"},{"id":"25","prefix":"30.1.2.0/24"},{"id":"26","prefix":"30.1.3.0/24"}]''
+        | jq -c .'
+    - description: b
+      script: "echo @data.a*@ |\n\necho @data.b*@ "
+    - description: xxxxx
+      script: |-
+        jq --argjson arr1 '@data.a*@' --argjson arr2 '@data.b*@' -n '$arr1 + $arr2 | group_by(.Key) | map(.[-1])'
+        #echo '@data.a*@' | jq .
+    keepgoing: false
+    strategy: node-first
+  uuid: 2cba6887-08bb-4574-b8f6-a95ca6cefbee
+

@@ -1,0 +1,591 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: NSO/Configure
+  id: 7f9285c9-f706-4522-8dfd-5f715988d8eb
+  loglevel: INFO
+  multipleExecutions: true
+  name: Configure NSO (local) v2
+  nodeFilterEditable: false
+  options:
+  - description: |-
+      [Create POD](00a7b4c3-dc1b-4a1a-b4fd-e1f396281b2f) | [Remove POD](e192c0e9-94be-4e0c-ae4a-578e3d0018f5) | [Show PODs](b0afa385-7f61-4852-a2fb-a2ca0ce8e2f7)
+      > /opt/cw/options/cw-environments.json
+    enforced: true
+    label: CNC POD
+    name: pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - description: |-
+      [Add Version](1feb2b38-194d-4427-b9e9-b3c1a031a9b6) | [Show Versions](87932153-4882-4b5e-bc8e-321615baa3d6) | [Remove Version](96b47113-9d8d-4841-8e69-3755d9885e2f)
+      > /opt/cw/options/cw-versions.json
+
+      > This will determine the NSO version, based on contents of directory
+    enforced: true
+    label: Crosswork Version
+    name: cw-version
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-versions.json
+  - enforced: true
+    label: Rundeck node
+    name: node
+    required: true
+    valuesUrl: file:/opt/cw/nodes.json
+  - description: '> Execute the script or just build it to be run manually.'
+    enforced: true
+    label: Execute or Build
+    name: execute
+    required: true
+    value: build
+    values:
+    - build
+    - execute
+    valuesListDelimiter: ','
+  - enforced: true
+    label: 'Save deployment for later? '
+    name: save
+    required: true
+    value: 'false'
+    values:
+    - 'true'
+    - 'false'
+    valuesListDelimiter: ','
+  - enforced: true
+    name: package-manager
+    required: true
+    value: apt
+    values:
+    - yum
+    - apt
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Enable package authentication?
+    name: package-authentication
+    required: true
+    value: 'false'
+    values:
+    - 'true'
+    - 'false'
+    valuesListDelimiter: ','
+  - label: Crosswork user password
+    name: cwpass
+    required: true
+    value: cisco!123
+  - label: Crosswork User Account
+    name: cwuser
+    required: true
+    value: cwuser
+  - name: https-port
+    value: '8888'
+  - name: http-port
+    value: '8080'
+  - name: netconf-port
+    required: true
+    value: '2022'
+  - enforced: true
+    label: Version of Python to install
+    name: python-ver
+    required: true
+    value: 3.8.12
+    values:
+    - 3.8.12
+    valuesListDelimiter: ','
+  - delimiter: ','
+    label: Which steps to run
+    multivalued: true
+    name: step
+    value: 'updates,python,java,nsocopy,nsofpcopy,nsonedcopy,nsoremove,nsoinstall,xmlupdate,quietyum'
+    values:
+    - updates
+    - python
+    - java
+    - nsocopy
+    - nsofpcopy
+    - nsonedcopy
+    - nsoremove
+    - nsoinstall
+    - xmlupdate
+    - quietyum
+    valuesListDelimiter: ','
+  - enforced: true
+    hidden: true
+    name: buildpath
+    required: true
+    value: /tmp/software
+    values:
+    - /tmp/software
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: null
+  retry: '0'
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: POD Properties
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'false'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |
+        jq -r '.[] | select(.name=="@option.pod@") | to_entries[] | [(("pod-"+.key)|tostring),(.value|tostring)]|join("=")' /opt/cw/options/cw-environments.json
+    - description: Other Properties
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'false'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |
+        # CNC Version info
+        jq -r '.[] | select(.value=="@option.cw-version@") | to_entries[] | [(("cnc-version-"+.key)|tostring),(.value|tostring)]|join("=")' /opt/cw/options/cw-versions.json
+    - description: parse input options
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'false'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |
+        echo @option.step@ | jq --raw-input --raw-output 'split(",")[] | [.,"true"]|join("=")'
+    - description: Batch script name
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'false'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        batchfile=/opt/cw/tmp/${RD_OPTION_POD}_NSO_@option.cw-version@-install.sh
+        bfile=${RD_OPTION_POD}_NSO_@option.cw-version@-install.sh
+        echo batchfile=${batchfile}
+        echo bfile=${bfile}
+        echo '#!/bin/bash' > ${batchfile}
+    - description: Set variables
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: "batchfile=/tmp/${RD_OPTION_POD}_NSO_@option.cw-version@-install.sh\n\
+        echo batchfile=${batchfile}\necho '#!/bin/bash' > ${batchfile}\nif [ \"@data.quietyum@\"\
+        \ == \"true\" ]\nthen \n    echo yumcmd=\"-qq\"\nelse\n    echo yumcmd=\"\
+        \ \"\nfi\n\nnodefile=/opt/cw/nodes/@option.node@.json\njq -r '.[]|to_entries[]\
+        \ |  [.key,.value|tostring]|join(\"=\")' $nodefile\n\necho ncsrundir='{NCS_RUN_DIR}'\n"
+    - description: create directories
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |
+        echo 'mkdir /tmp/software' >> @data.batchfile*@
+    - description: copy files?
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: "if [ \"@data.nsocopy*@\" == \"true\" ]\nthen\n    echo nsofilepath@data.cnc-version-location*@/cnc/@data.cnc-version-cnc-version*@/nso-core\n\
+        \    echo wget -r -nH -nd @data.cnc-version-location*@/cnc/@data.cnc-version-cnc-version*@/nso-core\
+        \ -P @option.buildpath@/nso-core >> @data.batchfile*@\n    # wget -r -nH -nd\
+        \ 10.67.22.133:8002/cnc/7.0/nso-core -P nso-core\nelse \n    echo nsofilepath=/dev/null\n\
+        fi\n\nif [ \"@data.nsofpcopy*@\" == \"true\" ]\nthen\n    echo nsofpfilepath=@data.cnc-version-location*@/cnc/@data.cnc-version-cnc-version*@/nso-fp\n\
+        \    echo wget -r -nH -nd @data.cnc-version-location*@/cnc/@data.cnc-version-cnc-version*@/nso-fp\
+        \ -P @option.buildpath@/nso-fp >> @data.batchfile*@\nelse \n    echo nsofpfilepath=/dev/null\n\
+        fi\n\nif [ \"@data.nsonedcopy*@\" == \"true\" ]\nthen\n    echo nedfilepath=@data.cnc-version-location*@/cnc/@data.cnc-version-cnc-version*@/nso-neds\n\
+        \    echo wget -r -nH -nd @data.cnc-version-location*@/cnc/@data.cnc-version-cnc-version*@/nso-neds\
+        \ -P @option.buildpath@/nso-neds >> @data.batchfile*@\nelse \n    echo nedfilepath=/dev/null\n\
+        fi"
+    - description: copy files?
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: "if [ \"@data.nsocopy*@\" == \"true\" ]\nthen\n    echo ansofilepath=/opt/cw/install/nso/@option.cw-version@\n\
+        else \n    echo ansofilepath=/dev/null\nfi\n\nif [ \"@data.nsofpcopy*@\" ==\
+        \ \"true\" ]\nthen\n    echo ansofpfilepath=/opt/cw/install/nso/@option.cw-version@/fp\n\
+        else \n    echo ansofpfilepath=/dev/null\nfi\n\nif [ \"@data.nsonedcopy*@\"\
+        \ == \"true\" ]\nthen\n    echo anedfilepath=/opt/cw/install/nso/@option.cw-version@/neds\n\
+        else \n    echo anedfilepath=/dev/null\nfi"
+    - description: Find management IP
+      exec: echo ${option.nso-ip}
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: ip
+            regex: (.*)
+          type: key-value-data
+    - description: Install updates and packages
+      script: "if [ \"@data.updates*@\" == \"true\" ]\nthen \n\n    echo --- 1/7 APT\
+        \ update\n    echo @option.package-manager@ @data.yumcmd*@ update -y >> @data.batchfile*@\n\
+        \    echo --- 2/7 yum yum-utils\n    #echo '@option.system-user-password@'\
+        \ | sudo -S apt install -y yum-utils\n    echo --- 3/7 Updates 1\n    echo\
+        \ @option.package-manager@ @data.yumcmd*@ -y install software-properties-common\
+        \   >> @data.batchfile*@  \n    echo @option.package-manager@ @data.yumcmd*@\
+        \ -y install aptitude   >> @data.batchfile*@  \n    echo @option.package-manager@\
+        \ @data.yumcmd*@ -y install iputils-ping  >> @data.batchfile*@   \n    echo\
+        \ @option.package-manager@ @data.yumcmd*@ -y install iputils-arping  >> @data.batchfile*@\
+        \   \n    echo @option.package-manager@ @data.yumcmd*@ -y install iproute2\
+        \   >> @data.batchfile*@  \n    echo @option.package-manager@ @data.yumcmd*@\
+        \ -y install sshpass  >> @data.batchfile*@    \n    echo @option.package-manager@\
+        \ @data.yumcmd*@ -y install chkconfig  >> @data.batchfile*@\n    echo ---\
+        \ 3/7 Open VM Tools\n    echo @option.package-manager@ @data.yumcmd*@ -y install\
+        \ open-vm-tools >> @data.batchfile*@\n    echo --- 4/7 xmlstarlet\n    echo\
+        \ @option.package-manager@ @data.yumcmd*@ -y install xmlstarlet >> @data.batchfile*@\n\
+        \    echo --- 5/7 jq    \n    echo @option.package-manager@ @data.yumcmd*@\
+        \ -y install jq >> @data.batchfile*@\n    echo --- 6/7 development tools\n\
+        \    echo @option.package-manager@ @data.yumcmd*@ -y install build-essential\
+        \ >> @data.batchfile*@\n    echo @option.package-manager@ @data.yumcmd*@ -y\
+        \ install make >> @data.batchfile*@\n    echo @option.package-manager@ @data.yumcmd*@\
+        \ -y install ant >> @data.batchfile*@\n    echo @option.package-manager@ @data.yumcmd*@\
+        \ -y install xsltproc >> @data.batchfile*@\n    echo @option.package-manager@\
+        \ @data.yumcmd*@ -y install ibreadline-dev\n    echo @option.package-manager@\
+        \ @data.yumcmd*@ -y install libncursesw5-dev >> @data.batchfile*@\n    echo\
+        \ @option.package-manager@ @data.yumcmd*@ -y install libssl-dev >> @data.batchfile*@\n\
+        \    echo @option.package-manager@ @data.yumcmd*@ -y install libsqlite3-dev\
+        \ >> @data.batchfile*@\n    echo @option.package-manager@ @data.yumcmd*@ -y\
+        \ install tk-dev >> @data.batchfile*@\n    echo @option.package-manager@ @data.yumcmd*@\
+        \ -y install libgdbm-dev >> @data.batchfile*@\n    echo @option.package-manager@\
+        \ @data.yumcmd*@ -y install libc6-dev >> @data.batchfile*@\n    echo @option.package-manager@\
+        \ @data.yumcmd*@ -y install libbz2-dev >> @data.batchfile*@\n    echo @option.package-manager@\
+        \ @data.yumcmd*@ -y install libffi-dev >> @data.batchfile*@\n    echo @option.package-manager@\
+        \ @data.yumcmd*@ -y install zlib1g-devibreadline-dev >> @data.batchfile*@\
+        \ \n    echo @option.package-manager@ @data.yumcmd*@ -y install libncursesw5-dev\
+        \ >> @data.batchfile*@ \n    echo @option.package-manager@ @data.yumcmd*@\
+        \ -y install libssl-dev >> @data.batchfile*@ \n    echo @option.package-manager@\
+        \ @data.yumcmd*@ -y install libsqlite3-dev >> @data.batchfile*@ \n    echo\
+        \ @option.package-manager@ @data.yumcmd*@ -y install tk-dev  >> @data.batchfile*@\n\
+        \    echo @option.package-manager@ @data.yumcmd*@ -y install libgdbm-dev \
+        \ >> @data.batchfile*@\n    echo @option.package-manager@ @data.yumcmd*@ -y\
+        \ install libc6-dev  >> @data.batchfile*@\n    echo @option.package-manager@\
+        \ @data.yumcmd*@ -y install libbz2-dev >> @data.batchfile*@ \n    echo @option.package-manager@\
+        \ @data.yumcmd*@ -y install libffi-dev \n    echo @option.package-manager@\
+        \ @data.yumcmd*@ -y install zlib1g-dev >> @data.batchfile*@\n    echo ---\
+        \ 6/7 pip \n    echo @option.package-manager@ @data.yumcmd*@ -y install python3-pip\
+        \  >> @data.batchfile*@\n\nelse \n    echo Skipping updates ...\n    \nfi"
+    - description: Install python
+      script: "if [ \"@data.python*@\" == \"true\" ]\nthen \n\n    echo --- 1/1 python\
+        \ 3\n    #echo '@option.system-user-password@' | sudo -S yum -y install \"\
+        https://repo.ius.io/ius-release-el$(rpm -E '%{rhel}').rpm\"\n    #echo '@option.system-user-password@'\
+        \ | sudo -S yum update -y\n    #echo '@option.system-user-password@' | sudo\
+        \ -S yum install -y python3\n    #python --version\n    #echo '@option.system-user-password@'\
+        \ | sudo -S alternatives --install /usr/bin/python python /usr/bin/python2\
+        \ 50\n    #echo '@option.system-user-password@' | sudo -S alternatives --install\
+        \ /usr/bin/python python /usr/bin/python3 60\n    #python --version\n    echo\
+        \ cd /tmp >> @data.batchfile*@\n    echo wget https://www.python.org/ftp/python/@option.python-ver@/Python-@option.python-ver@.tgz\
+        \ >> @data.batchfile*@\n    echo tar xvf Python-@option.python-ver@.tgz >>\
+        \ @data.batchfile*@\n    echo cd Python-@option.python-ver@ >> @data.batchfile*@\n\
+        \    echo ./configure --enable-optimizations  >> @data.batchfile*@\n    echo\
+        \ make altinstall >> @data.batchfile*@\n    echo rsync -var /tmp/Python-@option.python-ver@\
+        \ /usr/local/bin/  >> @data.batchfile*@\n    echo rm -f /usr/bin/python3 >>\
+        \ @data.batchfile*@\n    echo ln -s /usr/local/bin/Python-@option.python-ver@/python\
+        \ /usr/bin/python3 >> @data.batchfile*@\n\nelse\n    echo Skipping ..\n\n\n\
+        fi\n"
+    - description: Install java
+      script: |+
+        echo --- 4/7 java
+        if [ "@data.java*@" == "true" ]
+        then
+            #echo @option.package-manager@ install @data.yumcmd*@ -y openjdk-17-jdk openjdk-17-jre >> @data.batchfile*@
+            echo 'wget https://download.oracle.com/java/17/latest/jdk-17_linux-x64_bin.rpm' >> @data.batchfile*@
+            echo rpm -Uvh jdk-17_linux-x64_bin.rpm>> @data.batchfile*@
+
+        else
+            echo Skipping Java ...
+        fi
+
+    - description: reload daemon
+      exec: echo sysctl -p >> ${data.batchfile*}
+    - description: Undo NSO setup
+      script: "if [ \"@data.nsoremove*@\" == \"true\" ]\nthen \n    echo 'if [ -f\
+        \ /opt/ncs/current/ncsrc ]; then source /opt/ncs/current/ncsrc; /opt/ncs/current/bin/ncs-uninstall\
+        \ --all --non-interactive || true; fi' >> @data.batchfile*@\n    #echo /opt/ncs/current/bin/ncs-uninstall\
+        \ --all --non-interactive || true >> @data.batchfile*@\n\nelse\n    echo Skipping\
+        \ NSO Removal ...\n\nfi"
+    - description: unpack and install NSO
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |
+        # Unpack binary
+        echo '#Unpack and install NSO'  >> @data.batchfile*@
+        echo cd @option.buildpath@ >> @data.batchfile*@
+        echo 'nsosigned=`basename \$(ls @option.buildpath@/nso-core/nso*signed.bin)`' >> @data.batchfile*@
+        echo sh \$nsosigned --skip-verification >> @data.batchfile*@
+        echo 'nsoinstall=`basename \$(ls @option.buildpath@/nso-core/nso-*installer.bin)`' >> @data.batchfile*@
+
+        echo nso-signed=\$nsosigned >> @data.batchfile*@
+        echo nso-install=\$nsoinstall >> @data.batchfile*@
+
+        # Install NSO
+        echo sh \$nsoinstall --system-install >> @data.batchfile*@
+    - description: unpack Function packs and NEDs
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |+
+        # Unpack binary
+        echo cd @option.buildpath@/fp >> @data.batchfile*@
+        echo mkdir nca >> @data.batchfile*@
+        echo mkdir nso >> @data.batchfile*@
+        echo ncasigned='`basename $(ls @option.buildpath@/fp/nca*.bin | grep nca-*.signed.bin)`' >> @data.batchfile*@
+        echo sh \$ncasigned --skip-verification >> @data.batchfile*@
+        echo nsosigned='`basename $(ls @option.buildpath@/fp/signed*.gz | grep signed-*.gz)`' >> @data.batchfile*@
+
+        ## NCA Install
+        echo \\cp \$ncasigned nca >> @data.batchfile*@
+        echo cd nca >> @data.batchfile*@
+        echo sh \$ncasigned --skip-verification >> @data.batchfile*@
+        echo rm -f \$ncasigned >> @data.batchfile*@
+
+        echo ncaunpack='`basename $(ls @option.buildpath@/fp/nca/nca*.gz | grep nca-*.gz)`' >> @data.batchfile*@
+        echo tar -xvf \$ncaunpack >> @data.batchfile*@
+        echo 'pathtonca=`basename $(ls -d */)`' >> @data.batchfile*@
+        echo 'export ncainstall=$(echo `pwd`/$pathtonca/standalone)' >> @data.batchfile*@
+
+        echo '\cp $ncainstall/packages/*.tar.gz /opt/ncs/packages' >> @data.batchfile*@
+
+        ## NSO Install
+        echo cd @option.buildpath@/fp >> @data.batchfile*@
+        echo \\cp \$nsosigned nso >> @data.batchfile*@
+        echo cd nso >> @data.batchfile*@
+        echo tar -xvf \$nsosigned >> @data.batchfile*@
+        echo rm -f \$nsosigned >> @data.batchfile*@
+
+        echo 'nsopackage=$(ls *.gz | grep -i *cnc*.tar.gz)' >> @data.batchfile*@
+        echo tar -xvf \$nsopackage >> @data.batchfile*@
+        echo rm -f \$nsopackage >> @data.batchfile*@
+
+        echo 'for i in `ls *.bin`; do sh $i --skip-verification; true; done' >> @data.batchfile*@
+        echo 'for i in `ls *.gz`; do tar -xvf $i; true; done' >> @data.batchfile*@
+
+        echo 'for i in `ls -d */`; do \cp -r $(basename $i)/standalone/packages/*.tar.gz /opt/ncs/packages; done' >> @data.batchfile*@
+
+        ## NSO NEDS
+        echo cd @option.buildpath@/neds >> @data.batchfile*@
+
+        echo 'for i in *.bin; do sh $i --skip-verification; true; done' >> @data.batchfile*@
+        echo 'for i in *.tar.gz; do tar -xvf $i; true; done' >> @data.batchfile*@
+
+        echo '\cp *.tar.gz /opt/ncs/packages' >> @data.batchfile*@
+        echo 'for i in `ls /opt/ncs/packages/*.tar.gz `; do ln -s $i /var/opt/ncs/packages/$(basename $i); true; done' >> @data.batchfile*@
+
+
+
+
+    - description: add security options to /etc/security/limits.conf
+      script: "echo \"sed -i '/^# End of file/i * soft nproc 65535' /etc/security/limits.conf\"\
+        \ >> @data.batchfile*@\necho \"sed -i '/^# End of file/i * hard nproc 65535'\
+        \ /etc/security/limits.conf\" >> @data.batchfile*@\necho \"sed -i '/^# End\
+        \ of file/i * soft nofile 65535' /etc/security/limits.conf\" >> @data.batchfile*@\n\
+        echo \"sed -i '/^# End of file/i * hard nofile 65535' /etc/security/limits.conf\"\
+        \ >> @data.batchfile*@\necho \"sed -i '/^# End of file/i * hard memlock 65535'\
+        \ /etc/security/limits.conf\" >> @data.batchfile*@ \necho \"sed -i '/^# End\
+        \ of file/i * soft memlock 65535' /etc/security/limits.conf\" >> @data.batchfile*@"
+    - description: add ulimit to /etc/init.d/ncs
+      script: |
+        echo "sed -i '/^prog=ncs/i ulimit -n 64000' /etc/init.d/ncs" >> @data.batchfile*@
+    - description: update XML
+      script: "if [ \"@data.xmlupdate*@\" == \"true\" ]\nthen \n\n    echo xmlstarlet\
+        \ edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:aaa/x:local-authentication/x:enabled'\
+        \ --value 'true' /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo xmlstarlet\
+        \ edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:enabled'\
+        \ --value 'true' /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo xmlstarlet\
+        \ edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:transport/x:tcp/x:enabled'\
+        \ --value 'true' /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo xmlstarlet\
+        \ edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:transport/x:tcp/x:ip'\
+        \ --value @data.hostname*@  /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo\
+        \ xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update\
+        \ '/x:ncs-config/x:webui/x:transport/x:ssl/x:enabled' --value 'true' /etc/ncs/ncs.conf\
+        \ >> @data.batchfile*@\n    echo xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --update '/x:ncs-config/x:webui/x:transport/x:ssl/x:port' --value @option.https-port@\
+        \  /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo xmlstarlet edit --inplace\
+        \ -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:transport/x:ssl/x:ip'\
+        \ --value @data.hostname*@  /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo\
+        \ xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update\
+        \ '/x:ncs-config/x:restconf/x:enabled' --value 'true' /etc/ncs/ncs.conf >>\
+        \ @data.batchfile*@\n    echo xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --update '/x:ncs-config/x:netconf-north-bound/x:enabled' --value 'true'\
+        \ /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo xmlstarlet edit --inplace\
+        \ -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:netconf-north-bound/x:transport/x:ssh/x:enabled'\
+        \ --value 'true' /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo xmlstarlet\
+        \ edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:netconf-north-bound/x:transport/x:ssh/x:ip'\
+        \ --value @data.hostname*@ /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo\
+        \ xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update\
+        \ '/x:ncs-config/x:cli/x:ssh/x:enabled' --value 'true' /etc/ncs/ncs.conf >>\
+        \ @data.batchfile*@\n\n    echo xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --update '/x:ncs-config/x:cli/x:ssh/x:ip' --value @data.hostname*@  /etc/ncs/ncs.conf\
+        \ >> @data.batchfile*@\n    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --update \"/x:ncs-config/x:notifications/x:event-streams/x:stream[x:name='service-state-changes']/x:builtin-replay-store/x:enabled\"\
+        \ -v 'true' /etc/ncs/ncs.conf >> @data.batchfile*@\n\n    # ssh encryption\n\
+        \    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config\" -type elem -n \"ssh-tmp\"   /etc/ncs/ncs.conf\
+        \ >> @data.batchfile*@    \n    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:ssh-tmp\" -type elem -n \"algorithms\"  /etc/ncs/ncs.conf\
+        \ >> @data.batchfile*@\n    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:ssh-tmp/x:algorithms\" -type elem -n \"kex\"\
+        \ -v \"diffie-hellman-group14-sha1\" /etc/ncs/ncs.conf >> @data.batchfile*@\n\
+        \    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:ssh-tmp/x:algorithms\" -type elem -n \"mac\"\
+        \ -v \"hmac-sha2-512,hmac-sha2-256,hmac-sha1\" /etc/ncs/ncs.conf >> @data.batchfile*@\n\
+        \    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:ssh-tmp/x:algorithms\" -type elem -n \"encryption\"\
+        \ -v \"aes128-ctr,aes192-ctr,aes256-ctr\" /etc/ncs/ncs.conf >> @data.batchfile*@\n\
+        \    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ -r \"/x:ncs-config/x:ssh-tmp\" -v \"ssh\" /etc/ncs/ncs.conf >> @data.batchfile*@\n\
+        \n    # new subscription\n    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:notifications/x:event-streams\" -type elem -n\
+        \ \"tmp-stream\"   /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo xmlstarlet\
+        \ ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream\"\
+        \ -type elem -n \"name\" -v \"service-aa-changes\"   /etc/ncs/ncs.conf >>\
+        \ @data.batchfile*@\n    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream\"\
+        \ -type elem -n \"description\" -v \\\"Notifications relating to the service\
+        \ aa configuration change\\\"   /etc/ncs/ncs.conf >> @data.batchfile*@\n \
+        \   echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream\"\
+        \ -type elem -n \"replay-support\" -v \"true\"   /etc/ncs/ncs.conf >> @data.batchfile*@\n\
+        \    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream\"\
+        \ -type elem -n \"builtin-replay-store\"    /etc/ncs/ncs.conf >> @data.batchfile*@\n\
+        \    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream/x:builtin-replay-store\"\
+        \ -type elem -n \"enabled\" -v \"true\"    /etc/ncs/ncs.conf >> @data.batchfile*@\n\
+        \    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream/x:builtin-replay-store\"\
+        \ -type elem -n \"dir\" -v \\'\\$@data.ncsrundir*@/state\\' /etc/ncs/ncs.conf\
+        \ >> @data.batchfile*@\n    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream/x:builtin-replay-store\"\
+        \ -type elem -n \"max-size\" -v 'S10M'    /etc/ncs/ncs.conf >> @data.batchfile*@\n\
+        \    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream/x:builtin-replay-store\"\
+        \ -type elem -n \"max-files\" -v '50' /etc/ncs/ncs.conf >> @data.batchfile*@\n\
+        \    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ -r \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream\" -v \"\
+        stream\" /etc/ncs/ncs.conf >> @data.batchfile*@\n    # package authentication\n\
+        \    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:aaa\" -type elem -n \"package-authentication\"\
+        \   /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo xmlstarlet ed --inplace\
+        \ -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:aaa/x:package-authentication\"\
+        \ -type elem -n \"enabled\" -v \"@option.package-authentication@\"   /etc/ncs/ncs.conf\
+        \ >> @data.batchfile*@\n    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:aaa/x:package-authentication\" -type elem -n\
+        \ \"packages\"  /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo xmlstarlet\
+        \ ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:aaa/x:package-authentication/x:packages\"\
+        \ -type elem -n \"package\" -v \"cisco-cfp-jwt-auth\"   /etc/ncs/ncs.conf\
+        \ >> @data.batchfile*@\n   \n\n    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ -s \"/x:ncs-config\" -t elem -n \"tmp-hide-group\"   /etc/ncs/ncs.conf >>\
+        \ @data.batchfile*@\n    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:tmp-hide-group\" --type elem --name \"name\"\
+        \ -v \"tsdn\" -r \"/x:ncs-config/x:tmp-hide-group\" -v hide-group  /etc/ncs/ncs.conf\
+        \ >> @data.batchfile*@\n    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ -s \"/x:ncs-config\" -t elem -n \"tmp-hide-group\"    /etc/ncs/ncs.conf\
+        \ >> @data.batchfile*@\n    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:tmp-hide-group\" --type elem --name \"name\"\
+        \ -v \"fastmap-private\" -r \"/x:ncs-config/x:tmp-hide-group\" -v hide-group\
+        \  /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo xmlstarlet ed --inplace\
+        \ -N x=http://tail-f.com/yang/tailf-ncs-config -s \"/x:ncs-config\" -t elem\
+        \ -n \"tmp-hide-group\"   /etc/ncs/ncs.conf >> @data.batchfile*@\n    echo\
+        \ xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode\
+        \ \"/x:ncs-config/x:tmp-hide-group\" --type elem --name \"name\" -v \"debug\"\
+        \ -r \"/x:ncs-config/x:tmp-hide-group\" -v hide-group  /etc/ncs/ncs.conf \
+        \    >> @data.batchfile*@\n\n    echo xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config\
+        \ --subnode \"/x:ncs-config/x:python-vm\" --type elem --name \"start-timeout\"\
+        \ -v \"PT300S\"  /etc/ncs/ncs.conf >> @data.batchfile*@\n\nelse\n    echo\
+        \ Skipping XML Updates ...\nfi"
+    - description: Create ncsadmin group
+      exec: echo groupadd ncsadmin >> ${data.batchfile*}
+    - description: enable ncs
+      exec: echo systemctl enable ncs >> ${data.batchfile*}
+    - description: add user to group
+      script: echo 'usermod -a -G ncsadmin $(whoami)' >> @data.batchfile*@
+    - description: add firewall exception for HTTPS
+      exec: echo firewall-cmd --zone=public --permanent --add-port ${option.https-port}/tcp
+        \|\| true >> ${data.batchfile*}
+    - description: add firewall exception for HTTP
+      exec: echo firewall-cmd --zone=public --permanent --add-port ${option.http-port}/tcp
+        \|\| true >> ${data.batchfile*}
+    - description: add firewall exception for netconf
+      exec: echo firewall-cmd --zone=public --permanent --add-port ${option.netconf-port}/tcp
+        \|\| true >> ${data.batchfile*}
+    - description: reload firewalld
+      exec: echo firewall-cmd --reload \|\| true >> ${data.batchfile*}
+    - description: add cwuser and set password
+      script: |-
+        echo useradd @option.cwuser@ >> @data.batchfile*@
+        echo 'echo @option.cwuser@:@option.cwpass@ | chpasswd' >> @data.batchfile*@
+    - description: add cwuser to ncsadmin
+      exec: 'echo usermod -aG ncsadmin,sudo ${option.cwuser} >> ${data.batchfile*}'
+    - description: 'Create and import additional data '
+      script: |
+        echo source /opt/ncs/current/ncsrc >> @data.batchfile*@
+        echo mkdir -p /tmp/nso_load >> @data.batchfile*@
+        # Create NSO security algorithms for import
+        echo 'echo '"'<devices xmlns=\"http://tail-f.com/ns/ncs\"><global-settings><ssh-algorithms><public-key>ssh-ed25519</public-key><public-key>ecdsa-sha2-nistp256</public-key><public-key>ecdsa-sha2-nistp384</public-key><public-key>ecdsa-sha2-nistp521</public-key><public-key>rsa-sha2-512</public-key><public-key>rsa-sha2-256</public-key><public-key>ssh-rsa</public-key></ssh-algorithms></global-settings></devices>'"' > /tmp/nso_load/algos.xml' >> @data.batchfile*@
+        echo 'echo '"'<nacm xmlns=\"urn:ietf:params:xml:ns:yang:ietf-netconf-acm\"><groups><group><name>ncsadmin</name><user-name>@option.cwuser@</user-name></group></groups></nacm>'"' > /tmp/nso_load/nacm.xml' >> @data.batchfile*@
+    - description: start NSO with packages reload
+      script: |+
+        echo source /opt/ncs/current/ncsrc >> @data.batchfile*@
+        #NCS_RELOAD_PACKAGES=force /etc/init.d/ncs restart
+        #echo '/etc/init.d/ncs restart-with-package-reload' >> @data.batchfile*@
+        echo 'systemctl restart ncs' >> @data.batchfile*@
+
+
+    - description: load bootstrap data
+      script: |
+        echo source /opt/ncs/current/ncsrc >> @data.batchfile*@
+        #runfile=/tmp/bootstrap.sh
+        echo 'runfile=/tmp/bootstrap.sh' >> @data.batchfile*@
+
+        #"echo '@option.system-user-password@' | sudo -S  sh -c 'cd /opt/ncs/packages/*@data.nso-ver*@*/tsdn/bootstrap-data; for i in `ls *.xml`; do ncs_load -l -m -F x "$i";  done'"
+        echo 'echo #!/bin/sh > '\$runfile >> @data.batchfile*@
+        echo 'echo source /opt/ncs/current/ncsrc >> '\$runfile >> @data.batchfile*@
+        echo 'echo '"'for folder in \`find @option.buildpath@/* -type d -iname \"bootstrap-data\" | grep -i standalone\`; do pushd \"\$folder\"; for file in *.xml; do echo \"loading \$file\";  ncs_load -l -m -F x \"\$file\"; done; popd; done'"' >> $runfile' >> @data.batchfile*@
+
+        echo bash '/tmp/bootstrap.sh' >> @data.batchfile*@
+
+        # Load other data
+        echo 'echo '"'for file in \`find /tmp/nso_load/ -type f -iname \"*.xml\"\`; do echo \"loading \$file\"; ncs_load -l -m -F x \"\$file\"; done'"' >> $runfile' >> @data.batchfile*@
+    - description: show contents of file
+      script: |
+        cat "@data.batchfile*@"
+    keepgoing: true
+    strategy: sequential
+  timeout: 12h
+  uuid: 7f9285c9-f706-4522-8dfd-5f715988d8eb
+

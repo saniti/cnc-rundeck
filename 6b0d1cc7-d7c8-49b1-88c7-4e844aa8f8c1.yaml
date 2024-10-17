@@ -1,0 +1,35 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: Infra Services
+  id: 6b0d1cc7-d7c8-49b1-88c7-4e844aa8f8c1
+  loglevel: INFO
+  name: Show Docker Compose
+  nodeFilterEditable: false
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'name: gitbox '
+  nodesSelectedByDefault: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Show docker compose
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      script: docker compose ls --format json | jq .
+    keepgoing: false
+    strategy: node-first
+  uuid: 6b0d1cc7-d7c8-49b1-88c7-4e844aa8f8c1
+

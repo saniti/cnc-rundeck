@@ -1,0 +1,115 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: Kafka/99 - Callbacks
+  id: cc36f0ad-f7d2-4da4-bd8d-786dccf0a0ee
+  loglevel: INFO
+  maxMultipleExecutions: '1'
+  name: netbox - updates
+  nodeFilterEditable: false
+  notification:
+    onfailure:
+      email:
+        recipients: autoamtion@microlab.dcloud.cisco.com
+        subject: '${notification.eventStatus} :[${job.name}]: FAILURE: Service Deployment'
+    onsuccess:
+      email:
+        recipients: autoamtion@microlab.dcloud.cisco.com
+        subject: '${notification.eventStatus} :[${job.name}]: SUCCESS: Service Deployment'
+  notifyAvgDurationThreshold: null
+  options:
+  - hidden: true
+    name: netbox-server
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-host
+    valueExposed: true
+  - hidden: true
+    name: api-token
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-token
+    valueExposed: true
+  - name: raw
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: get values
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |
+        echo '@option.raw@' | jq -r '.params[] |to_entries[] | ("input-"+(.key|tostring)+"="+(.value|tostring))'
+        echo '@option.raw@' | jq -r '.data[][][] |to_entries[] | ("input-"+(.key|tostring)+"="+(.value|tostring))'
+
+        data=$(echo '@option.raw@' | jq -c '.data')
+        echo service_data=$data
+    - description: now
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: now
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: echo $(date +"%Y-%m-%d-%H-%M-%S")
+    - description: if type vlan
+      errorhandler:
+        configuration:
+          authentication: None
+          body: ${data.service_data*}
+          checkResponseCode: 'false'
+          headers: '{"Content-Type":"application/json","Authorization":"${option.api-token}"}'
+          method: POST
+          printResponse: 'true'
+          printResponseToFile: 'false'
+          proxySettings: 'false'
+          remoteUrl: ${option.netbox-server}/ipam/vlans/
+          sslVerify: 'false'
+          timeout: '30000'
+        keepgoingOnSuccess: true
+        nodeStep: false
+        type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+      script: |+
+        if [ "@data.input-service-type*@" == "vlan" ]
+        then
+            false
+        fi
+
+    - description: if type ip
+      errorhandler:
+        configuration:
+          authentication: None
+          body: ${data.service_data*}
+          checkResponseCode: 'false'
+          headers: '{"Content-Type":"application/json","Authorization":"${option.api-token}"}'
+          method: POST
+          printResponse: 'true'
+          printResponseToFile: 'false'
+          proxySettings: 'false'
+          remoteUrl: ${option.netbox-server}/ipam/ip-addresses/
+          sslVerify: 'false'
+          timeout: '30000'
+        keepgoingOnSuccess: true
+        nodeStep: false
+        type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+      script: |+
+        if [ "@data.input-service-type*@" == "ip" ]
+        then
+            echo Found type IP
+            false
+        fi
+
+    keepgoing: false
+    strategy: sequential
+  uuid: cc36f0ad-f7d2-4da4-bd8d-786dccf0a0ee
+

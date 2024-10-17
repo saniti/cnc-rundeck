@@ -1,0 +1,110 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: CNC/Configuration
+  id: 5968d5f6-1127-434c-86f2-02ad4b3fd758
+  loglevel: INFO
+  name: Attach to CDG
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: Environment
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - label: Device Name
+    name: device-name
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: get vars
+      jobref:
+        group: CNC/Configuration
+        ignoreNotifications: true
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - description: cdg
+      jobref:
+        group: CNC/Services
+        importOptions: true
+        name: CNC - Get DG
+        uuid: c3010b1d-86cf-45a7-9b72-62d2de835ab6
+    - description: cdg
+      jobref:
+        group: CNC/Services
+        importOptions: true
+        name: CNC - Get Device Details
+        uuid: 23d13185-8891-4031-9eea-580f733a346c
+    - configuration:
+        data: '{"dgDeviceMappings":[{"cdg_duuid":"${export.cdg-uuid}","device_uuid":["${export.device-uuid}"],"mapping_oper":"ADD_OPER"}]}'
+        format: json
+      description: data
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: payload
+            regex: (.*)
+          type: key-value-data
+      type: stub-data-step
+    - configuration:
+        authentication: None
+        body: ${data.payload}
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.id}
+        headers: '{"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}'
+        method: PUT
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/inventory/v1/dg/devicemapping
+        sslVerify: 'false'
+        timeout: '30000'
+      description: attach to DG
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        body: |+
+          {"filter":{"uuid":"${export.device-uuid}"}}
+
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.id}
+        headers: '{"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/inventory/v1/nso/fetch-ssh-keys
+        sslVerify: 'false'
+        timeout: '30000'
+      description: fetch ssh keys
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        body: |+
+          {"filter":{"uuid":"${export.device-uuid}"}}
+
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.id}
+        headers: '{"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/inventory/v1/nso/sync-from
+        sslVerify: 'false'
+        timeout: '30000'
+      description: sync from
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 5968d5f6-1127-434c-86f2-02ad4b3fd758
+

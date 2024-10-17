@@ -1,0 +1,178 @@
+- defaultTab: nodes
+  description: Onboards a device without it being discovered via PCE
+  executionEnabled: true
+  group: CNC/Configuration
+  id: 53415e8c-8e82-4dc6-a40a-e7f12e5d861c
+  loglevel: INFO
+  name: CNC - Onboard Device - Basic [dCloud]
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: CNC POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - description: '> required'
+    label: Device Name (short)
+    name: device-name
+    required: true
+  - description: '> required'
+    label: Device IPv4 Address
+    name: device-ip
+    required: true
+  - description: '> required'
+    enforced: true
+    name: location-data
+    required: true
+    valuesUrl: file:/opt/cw/options/locations.json
+  - label: Device subnet mask
+    name: device-mask
+    required: true
+    value: '32'
+  - label: SSH Port
+    name: device-ssh-port
+    required: true
+    value: '22'
+  - label: SNMP Port
+    name: device-snmp-port
+    required: true
+    value: '161'
+  - description: '- optional'
+    label: Telemetry VRF
+    name: telemetry_intf_src_vrf
+  - description: '- optional'
+    label: Router ID
+    name: te_router_id
+  - hidden: true
+    name: cnc-password
+    required: true
+    secure: true
+    storagePath: keys/cw/admin
+    valueExposed: true
+  - hidden: true
+    label: CNC User Name
+    name: cnc-user
+    required: true
+    value: admin
+  - description: This should be hidden
+    hidden: true
+    name: provider-schema
+    value: '{"data":[{"host_name":"","profile":"demo","reachability_check":"REACH_CHECK_ENABLE","admin_state":"ROBOT_ADMIN_STATE_UP","connectivity_info":[{"type":"ROBOT_MSVC_TRANS_SNMP","ipaddrs":[{"inet_af":0,"inet_addr":"220.11.2.3","mask":"32"}],"port":161,"timeout":"120"},{"type":"ROBOT_MSVC_TRANS_SSH","ipaddrs":[{"inet_af":0,"inet_addr":"220.11.2.3","mask":"32"}],"port":22,"timeout":"120"},{"type":"ROBOT_MSVC_TRANS_TELNET","ipaddrs":[{"inet_af":0,"inet_addr":"220.11.2.3","mask":"32"}],"port":23,"timeout":"120"},{"type":"ROBOT_MSVC_TRANS_NETCONF","ipaddrs":[{"inet_af":0,"inet_addr":"220.11.2.3","mask":"32"}],"port":830,"timeout":"120"},{"type":"ROBOT_MSVC_TRANS_HTTP","ipaddrs":[{"inet_af":0,"inet_addr":"220.11.2.3","mask":"32"}],"port":80,"timeout":"120"},{"type":"ROBOT_MSVC_TRANS_GNMI","ipaddrs":[{"inet_af":0,"inet_addr":"220.11.2.3","mask":"32"}],"port":57400,"timeout":"120","encoding_type":"PROTO"}],"tags":[],"product_info":{"software_type":"","software_version":"","product_type":"","product_family":"","product_series":"","manufacturer":"","capability":["SNMP","GNMI","YANG_MDT","YANG_CLI"]},"geo_info":{"coordinates":{},"building":"","street":"","city":"","state":"","country":"","region":"","zip":"","range_incr":{}},"routing_info":{"global_isis_system_id":"","global_ospf_router_id":"","te_router_id":"","ipv6_router_id":"","telemetry_intf_src_vrf":"","is_opt_out_of_mdt_collection_config_enabled":false,"telemetry_intf_src_name":""},"providers_family":{"ROBOT_PROVIDER_NSO":{"providers":{"nso201":{"provider_name":"nso201","provider_node_id":"testxx"}}}}}]}'
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - configuration:
+        command: jq '.[] | select(.name=="${option.location-data}")."Longitude"' /opt/cw/options/locations.json
+      description: get long
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: longitude
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: jq '.[] | select(.name=="${option.location-data}")."Latitude"' /opt/cw/options/locations.json
+      description: get lat
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: latitude
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        command: jq '.[] | select(.name=="${option.location-data}")."Country"' /opt/cw/options/locations.json
+      description: get country
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: country
+            regex: '.([A-Z,a-z]+).+'
+          type: key-value-data
+      type: localexec
+    - description: reconfigure JSON object
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: payload
+            regex: (.*)
+          type: key-value-data
+      script: |-
+        file=/tmp/@job.execid@.json
+        tmpfile=/tmp/@job.execid@.json.tmp
+
+        echo '@option.provider-schema@' > $file
+        jq '( .data[].geo_info.coordinates.longitude.value)|="@data.longitude*@"' $file > $tmpfile
+        jq '( .data[].geo_info.coordinates.latitude.value)|="@data.latitude*@"' $tmpfile > $file
+        jq '( .data[].geo_info.country)|="@data.country*@"' $file > $tmpfile
+        jq '(..|objects|select(has("inet_addr")))."inet_addr"|= "@option.device-ip@"' $tmpfile > $file
+        jq '(..|objects|select(has("host_name")))."host_name"|= "@option.device-name@"' $file > $tmpfile
+        jq '(..|objects|select(has("mask")))."mask"|= "@option.device-mask@"' $tmpfile > $file
+        jq '(..|objects|select(has("provider_node_id")))."provider_node_id"|= "@option.device-name@"' $file > $tmpfile
+        jq '(..|objects|select(has("te_router_id")))."te_router_id"|= "@option.te_router_id@"' $tmpfile > $file
+        jq '(..|objects|select(has("telemetry_intf_src_vrf")))."telemetry_intf_src_vrf"|= "@option.telemetry_intf_src_vrf@"' $file > $tmpfile
+        jq '(..|objects|select(has("telemetry_intf_src_name")))."telemetry_intf_src_name"|= "@option.telemetry_intf_src_name@"' $tmpfile > $file
+        jq '( .data[].connectivity_info[]|select(.type=="ROBOT_MSVC_TRANS_SNMP") ).port|="@option.device-snmp-port@"' $file > $tmpfile
+        jq '( .data[].connectivity_info[]|select(.type=="ROBOT_MSVC_TRANS_SSH") ).port|="@option.device-ssh-port@"' $tmpfile > $file
+        jq -c . $file
+    - description: Get params
+      jobref:
+        args: -cnc-pod ${option.cnc-pod}
+        group: CNC/Configuration
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        body: ${data.payload*}
+        checkResponseCode: 'true'
+        headers: '{"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/inventory/v1/nodes
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: add device
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        checkResponseCode: 'true'
+        headers: '{"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/inventory/v1/nodes/query
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get devices
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Attach to CDG
+      jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: Attach to CDG
+        uuid: 5968d5f6-1127-434c-86f2-02ad4b3fd758
+    keepgoing: false
+    strategy: node-first
+  uuid: 53415e8c-8e82-4dc6-a40a-e7f12e5d861c
+

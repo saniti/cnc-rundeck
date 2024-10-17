@@ -1,0 +1,68 @@
+- defaultTab: nodes
+  description: |-
+    modify the latency on a specific interface and device
+    ---
+    ## Demo Setup
+    For L2VPN, routing should look like `Node-4` -> `Node-3` -> `Node-1` -> `Node-5`
+
+    We will inject latency between `Node-3` interface `GigabitEthernet0/0/0/3` and `Node-4` interface `GigabitEthernet0/0/0/2` of 30ms
+
+    We expect to see path transition in about 30 seconds
+  executionEnabled: true
+  group: -DEMO/.working
+  id: 236d8a94-42e7-41a5-aa4d-1214e2d2a218
+  loglevel: INFO
+  name: CNC - devices
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: CW POD
+    name: cnc-pod
+    required: true
+    value: R1R2
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: get cnc token
+      jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        body: '{"time_ago":"0m","offset":"0","time_interval":"1h","levels":["CRITICAL","MAJOR","WARNING","MINOR","INFO"],"limit":"100","top_devices":true}'
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-alerts.json
+        headers: |+
+          {"Content-Type": "application/yang-data+json","Authorization": "Bearer ${export.cwtoken}"}
+
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/inventory/v1/nodes/query
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Get Stats
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Extract properties
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-alerts.json
+        #jq '[."device_alerts"[] |   select(.summary.levels[] | (.level=="CRITICAL") and (.alert>0)) | {"1 device-name":."device_id","2 device-ip":."device_IP","3 device-alerts":(.summary.levels )} ]' $file
+        jq -r '[.data[]|del(.. | ."Inventory"?)|[ [leaf_paths as $path | {"key": $path | join("_"), "value": getpath($path)}] | from_entries ] []] |  (.[0] | keys_unsorted) as $keys |   ([$keys] + map([.[ $keys[] ]])) [] | @csv' $file
+    keepgoing: false
+    strategy: node-first
+  uuid: 236d8a94-42e7-41a5-aa4d-1214e2d2a218
+

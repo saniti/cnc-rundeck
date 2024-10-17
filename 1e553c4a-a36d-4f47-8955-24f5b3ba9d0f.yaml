@@ -1,0 +1,148 @@
+- defaultTab: nodes
+  description: 'Attach the SR policies created in step 2 to the service, with optional
+    `dry-run`'
+  executionEnabled: true
+  group: -DEMO/L2VPN
+  id: 1e553c4a-a36d-4f47-8955-24f5b3ba9d0f
+  loglevel: INFO
+  name: 'CNC - L2 Service (step 5 change endpoint) '
+  nodeFilterEditable: false
+  notification:
+    onsuccess:
+      email:
+        recipients: device-details@necehealthpoc.local
+        subject: ${notification.eventStatus} ${job.name}
+  notifyAvgDurationThreshold: null
+  options:
+  - enforced: true
+    hidden: true
+    name: proxy
+    required: true
+    value: proxy:3001
+    values:
+    - proxy:3001
+    valuesListDelimiter: ','
+  - enforced: true
+    label: CW POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - enforced: true
+    label: Commit Options
+    name: dry-run-options
+    required: true
+    valuesUrl: file:/opt/cw/options/nso-commit-options.json
+  - enforced: true
+    name: vpn-id
+    required: true
+    valuesUrl: http://${option.proxy.value}/nso/vpnservices/l2vpn
+  - hidden: true
+    name: payload
+    required: true
+    value: '{"ietf-l2vpn-ntw:vpn-service":[{}]}'
+  - enforced: true
+    label: Current Endpoint
+    name: endpoint
+    required: true
+    valuesUrl: http://${option.proxy.value}/nso/vpnservice/l2vpn/${option.vpn-id.value}
+  - enforced: true
+    label: Replacement Endpoint
+    name: new-endpoint
+    valuesUrl: http://${option.proxy.value}/devices
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Dry run options
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: "if [ \"@option.dry-run-options@\" == \"implementation-plan\" ]\nthen\n\
+        \    echo DRY_RUN_COMMAND=\"?dry-run=native\"\n    echo RUN_IMPLEMENTATION_PLAN=false\n\
+        elif [ \"@option.dry-run-options@\" == \"commit\" ]\n    then\n        echo\
+        \ DRY_RUN_COMMAND=\nelse\n    echo DRY_RUN_COMMAND=\"@option.dry-run-options@\"\
+        \n    \nfi\n"
+    - jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}.json
+        headers: |
+          {"Content-Type": "application/yang-data+json","Authorization": "Bearer ${export.cwtoken}"}
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data/ietf-l2vpn-ntw:l2vpn-ntw/vpn-services/vpn-service=${option.vpn-id}
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Get Service
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Update Data
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: update-payload
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: |-
+        file=/opt/cw/tmp/@job.execid@.json
+        jq -c 'del(.[][]."directly-modified") | del(.[][]."plan-location")| del(.[][]."log") | del(.[][]."modified") | del(.[][]."commit-queue") | (..|objects|select(has("vpn-node-id") and ."vpn-node-id" == "@option.endpoint@")."vpn-node-id")|="@option.new-endpoint@"' $file
+    - description: generate implementation plan?
+      errorhandler:
+        jobref:
+          args: -friendly-name L2VPN -payload ${data.update-payload*} -service-type
+            L2VPN -name ${option.vpn-id} -endpoint /ietf-l2vpn-ntw:l2vpn-ntw/vpn-services/vpn-service=${option.vpn-id}
+          group: -DEMO
+          importOptions: true
+          name: Create dry run exports v2 - PUT
+          nodeStep: 'true'
+          uuid: 6d08d0ce-1f26-47a1-b441-93d9d92e6ac0
+        keepgoingOnSuccess: true
+      script: |+
+        @data.RUN_IMPLEMENTATION_PLAN*@
+
+
+
+    - configuration:
+        authentication: None
+        body: ${data.update-payload*}
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}.json
+        headers: |
+          {"Content-Type": "application/yang-data+json","Authorization": "Bearer ${export.cwtoken}"}
+        method: PUT
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data/ietf-l2vpn-ntw:l2vpn-ntw/vpn-services/vpn-service=${option.vpn-id}${data.DRY_RUN_COMMAND*}
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Update Service
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 1e553c4a-a36d-4f47-8955-24f5b3ba9d0f
+

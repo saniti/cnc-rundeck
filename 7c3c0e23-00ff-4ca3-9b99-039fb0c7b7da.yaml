@@ -1,0 +1,30 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: _SYSTEM
+  id: 7c3c0e23-00ff-4ca3-9b99-039fb0c7b7da
+  loglevel: INFO
+  name: System Shutdown
+  nodeFilterEditable: false
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'name: gitbox '
+  nodesSelectedByDefault: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: shutdown
+      script: |
+        systemctl stop rundeckd
+        shutdown now
+    keepgoing: false
+    strategy: node-first
+  uuid: 7c3c0e23-00ff-4ca3-9b99-039fb0c7b7da
+

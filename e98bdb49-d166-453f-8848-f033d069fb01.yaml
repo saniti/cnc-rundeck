@@ -1,0 +1,122 @@
+- defaultTab: nodes
+  description: |-
+    CNC - Run Change Automation
+    # Overview
+    Runs NSO Sync for a tagged list of devices
+  executionEnabled: true
+  group: CNC/Change Automations
+  id: e98bdb49-d166-453f-8848-f033d069fb01
+  loglevel: INFO
+  name: CNC - Run CA
+  nodeFilterEditable: false
+  notification:
+    onsuccess:
+      email:
+        attachLog: true
+        attachLogInFile: true
+        recipients: mop-status@poc.local
+        subject: ${notification.eventStatus} ${job.name}
+  notifyAvgDurationThreshold: null
+  options:
+  - enforced: true
+    label: CNC POD
+    name: cnc-vip
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - label: CA Name
+    name: mop-id
+    required: true
+    value: nsosync01
+  - description: '> The tag that contains the devices in question'
+    label: TAG
+    name: tag
+    required: true
+    value: hwan
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Get Vars
+      jobref:
+        args: -cnc-pod ${option.cnc-vip}
+        group: CNC/Configuration
+        ignoreNotifications: true
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        command: 'echo {"mop_id":"${option.mop-id}","devices":{"ids":[]},"check_start_time":0,"exec_start_time":0,"wae_threshold":"90","name":"demo","tags":["${option.tag}"],"device_user":"","device_pass":"","device_group":"${option.tag}","execution_params":{"1":{}},"execution_policy":{"execution_strategy":"STRATEGY_CONTINUOUS","on_failure":"ON_FAILURE_ABORT","collect_syslog":true}}'
+      description: generate payload
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: payload
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        authentication: None
+        body: ${data.payload*}
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.id}-ca.json
+        headers: '{"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/nca/v1/mopjobs
+        sslVerify: 'false'
+        timeout: '30000'
+      description: run change automation
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'false'
+          type: render-datatype
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: mm
+            regex: (.*)
+          type: key-value-data
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        command: jq -r '.set_id' /opt/cw/tmp/${job.id}-ca.json
+      description: ID
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: id
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - description: check status
+      jobref:
+        args: -job-id ${data.id*}
+        group: CNC/Change Automations
+        ignoreNotifications: true
+        importOptions: true
+        name: CNC - Check Status
+        uuid: 04fe5369-e770-44c4-9e43-7bc494081a95
+    keepgoing: false
+    pluginConfig:
+      LogFilter:
+      - config:
+          loglevel: normal
+          matchLoglevel: normal
+          quietMatch: 'false'
+          regex: .*((?!status).)*$
+        type: quiet-output
+    strategy: node-first
+  uuid: e98bdb49-d166-453f-8848-f033d069fb01
+

@@ -1,0 +1,324 @@
+- defaultTab: nodes
+  description: |-
+    Deploys a 3 node CNC cluster with a single vNIC
+    ---
+    ### Input Data
+    ***CNC POD*** - Choose from a POD definition, which includes the Key Crosswork parameters such as VIPs and DNS entries<br>
+    ***CNC Version*** - Choose from a CNC Version definition, which defines the mappings to CNC and CDG Deployment files (OVAs)<br>
+    ***Option*** - `execute` will attempt to deploy the POD, `generate` will simply generate a new command line which can be run manually using `ovftool`<br>
+    ***Deployment Size*** - `small` is appropriate for labs, `large` is appropriate for production and showcases<br>
+  executionEnabled: true
+  group: CNC/Deploy/CNC - Single vNIC
+  id: 18b34a6f-dade-4dcd-ac0d-93a766594bfb
+  loglevel: INFO
+  maxMultipleExecutions: '0'
+  multipleExecutions: true
+  name: CNC - 3 Node Cluster (single vNIC)
+  nodeFilterEditable: false
+  options:
+  - description: '> If no options present, create the POD definiting using Job `Create
+      POD`'
+    enforced: true
+    label: CNC POD
+    name: controller-vip
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - description: '> /opt/cw/options/cw-versions.json'
+    enforced: true
+    label: CNC Version
+    name: cw-version
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-versions.json
+  - description: |-
+      Execute command or just generate it.
+      - Generate (default) Show the command line that needs to be run, but the user
+      - Execute - Generate the command line and run it on the local system
+    enforced: true
+    name: Option
+    required: true
+    value: Execute
+    values:
+    - Execute
+    - Generate
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Deployment Size
+    name: deployment-size
+    required: true
+    value: small
+    values:
+    - large
+    - small
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Memory
+    name: deployment-size-mem
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-deployment-${option.deployment-size.value}-mem.json
+  - enforced: true
+    label: CPU
+    name: deployment-size-cpu
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-deployment-${option.deployment-size.value}-cpu.json
+  - description: '`Hybrid`, Master or Worker'
+    enforced: true
+    name: node-type
+    required: true
+    value: Hybrid
+    values:
+    - Hybrid
+    - Master
+    - Standalone
+    - Worker
+    valuesListDelimiter: ','
+  - description: |-
+      - thin - lab only, meaning disk is thin provisioned
+      - thick - production, meaning disk is fully allocated before usage
+    enforced: true
+    label: Virtual Disk Mode
+    name: disk-mode
+    required: true
+    value: thin
+    values:
+    - thick
+    - thin
+    valuesListDelimiter: ','
+  - description: |-
+      - IPv4 Network (2 vNIC)
+      - IPv4 Network on a Single Interface (1 vNIC) - LAB only.
+    enforced: true
+    label: Deployment Type
+    name: deployment-option
+    required: true
+    value: 1intv4
+    valuesUrl: file:/opt/cw/options/cw-deployment-option.json
+  - description: default is `50`
+    label: '% Reserved for backup'
+    name: backup-percentage
+    required: true
+    value: '50'
+    values:
+    - '20'
+    - '50'
+    valuesListDelimiter: ','
+  - delimiter: ','
+    description: 'If planning to change the VM resources, ensure "PowerON" is not
+      selected. After deployment, govc will modify the resources.'
+    multivalued: true
+    name: ovf-options
+    required: true
+    valuesUrl: file:/opt/cw/options/ovf-deploy-options.json
+  - label: OVF Extra Configuration Options
+    name: ovf-extra-config
+    required: true
+    value: default
+    values:
+    - advanced
+    - default
+    valuesListDelimiter: ','
+  - delimiter: ','
+    enforced: true
+    multivalued: true
+    name: ovf-extra-config-options
+    required: true
+    valuesUrl: file:/opt/cw/options/extra-config-options.${option.ovf-extra-config.value}.json
+  - label: Node 3 Name
+    name: host-name_1
+    value: cw01
+  - label: Node 2 Name
+    name: host-name_2
+    value: cw02
+  - label: Node 3 Name
+    name: host-name_3
+    value: cw03
+  - enforced: true
+    label: Role for Netbox
+    name: vm-role
+    required: true
+    value: '1'
+    valuesUrl: file:/opt/cw/options/roles.json
+  - description: DNS Domain name as defined in DNS. This should be pre-existing
+    label: Domain Name
+    name: domain-name
+    required: true
+    valuesUrl: file:/opt/cw/options/domains.json
+  - description: |-
+      If present, it must be existing and resolvable. Otherwise keep blank to use by IP
+      > If it does not exist then the deployment will fail.
+    hidden: true
+    label: Controller IP DNS Name
+    name: controller-vip-name
+    value: ${option.controller-vip}
+    values:
+    - ${option.controller-vip}
+    valuesListDelimiter: ','
+  - description: |-
+      If present, it must be existing and resolvable. Otherwise keep blank to use by IP
+      > If it does not exist then the deployment will fail.
+    hidden: true
+    label: Data VIP DNS Name
+    name: data-vip-name
+    required: true
+    value: ${option.controller-vip}
+    values:
+    - ${option.controller-vip}
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Data VIP
+    name: data-vip
+    required: true
+    value: ${option.controller-vip}
+    values:
+    - ${option.controller-vip}
+    valuesListDelimiter: ','
+  - delimiter: ','
+    description: |-
+      > /opt/cw/dns-server.json
+      Select `new value` to add entry
+    label: DNS Server
+    multivalued: true
+    name: dns-server
+    required: true
+    valuesUrl: file:/opt/cw/options/dns-servers.json
+  - delimiter: ','
+    description: |-
+      > /opt/cw/ntp-servers.json
+      Select `new value` to add entry
+    label: NTP Server
+    multivalued: true
+    name: ntp-server
+    required: true
+    valuesUrl: file:/opt/cw/options/ntp-servers.json
+  - delimiter: ','
+    enforced: true
+    label: Virtual Networking Options
+    multivalued: true
+    name: vnic-options
+    required: true
+    valuesUrl: file:/opt/cw/options/vnic-options.json
+  - label: Node 1 Datastore
+    name: datastore-1
+    required: true
+    valuesUrl: file:/tmp/datastores.json
+  - label: Node 2 Datastore
+    name: datastore_2
+    required: true
+    valuesUrl: file:/tmp/datastores.json
+  - label: Node 3 Datastore
+    name: datastore_3
+    required: true
+    valuesUrl: file:/tmp/datastores.json
+  - label: Node 1 ESX host
+    name: vmware-esx-host_1
+    required: true
+    valuesUrl: file:/tmp/hosts.json
+  - label: Node 2 ESX host
+    name: vmware-esx-host_2
+    required: true
+    valuesUrl: file:/tmp/hosts.json
+  - label: Node 3 ESX host
+    name: vmware-esx-host_3
+    required: true
+    valuesUrl: file:/tmp/hosts.json
+  - label: Management Network
+    name: vnic-1-network
+    value: /HX-cluster/network/vm-network-411
+    valuesUrl: file:/tmp/networks.json
+  - hidden: true
+    name: cw-admin-password
+    required: true
+    secure: true
+    storagePath: keys/cw/cw-admin
+    valueExposed: true
+  - hidden: true
+    name: admin-password
+    required: true
+    secure: true
+    storagePath: keys/cw/admin
+    valueExposed: true
+  - hidden: true
+    name: vcenter-host
+    secure: true
+    storagePath: keys/vmware/vc-address
+    valueExposed: true
+  - hidden: true
+    name: vcenter-password
+    required: true
+    secure: true
+    storagePath: keys/vmware/vc-password
+    valueExposed: true
+  - hidden: true
+    name: vcenter-username
+    required: true
+    secure: true
+    storagePath: keys/vmware/vc-user
+    valueExposed: true
+  - description: |-
+      ***Dynamic*** - IP Addressing from Netbox
+      ***Static*** - IP Addressing entered by user
+    enforced: true
+    label: Network Options for Management Network
+    name: vnic-0-static
+    required: true
+    value: static
+    values:
+    - dynamic
+    - static
+    valuesListDelimiter: ','
+  - description: IP Address for Management Interface
+    label: Node 1 IP
+    name: vnic-0-ip
+    required: true
+  - description: IP Address for Management Interface
+    label: Node 2 IP
+    name: vnic-0-ip_2
+    required: true
+  - description: IP Address for Management Interface
+    label: Node 3 IP
+    name: vnic-0-ip_3
+    required: true
+  - description: Subnet Mask
+    label: Management - Mask
+    name: vnic-0-mask
+    required: true
+  - description: Gateway IP
+    label: Management - Gateway
+    name: vnic-0-gateway
+    required: true
+  - label: User Disclaimer
+    name: disclaimer
+    required: true
+    valuesUrl: file:/opt/cw/options/disclaimers.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: deploy seed node
+      jobref:
+        args: -seed-node True -host-name ${option.host-name_1} -datastore-1 ${option.datastore-1}
+          -vmware-esx-host ${option.vmware-esx-host_1} -vnic-0-ip ${option.vnic-0-ip}
+        group: CNC/Deploy/CNC
+        importOptions: true
+        name: CNC - Single Node (1 nic) v2
+        uuid: eda8f651-7862-42fb-9ad9-edd1cffe4241
+    - description: deploy second node
+      jobref:
+        args: '-seed-node False -host-name ${option.host-name_2} -datastore-1 ${option.datastore_2}
+          -vmware-esx-host ${option.vmware-esx-host_2} -vnic-0-ip ${option.vnic-0-ip_2}  '
+        group: CNC/Deploy/CNC
+        importOptions: true
+        name: CNC - Single Node (1 nic) v2
+        uuid: eda8f651-7862-42fb-9ad9-edd1cffe4241
+    - description: deploy third node
+      jobref:
+        args: -seed-node False -host-name ${option.host-name_3} -datastore-1 ${option.datastore_3}
+          -vmware-esx-host ${option.vmware-esx-host_3} -vnic-0-ip ${option.vnic-0-ip_3}
+        group: CNC/Deploy/CNC
+        importOptions: true
+        name: CNC - Single Node (1 nic) v2
+        uuid: eda8f651-7862-42fb-9ad9-edd1cffe4241
+    keepgoing: false
+    strategy: parallel
+  uuid: 18b34a6f-dade-4dcd-ac0d-93a766594bfb
+

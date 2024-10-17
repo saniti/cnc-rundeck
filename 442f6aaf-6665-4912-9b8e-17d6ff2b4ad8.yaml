@@ -1,0 +1,64 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: -DEMO/.working
+  id: 442f6aaf-6665-4912-9b8e-17d6ff2b4ad8
+  loglevel: INFO
+  name: CNC - Get Services (all)
+  nodeFilterEditable: false
+  notification:
+    onsuccess:
+      email:
+        recipients: device-details@necehealthpoc.local
+        subject: ${notification.eventStatus} ${job.name}
+  notifyAvgDurationThreshold: null
+  options:
+  - enforced: true
+    label: CW POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        command: echo  ${export.mgtvip} ${export.cwtoken}
+      nodeStep: true
+      type: localexec
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-cnc-services.json
+        headers: '{"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/nbi/cat-inventory/v1/restconf/operations/cat-inventory-rpc:get-all-services
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get service list
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: Filter JSON output
+      script: |+
+        file=/opt/cw/tmp/@job.execid@-cnc-services.json
+
+        jq -r '. | . | (..|select(has("service-type"))?)."service-type"|=(.|split("}")[1]) |[."cat-inventory-rpc:output"."get-all-services-response"."collection-data"."service-info"[]|[ [leaf_paths as $path | {"key": $path | join("_"), "value": getpath($path)}] | from_entries ] []] |  (.[0] | keys_unsorted) as $keys |   ([$keys] + map([.[ $keys[] ]])) [] | @csv' $file
+
+    - configuration:
+        fail: 'false'
+        halt: 'false'
+      nodeStep: false
+      type: flow-control
+    keepgoing: false
+    strategy: node-first
+  uuid: 442f6aaf-6665-4912-9b8e-17d6ff2b4ad8
+

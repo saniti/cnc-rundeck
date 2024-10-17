@@ -1,0 +1,35 @@
+- defaultTab: nodes
+  description: |-
+    description
+    ---
+    1. do this
+    2. do this
+    3. should see this
+  executionEnabled: true
+  group: .archive
+  id: 0098e1ac-25d4-4a4b-8b1b-a9d063b9c178
+  loglevel: INFO
+  name: test123
+  nodeFilterEditable: false
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'name: PE1 '
+  nodesSelectedByDefault: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - exec: show router-id
+    - interpreterArgsQuoted: false
+      script: ps -eaf
+      scriptInterpreter: run
+    keepgoing: false
+    strategy: node-first
+  uuid: 0098e1ac-25d4-4a4b-8b1b-a9d063b9c178
+

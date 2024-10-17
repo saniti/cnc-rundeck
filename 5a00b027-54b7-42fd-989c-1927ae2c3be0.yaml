@@ -1,0 +1,289 @@
+- defaultTab: nodes
+  description: |-
+    OVF Command line builder for Data Gateway deployment
+    ## Features
+    - Create an OVF command line for deploying a cluster (3) Data Gateway
+  executionEnabled: true
+  group: CNC/Deploy/CDG
+  id: 5a00b027-54b7-42fd-989c-1927ae2c3be0
+  loglevel: INFO
+  name: CDG - Cluster
+  nodeFilterEditable: false
+  options:
+  - description: |-
+      Execute command or just generate it.
+      - Generate (default) Show the command line that needs to be run, but the user
+      - Execute - Generate the command line and run it on the local system
+    enforced: true
+    name: Option
+    required: true
+    value: Execute
+    values:
+    - Execute
+    - Generate
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Deployment Type
+    name: deployment-option
+    required: true
+    value: onpremise-extended
+    values:
+    - onpremise-extended
+    - onpremise-standard
+    valuesListDelimiter: ','
+  - enforced: true
+    label: vCPU
+    name: deploy-option-cpu
+    required: true
+    valuesUrl: file:/opt/cw/options/${option.deployment-option.value}-cpu.json
+  - enforced: true
+    label: Memory
+    name: deploy-option-mem
+    required: true
+    valuesUrl: file:/opt/cw/options/${option.deployment-option.value}-mem.json
+  - enforced: true
+    label: Disk
+    name: deploy-option-disk
+    required: true
+    valuesUrl: file:/opt/cw/options/${option.deployment-option.value}-disk.json
+  - enforced: true
+    name: image-file
+    required: true
+    valuesUrl: file:/opt/cw/options/cdg-images.json
+  - delimiter: ','
+    description: '`test` `test2`'
+    multivalued: true
+    name: ovf-options
+    required: true
+    valuesUrl: file:/opt/cw/options/ovf-deploy-options.json
+  - label: OVF Extra Configuration Options
+    name: ovf-extra-config
+    required: true
+    value: default
+    values:
+    - advanced
+    - default
+    valuesListDelimiter: ','
+  - delimiter: ','
+    enforced: true
+    multivalued: true
+    name: ovf-extra-config-options
+    required: true
+    valuesUrl: file:/opt/cw/options/extra-config-options.${option.ovf-extra-config.value}.json
+  - label: CDG hostname
+    name: host-name-1
+    value: cdg01
+  - label: VM Datastore
+    name: datastore-1
+    required: true
+    valuesUrl: file:/tmp/datastores.json
+  - label: VMware ESX host 1
+    name: vmware-esx-host_1
+    required: true
+    valuesUrl: file:/tmp/hosts.json
+  - label: CDG hostname 2
+    name: host-name-2
+    value: cdg02
+  - label: VM Datastore 2
+    name: datastore-2
+    required: true
+    valuesUrl: file:/tmp/datastores.json
+  - label: VMware ESX host 2
+    name: vmware-esx-host_2
+    required: true
+    valuesUrl: file:/tmp/hosts.json
+  - label: CDG hostname 3
+    name: host-name-3
+    value: cdg03
+  - label: VM Datastore 3
+    name: datastore-3
+    required: true
+    valuesUrl: file:/tmp/datastores.json
+  - label: VMware ESX host 3
+    name: vmware-esx-host_3
+    required: true
+    valuesUrl: file:/tmp/hosts.json
+  - description: Role for Netbox
+    enforced: true
+    name: vm-role
+    required: true
+    value: '2'
+    valuesUrl: file:/opt/cw/options/roles.json
+  - label: Domain Name
+    name: domain-name
+    required: true
+    value: ntf.local
+  - label: Description
+    name: description
+    required: true
+    value: Cisco Data Gateway Node
+  - label: CDG Pool
+    name: label
+    value: Pool1
+  - hidden: true
+    label: CDG hostname
+    name: host-name
+    required: true
+    value: ${option.host-name-1}
+  - label: Crossworks VIP
+    name: controller-ip
+    required: true
+  - label: Crossworks port
+    name: controller-port
+    required: true
+    value: '30607'
+  - delimiter: ','
+    label: DNS Server
+    multivalued: true
+    name: dns-server
+    required: true
+    valuesUrl: file:/opt/cw/options/dns-servers.json
+  - delimiter: ','
+    label: NTP Server
+    multivalued: true
+    name: ntp-server
+    required: true
+    valuesUrl: file:/opt/cw/options/ntp-servers.json
+  - delimiter: ','
+    enforced: true
+    label: Virtual Networking Options
+    multivalued: true
+    name: vnic-options
+    required: true
+    valuesUrl: file:/opt/cw/options/vnic-options.json
+  - enforced: true
+    hidden: true
+    label: Number of Network Adapters
+    name: active-vnics
+    value: '2'
+    values:
+    - '2'
+    valuesListDelimiter: ','
+  - label: First Network
+    name: vnic-1-network
+    value: /HX-cluster/network/vm-network-411
+    valuesUrl: file:/tmp/networks.json
+  - label: Second Network
+    name: vnic-2-network
+    value: /HX-cluster/network/vm-network-413
+    valuesUrl: file:/tmp/networks.json
+  - hidden: true
+    name: dg-admin-password
+    required: true
+    secure: true
+    storagePath: keys/cw/dg-admin
+    valueExposed: true
+  - hidden: true
+    name: dg-oper-password
+    required: true
+    secure: true
+    storagePath: keys/cw/dg-operator
+    valueExposed: true
+  - hidden: true
+    name: cnc-password
+    required: true
+    secure: true
+    storagePath: keys/cw/cw-admin
+    valueExposed: true
+  - hidden: true
+    name: vcenter-host
+    secure: true
+    storagePath: keys/vmware/vcenter
+    valueExposed: true
+  - hidden: true
+    name: vcenter-password
+    required: true
+    secure: true
+    storagePath: keys/vmware/administrator-vc-local
+    valueExposed: true
+  - hidden: true
+    name: vcenter-username
+    required: true
+    secure: true
+    storagePath: keys/vmware/vc-username
+    valueExposed: true
+  - description: |-
+      ***Dynamic*** - IP Addressing from Netbox
+      ***Static*** - IP Addressing entered by user
+    enforced: true
+    label: Network Options for Management Network
+    name: vnic-0-static
+    required: true
+    values:
+    - dynamic
+    - static
+    valuesListDelimiter: ','
+  - description: IP Address for Management Interface
+    label: Management - IP
+    name: vnic-0-ip
+    required: true
+    valuesUrl: file:/opt/cw/options/vnic-${option.vnic-0-static.value}-ip.json
+  - description: Subnet Mask
+    label: Management - Mask
+    name: vnic-0-mask
+    required: true
+    valuesUrl: file:/opt/cw/options/vnic-${option.vnic-0-static.value}-mask.json
+  - description: Gateway IP
+    label: Management - Gateway
+    name: vnic-0-gateway
+    required: true
+    valuesUrl: file:/opt/cw/options/vnic-${option.vnic-0-static.value}-gw.json
+  - description: |-
+      ***Dynamic*** - IP Addressing from Netbox
+      ***Static*** - IP Addressing entered by user
+    enforced: true
+    label: Network Options for Data Network
+    name: vnic-1-static
+    required: true
+    values:
+    - dynamic
+    - static
+    valuesListDelimiter: ','
+  - description: IP Address for Data Interface
+    label: DATA - IP
+    name: vnic-1-ip
+    required: true
+    valuesUrl: file:/opt/cw/options/vnic-${option.vnic-1-static.value}-1-ip.json
+  - description: Subnet Mask
+    label: DATA - Mask
+    name: vnic-1-mask
+    required: true
+    valuesUrl: file:/opt/cw/options/vnic-${option.vnic-1-static.value}-1-mask.json
+  - description: Gateway IP
+    label: DATA - Gateway
+    name: vnic-1-gateway
+    required: true
+    valuesUrl: file:/opt/cw/options/vnic-${option.vnic-1-static.value}-1-gw.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: CDG node 1
+      jobref:
+        args: -host-name ${option.host-name-1} -data-store-1 ${option.datastore-1}
+          ${option.vmware-esx-host_1} -vmware-esx-host ${option.vmware-esx-host_1}
+        group: CNC/Deploy/CDG
+        importOptions: true
+        name: CDG - Single Node
+        uuid: 25014383-1230-46a8-a45c-3f2700efd50e
+    - description: CDG node 2
+      jobref:
+        args: -host-name ${option.host-name-2} -data-store-1 ${option.datastore-2}
+          ${option.vmware-esx-host_2} -vmware-esx-host ${option.vmware-esx-host_2}
+        group: CNC/Deploy/CDG
+        importOptions: true
+        name: CDG - Single Node
+        uuid: 25014383-1230-46a8-a45c-3f2700efd50e
+    - description: CDG node 3
+      jobref:
+        args: -host-name ${option.host-name-3} -data-store-1 ${option.datastore-3}
+          ${option.vmware-esx-host_3} -vmware-esx-host ${option.vmware-esx-host_3}
+        group: CNC/Deploy/CDG
+        importOptions: true
+        name: CDG - Single Node
+        uuid: 25014383-1230-46a8-a45c-3f2700efd50e
+    keepgoing: false
+    strategy: sequential
+  uuid: 5a00b027-54b7-42fd-989c-1927ae2c3be0
+

@@ -1,0 +1,182 @@
+- defaultTab: nodes
+  description: |-
+    Applies device configuration (not via service) to multiple devices
+    ---
+    ### Overview
+    - Choose the type of device. This is read from NSO devices
+    - Choose the corresponding devices (based on device type)
+    - Enter the options
+  executionEnabled: true
+  group: DEMO/Datacenter/Datacenter
+  id: 7841a746-a4eb-4beb-90af-eacc536f8e44
+  loglevel: INFO
+  name: Update config - GNMI
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    hidden: true
+    name: proxy
+    required: true
+    value: proxy:3001
+    values:
+    - proxy:3001
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Commit Options
+    name: dry-run-options
+    required: true
+    valuesUrl: file:/opt/cw/options/nso-commit-options.json
+  - description: '> From NSO'
+    enforced: true
+    name: device-type
+    required: true
+    valuesUrl: http://${option.proxy.value}/devicetypes/${option.env.value}
+  - delimiter: ','
+    description: '> From NSO'
+    enforced: true
+    label: device
+    multivalueAllSelected: true
+    multivalued: true
+    name: device-1
+    required: true
+    valuesUrl: http://${option.proxy.value}/devicesbytype/${option.env.value}/${option.device-type.value}
+  - hidden: true
+    name: nso-host
+    required: true
+    secure: true
+    storagePath: keys/nso/nso-bhp
+    valueExposed: true
+  - hidden: true
+    name: nso-pass
+    required: true
+    secure: true
+    storagePath: keys/nso/nso-bhp-pass
+    valueExposed: true
+  - hidden: true
+    name: nso-user
+    required: true
+    secure: true
+    storagePath: keys/nso/nso-bhp-user
+    valueExposed: true
+  - hidden: true
+    name: git
+    required: true
+    secure: true
+    storagePath: keys/git/repo
+    valueExposed: true
+  - hidden: true
+    name: git-token
+    required: true
+    secure: true
+    storagePath: keys/gitea/token
+    valueExposed: true
+  - label: GNMI Port
+    name: port
+    required: true
+    value: '57400'
+  - label: Address Family
+    name: address-family
+    required: true
+    value: ipv4
+  - enforced: true
+    hidden: true
+    name: env
+    required: true
+    value: bhp
+    values:
+    - bhp
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Dry run options
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        if [ "@option.dry-run-options@" = "commit" ]
+        then
+            echo DRY_RUN_COMMAND=
+        else
+            echo DRY_RUN_COMMAND="@option.dry-run-options@"
+        fi
+    - description: create basic auth
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: basic-auth
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: echo -n @option.nso-user@:@option.nso-pass@ | base64
+    - description: Cisco IOS?
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        if [ "@option.device-type@" == "cisco-ios" ]
+        then
+            res=$(echo '@option.device-1@' | jq -R -c 'split(",") | {"devices":[.[] | {"device":{"name":.,"config":{"tailf-ned-cisco-ios:snmp-server":{"community":[{"name":"@option.community-name@","RO":[null]}]}}}}] }')
+            echo base_config=$res
+        fi
+    - description: Cisco IOS-XR?
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: "if [ \"@option.device-type@\" == \"cisco-iosxr\" ]\nthen\n    \n  \
+        \  #res=$(echo '@option.device-1@' | jq -R -c 'split(\",\") | {\"devices\"\
+        :[.[] | {\"device\":{\"name\":.,\"config\":{\"@option.devicetype@:interface\"\
+        :{\"@option.interfacetype@\":[{\"id\":\"@option.interface_1@\",\"description\"\
+        :\"@option.text@\",\"shutdown\":[null]}]}}}}] }')\n\n    res=$(echo '@option.device-1@'\
+        \ | jq -R -c 'split(\",\") | {\"devices\":[.[] | {\"device\":{\"name\":.,\"\
+        config\":{\"tailf-ned-cisco-ios-xr:grpc\":{\"port\":@option.port@,\"no-tls\"\
+        :[null],\"address-family\":\"@option.address-family@\"}}}}] }')\n    \n  \
+        \  echo base_config=$res\nfi"
+    - description: Show Payload
+      script: echo '@data.base_config*@' | jq .
+    - configuration:
+        authentication: None
+        body: ${data.base_config*}
+        checkResponseCode: 'false'
+        headers: '{''Content-Type'':''application/yang-data+json'',''Authorization'':''Basic
+          ${data.basic-auth*}''}'
+        method: PATCH
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: ${option.nso-host}/restconf/data/tailf-ncs:devices${data.DRY_RUN_COMMAND*}
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Modify Devices
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 7841a746-a4eb-4beb-90af-eacc536f8e44
+

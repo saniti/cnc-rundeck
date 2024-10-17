@@ -1,0 +1,96 @@
+- defaultTab: nodes
+  description: "Uses `nso` to generate a topology from the live network, and converts\
+    \ into mermaid (markdown) format for WIKI page. \n---\n### Wiki Page\n[Topology](http://198.18.133.102:3000/simon/demo/wiki/Topology)"
+  executionEnabled: true
+  group: -DEMO
+  id: 2d668bb6-5e1c-4b86-8995-67b64758f1e2
+  loglevel: INFO
+  name: show topoloogy (CNC)
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: CW POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - enforced: true
+    name: ip-type
+    required: true
+    value: IPv4
+    values:
+    - IPv4
+    - IPv6
+    valuesListDelimiter: ','
+  - label: Device Filter
+    name: device
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: cnc vars
+      jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/nso-topology.json
+        headers: ' {"Content-Type": "application/yang-data+json","Authorization":
+          "Bearer ${export.cwtoken}"}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/nbi/optima/v2/restconf/data/ietf-network-state:networks
+        sslVerify: 'false'
+        timeout: '1000000'
+      description: Get Topology
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: run if filtering on device
+      errorhandler:
+        keepgoingOnSuccess: true
+        script: |-
+          file=/opt/cw/tmp/nso-topology.json
+          outfile=/opt/cw/tmp/nso-topology-out.json
+          echo '```mermaid' > $outfile
+          echo 'flowchart LR' >> $outfile
+          echo '%% updated: ' `date` >> $outfile
+          #jq -r '(..|select(has("ietf-network-topology-state:link"))?)."ietf-network-topology-state:link"[] | select(.source."source-node"=="@option.device@" or .destination."dest-node"=="@option.device@") | ."link-id" | split(":")[4] as $iptype| if ($iptype |contains("@option.ip-type@")) then (split(":")| .[0]|=.+"x--x" | .[0]+"|<-"+.[1]+"<br>"+.[3]+"->|"+.[2]) else "" end' $file >> $outfile
+          #jq -r '(..|select(has("ietf-network-topology-state:link"))?)."ietf-network-topology-state:link"[] | select(.source."source-node"=="@option.device@" or .destination."dest-node"=="@option.device@") | ."link-id" | split(":")[4] as $iptype| if ($iptype |contains("@option.ip-type@")) then (split(":")| .[0]|=.+"x--x" | .[0]+"|"+.[1]+"|"+.[2]) else "" end' $file >> $outfile
+          #jq -r '(..|select(has("ietf-network-topology-state:link"))?)."ietf-network-topology-state:link"[] | select(.source."source-node"=="@option.device@" or .destination."dest-node"=="@option.device@") | ."link-id" | split(":")[4] as $iptype| if ($iptype |contains("@option.ip-type@")) then (split(":")| .[0]|=.+"x--x" | .[0]+"|"+.[1]+"|"+.[2]) else "" end' $file >> $outfile
+          jq -r '[.[].network[]."ietf-network-topology-state:link"[]|[ [leaf_paths as $path | {"key": $path | join("_"), "value": getpath($path)}] | from_entries ] []] |  (.[0] | keys) as $keys |sort_by(."source_source-node") | .[]  |(."link-id"|split(":")[-1]) as $ipversion|select(."source_source-node"=="@option.device@" or ."destination_dest-node"=="@option.device@") | if $ipversion|contains("@option.ip-type@") then ."source_source-node"+" x--x "+"|"+."source_source-node"+":"+."source_source-tp"+"<br>"+."destination_dest-node"+":"+."destination_dest-tp"+"|"+."destination_dest-node" else "" end' $file >> $outfile
+
+          echo '```' >> $outfile
+      script: |
+        if [ -z "@option.device@"]; then true; else false; fi
+    - description: run if not filtering
+      errorhandler:
+        keepgoingOnSuccess: true
+        script: |-
+          file=/opt/cw/tmp/nso-topology.json
+          outfile=/opt/cw/tmp/nso-topology-out.json
+          echo '```mermaid' > $outfile
+          echo 'flowchart LR' >> $outfile
+          echo '%% updated: ' `date` >> $outfile
+          #jq -r '(..|select(has("ietf-network-topology-state:link"))?)."ietf-network-topology-state:link"[] | ."link-id" | split(":")[4] as $iptype| if ($iptype |contains("@option.ip-type@")) then (split(":")| .[0]|=.+"x--x" | .[0]+"|<-"+.[1]+"<br>"+.[3]+"->|"+.[2]) else "" end' $file >> $outfile
+          jq -r '(..|select(has("ietf-network-topology-state:link"))?)."ietf-network-topology-state:link"[] | ."link-id" | split(":")[4] as $iptype| if ($iptype |contains("@option.ip-type@")) then (split(":")| .[0]|=.+"x--x" | .[0]+"|"+.[1]+"|"+.[2]) else "" end' $file >> $outfile
+
+          echo '```' >> $outfile
+      script: |
+        if [ -z "@option.device@"]; then false; else true; fi
+    - description: Show file
+      exec: cat /opt/cw/tmp/nso-topology-out.json
+    - jobref:
+        args: -repo simon/demo -branch develop -file-path /opt/cw/tmp/nso-topology-out.json
+          -file-name Topology-CNC-${option.ip-type} -message "updated"
+        group: git
+        name: git - replace wiki file v2
+        uuid: e81b5233-73ba-40a0-bc17-f6a78e606c30
+    keepgoing: false
+    strategy: node-first
+  uuid: 2d668bb6-5e1c-4b86-8995-67b64758f1e2
+

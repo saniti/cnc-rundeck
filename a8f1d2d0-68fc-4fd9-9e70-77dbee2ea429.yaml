@@ -1,0 +1,105 @@
+- defaultTab: nodes
+  description: 'Reconcile devices present in the actual network into netbox, including
+    interfaces, manufacturer and type / model of device.'
+  executionEnabled: true
+  group: -DEMO/Slicing
+  id: a8f1d2d0-68fc-4fd9-9e70-77dbee2ea429
+  loglevel: INFO
+  name: Reconcile Network devices to Netbox v2
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    hidden: true
+    name: proxy
+    required: true
+    value: proxy:3001
+    values:
+    - proxy:3001
+    valuesListDelimiter: ','
+  - hidden: true
+    name: netbox
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-host
+    valueExposed: true
+  - hidden: true
+    name: netbox-token
+    required: true
+    secure: true
+    storagePath: keys/netbox/netbox-token
+    valueExposed: true
+  - delimiter: ','
+    description: |
+      > Devices in the active network (live)
+    enforced: true
+    label: Device (NSO)
+    multivalueAllSelected: true
+    multivalued: true
+    name: nso-device
+    required: true
+    valuesUrl: http://${option.proxy.value}/devices
+  - enforced: true
+    label: Sites (netbox)
+    name: netbox-site
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/sites
+  - enforced: true
+    label: Location (netbox)
+    name: netbox-location
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/locations/${option.netbox-site.value}
+  - enforced: true
+    label: Device Role (netbox)
+    name: netbox-role
+    required: true
+    valuesUrl: http://${option.proxy.value}/netbox/roles
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Get device properties
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        outfile=/opt/cw/tmp/reconcile.json
+        #echo '@option.nso-device@' | jq --raw-input --raw-output 'split(",") | to_entries[] | ["node",.value]|join("=")'
+        echo '@option.nso-device@' | jq --raw-input --raw-output 'split(",") | to_entries# | del(..|objects|select(has("key") and .key==5))' > $outfile
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-nso-devices.json
+        headers: '{"accept": "application/json"}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: http://${option.proxy}/nso/devicesandinterfaces
+        sslVerify: 'true'
+        timeout: '30000'
+      description: Get NSO properties for device
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: recon device
+      jobref:
+        args: -interfaces "/opt/cw/tmp/${job.execid}-nso-devices.json"
+        group: -DEMO/Slicing
+        importOptions: true
+        name: recon
+        uuid: cac37877-d7ec-4322-92e2-7ca79f21f2b2
+    - configuration:
+        fail: 'false'
+        halt: 'false'
+        status: success
+      nodeStep: false
+      type: flow-control
+    keepgoing: false
+    strategy: sequential
+  uuid: a8f1d2d0-68fc-4fd9-9e70-77dbee2ea429
+

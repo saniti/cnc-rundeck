@@ -1,0 +1,399 @@
+- defaultTab: nodes
+  description: |+
+    Deploys stored template services and policies from git. VPN services will be prefixed with the customer name
+
+  executionEnabled: true
+  group: -DEMO/Slicing
+  id: c8b793ce-39b0-422b-a764-2827ff962001
+  loglevel: INFO
+  name: 1.1 - Resource Pools
+  nodeFilterEditable: false
+  notification:
+    onsuccess:
+      email:
+        recipients: autoamtion@microlab.dcloud.cisco.com
+        subject: '${notification.eventStatus} :[${job.name}]: New VPN Definition :
+          ${option.customer}-${option.vpn-name}.json'
+  notifyAvgDurationThreshold: null
+  options:
+  - hidden: true
+    name: git
+    required: true
+    secure: true
+    storagePath: keys/git/repo
+    valueExposed: true
+  - hidden: true
+    name: token
+    required: true
+    secure: true
+    storagePath: keys/gitea/token
+    valueExposed: true
+  - description: '> [Authenticate](96e872a2-5704-4af6-96dc-47758e6049d9)'
+    enforced: true
+    label: CNC POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - description: |-
+      > [Add](8e3b0a1a-421c-4d0d-bb2c-c7d0af07116c)|[Remove](eec83222-22a5-46b9-9712-0b869442c27d)
+      ## CW/NSO Commit Options
+    enforced: true
+    label: Customer
+    name: customer
+    required: true
+    valuesUrl: file:/opt/cw/options/customers.json
+  - description: '## git options'
+    enforced: true
+    label: Commit Options
+    name: dry-run-options
+    required: true
+    valuesUrl: file:/opt/cw/options/nso-commit-options.json
+  - enforced: true
+    label: Sync
+    name: sync-option
+    required: true
+    value: 'true'
+    values:
+    - 'true'
+    - 'false'
+    valuesListDelimiter: ','
+  - enforced: true
+    label: git owner
+    name: git-owners
+    required: true
+    value: dcloud
+    valuesUrl: http://${option.proxy.value}/git/owners
+  - enforced: true
+    label: git repository
+    name: git-repos
+    required: true
+    value: slice-data
+    valuesUrl: http://${option.proxy.value}/git/myrepos/${option.git-owners.value}
+  - enforced: true
+    label: GIT Branch
+    name: git-branch
+    required: true
+    valuesUrl: http://${option.proxy.value}/git/branches/${option.git-owners.value}/${option.git-repos.value}
+  - enforced: true
+    label: Repo directories
+    name: git-dirs
+    required: true
+    value: slice_prereq-resource-pools
+    valuesUrl: http://${option.proxy.value}/git/content/dir/${option.git-owners.value}/${option.git-repos.value}/${option.git-branch.value}
+  - enforced: true
+    label: Resource Pools and allocators
+    name: resource-pools
+    required: true
+    sortValues: true
+    value: 1.1-resource-pools.json
+    valuesUrl: http://${option.proxy.value}/git/files/${option.git-owners.value}/${option.git-repos.value}/${option.git-branch.value}/${option.git-dirs.value}
+  - enforced: true
+    label: slice global pools
+    name: transport-pools
+    required: true
+    sortValues: true
+    value: 1.2-transport-slice-resource-pools.json
+    valuesUrl: http://${option.proxy.value}/git/files/${option.git-owners.value}/${option.git-repos.value}/${option.git-branch.value}/${option.git-dirs.value}
+  - enforced: true
+    label: global settings for resources
+    name: global-settings
+    required: true
+    sortValues: true
+    value: 1.3-transport-slice-global-settings.json
+    valuesUrl: http://${option.proxy.value}/git/files/${option.git-owners.value}/${option.git-repos.value}/${option.git-branch.value}/${option.git-dirs.value}
+  - hidden: true
+    name: now
+    required: true
+    value: ${DATE:yyyy-MM-dd-HH-mm-ss}
+  - enforced: true
+    hidden: true
+    name: proxy
+    required: true
+    value: proxy:3001
+    values:
+    - proxy:3001
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Dry run options
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: "if [ \"@option.dry-run-options@\" = \"commit\" ]\nthen\n    echo DRY_RUN_COMMAND=\"\
+        ?async-commit-queue=@option.sync-option@\"\n    echo RUN_EXPORT=false    \n\
+        else\n    echo DRY_RUN_COMMAND=\"@option.dry-run-options@\"\n    echo RUN_EXPORT=true\n\
+        fi"
+    - configuration:
+        authentication: None
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}-blob-resource-pools.json
+        headers: |
+          {"accept": "application/json","Authorization":"Bearer ${option.token}"}
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.resource-pools}
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get resource pools
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}-blob-transport-pools.json
+        headers: |
+          {"accept": "application/json","Authorization":"Bearer ${option.token}"}
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.transport-pools}
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get transport-pools
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}-blob-global-settings.json
+        headers: |
+          {"accept": "application/json","Authorization":"Bearer ${option.token}"}
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.global-settings}
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get global-settings
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: get names
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        resourcepools=/opt/cw/tmp/@job.execid@-blob-resource-pools.json
+        transportpools=/opt/cw/tmp/@job.execid@-blob-transport-pools.json
+        globalsettings=/opt/cw/tmp/@job.execid@-blob-global-settings.json
+        jq -r '"resource-pools-file="+(.name|tostring)' $resourcepools
+        jq -r '"transport-pools-file="+(.name|tostring)' $transportpools
+        jq -r '"global-settings-file="+(.name|tostring)' $globalsettings
+    - configuration:
+        authentication: None
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}-resource-pools.json
+        headers: |
+          {"accept": "application/json","Authorization":"Bearer ${option.token}"}
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.git}/api/v1/repos/${option.git-owners}/${option.git-repos}/raw/${option.git-dirs}/${data.resource-pools-file*}?ref=${option.git-branch}
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get resource-pools as JSON
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}-transport-pools.json
+        headers: |
+          {"accept": "application/json","Authorization":"Bearer ${option.token}"}
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.git}/api/v1/repos/${option.git-owners}/${option.git-repos}/raw/${option.git-dirs}/${data.transport-pools-file*}?ref=${option.git-branch}
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get transport-pools as JSON
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}-global-settings.json
+        headers: |
+          {"accept": "application/json","Authorization":"Bearer ${option.token}"}
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: ${option.git}/api/v1/repos/${option.git-owners}/${option.git-repos}/raw/${option.git-dirs}/${data.global-settings-file*}?ref=${option.git-branch}
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get global-settings as JSON
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: resource-pools
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: resource-pools-payload
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: |
+        file=/opt/cw/tmp/@job.execid@-resource-pools.json
+        jq -c '.' $file
+    - description: transport-pools
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: transport-pools-payload
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: |
+        file=/opt/cw/tmp/@job.execid@-transport-pools.json
+        jq -c '.' $file
+    - description: global-settings
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: global-settings-payload
+            regex: (.*)
+            replaceFilteredResult: 'false'
+          type: key-value-data
+      script: |
+        file=/opt/cw/tmp/@job.execid@-global-settings.json
+        jq -c '.' $file
+    - jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        project: CNC
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        body: ${data.resource-pools-payload*}
+        checkResponseCode: 'false'
+        headers: '{''Authorization'': ''Bearer ${export.cwtoken}'',''Content-Type'':
+          ''application/yang-data+json''}'
+        method: PATCH
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.cwvip}:30603/crosswork/proxy/nso/restconf/data${data.DRY_RUN_COMMAND*}
+        sslVerify: 'false'
+        timeout: '3000000'
+      description: Create resource-pools
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        body: ${data.transport-pools-payload*}
+        checkResponseCode: 'false'
+        headers: '{''Authorization'': ''Bearer ${export.cwtoken}'',''Content-Type'':
+          ''application/yang-data+json''}'
+        method: PATCH
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.cwvip}:30603/crosswork/proxy/nso/restconf/data${data.DRY_RUN_COMMAND*}
+        sslVerify: 'false'
+        timeout: '3000000'
+      description: Create transport-pools
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        authentication: None
+        body: ${data.global-settings-payload*}
+        checkResponseCode: 'false'
+        headers: '{''Authorization'': ''Bearer ${export.cwtoken}'',''Content-Type'':
+          ''application/yang-data+json''}'
+        method: PATCH
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.cwvip}:30603/crosswork/proxy/nso/restconf/data${data.DRY_RUN_COMMAND*}
+        sslVerify: 'false'
+        timeout: '3000000'
+      description: Create global-settings
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - configuration:
+        fail: 'false'
+        halt: 'true'
+      description: success
+      nodeStep: false
+      type: flow-control
+    keepgoing: false
+    strategy: node-first
+  uuid: c8b793ce-39b0-422b-a764-2827ff962001
+

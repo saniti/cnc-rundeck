@@ -1,0 +1,66 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: CNC/Configuration
+  id: 5636ffd7-9ebe-42d5-9730-a0655e7f74a6
+  loglevel: INFO
+  name: CNC - Add Configuration files
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: CNC POD
+    name: cnc-vip
+    required: true
+    value: 192.168.226.112
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - name: cnc-password
+    required: true
+    secure: true
+    storagePath: keys/cw/admin
+    valueExposed: true
+  - label: CNC User Name
+    name: cnc-user
+    required: true
+    value: admin
+  - description: paste data into this field
+    label: configFile
+    name: configFile
+    required: true
+    type: file
+  - label: version
+    name: version
+    value: 7.4.2
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - configuration:
+        debugOnly: 'false'
+      nodeStep: false
+      type: log-data-step
+    - jobref:
+        group: CNC
+        importOptions: true
+        name: CNC - Auth
+        uuid: 5fee437d-4fa6-4728-9601-0fac3a061ca9
+    - configuration:
+        authentication: None
+        body: '{"configFile":"${file.configFile}"}'
+        checkResponseCode: 'true'
+        headers: '{"content-type": "multipart/form-data","Authorization": "Bearer
+          ${export.cnc-token}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${option.cnc-vip}:30603/crosswork/configsvc/v1/configs/upload?confname=config-data.txt&osname=IOS-XR&version=${option.version}&devicefamily=CISCO%20NCS540
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 5636ffd7-9ebe-42d5-9730-a0655e7f74a6
+

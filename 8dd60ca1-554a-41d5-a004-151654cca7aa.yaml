@@ -1,0 +1,27 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  id: 8dd60ca1-554a-41d5-a004-151654cca7aa
+  loglevel: INFO
+  name: test1234
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - configuration:
+        command: jq '.[] | select(.name=="POD03 (.233)")."mgt-dns"' /opt/cw/options/cw-environments.json  |
+          tr -d '"'
+      nodeStep: true
+      type: localexec
+    - configuration:
+        command: jq '.[] | select(.name=="POD03 (.233)")."mgt-dns"' /opt/cw/options/cw-environments.json
+      nodeStep: true
+      type: localexec
+    - script: jq '.[] | select(.name=="POD03 (.233)")."mgt-dns"' /opt/cw/options/cw-environments.json
+        | tr -d '"'
+    keepgoing: true
+    strategy: node-first
+  uuid: 8dd60ca1-554a-41d5-a004-151654cca7aa
+

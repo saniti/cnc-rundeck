@@ -1,0 +1,53 @@
+- defaultTab: nodes
+  description: 'Discover CNC/NSO Services, ready for sync with GIT source control'
+  executionEnabled: true
+  group: -DEMO
+  id: 9417edf1-10dc-4df8-87d9-04cbeba35b3b
+  loglevel: INFO
+  name: CNC - Get CNC Services
+  nodeFilterEditable: false
+  notification:
+    onsuccess:
+      email:
+        recipients: device-details@necehealthpoc.local
+        subject: ${notification.eventStatus} ${job.name}
+  notifyAvgDurationThreshold: null
+  options:
+  - enforced: true
+    label: CW POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - enforced: true
+    label: Services
+    name: cnc-services
+    valuesUrl: file:/opt/cw/options/cnc-services.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - jobref:
+        group: CNC/Devices
+        importOptions: true
+        name: CNC - Get Services (all)
+        uuid: f6ea7ea5-2a82-4da2-86dc-f8aa8fc4fc46
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-cnc-service-details.json
+        headers: '{"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}'
+        method: GET
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/nbi/cat-inventory/v1/restconf/data/${option.cnc-services}
+        sslVerify: 'false'
+        timeout: '30000'
+      description: get CNC service details
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 9417edf1-10dc-4df8-87d9-04cbeba35b3b
+

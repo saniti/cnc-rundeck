@@ -1,0 +1,21 @@
+- defaultTab: nodes
+  description: Test and verification using robot scripts
+  executionEnabled: true
+  group: TEST/ZTP
+  id: d77ccb8a-2cf0-4120-857d-c2d91d680457
+  loglevel: INFO
+  name: ZTP - Verify Images
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: test
+      exec: echo ${job.name}
+    - description: test
+      exec: ip a | grep -i ens192 | grep -i inet
+    keepgoing: false
+    strategy: node-first
+  uuid: d77ccb8a-2cf0-4120-857d-c2d91d680457
+

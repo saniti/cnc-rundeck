@@ -1,0 +1,67 @@
+- defaultTab: nodes
+  description: |-
+    Removes all devices currently onboarded into CNC.
+    ---
+    - No validation is performed in regards to any KPI's associated
+    - No backups are taken
+    - If devices are discovered by PCE, they will return if onboard=`true` in provider setup
+  executionEnabled: true
+  group: CNC/Configuration
+  id: 1f7837c2-c3f8-4c7f-8069-26b3bb040fc8
+  loglevel: INFO
+  name: CNC - Offboard Devices [ALL]
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: CNC POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: get vars
+      jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - description: Get current device list
+      jobref:
+        group: CNC/Devices
+        importOptions: true
+        name: CNC - Device Details (all)
+        uuid: fe7a67f3-81bf-44c0-9361-fd2d7afb3cab
+    - configuration:
+        command: jq -c '{"data":[.[] | {"uuid":.id}]}' /opt/cw/options/${option.cnc-pod}-devices-short.json
+      description: JQ the file
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: delete-data
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        authentication: None
+        body: ${data.delete-data*}
+        checkResponseCode: 'false'
+        headers: '{"Content-Type": "application/json","Authorization": "Bearer ${export.cwtoken}"}'
+        method: DELETE
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/inventory/v1/nodes
+        sslVerify: 'false'
+        timeout: '30000'
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 1f7837c2-c3f8-4c7f-8069-26b3bb040fc8
+

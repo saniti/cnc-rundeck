@@ -1,0 +1,26 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  id: c3754188-af29-47c7-9b88-87439f00b424
+  loglevel: INFO
+  name: cli
+  nodeFilterEditable: false
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'name: dcloud-nso '
+  nodesSelectedByDefault: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - script: hostname
+    keepgoing: false
+    strategy: node-first
+  uuid: c3754188-af29-47c7-9b88-87439f00b424
+

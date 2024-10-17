@@ -1,0 +1,95 @@
+- defaultTab: nodes
+  description: Check to see if all NSO/CNC devices are in-sync with NSO
+  executionEnabled: true
+  group: -DEMO/2-CNC Device
+  id: fc3cd262-a1ec-47e4-8994-04b62bebdbe9
+  loglevel: INFO
+  name: NSO - Check Sync all devices
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    label: CW POD
+    name: cnc-pod
+    required: true
+    value: R1R2
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: get cnc token
+      jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        checkResponseCode: 'false'
+        file: /opt/cw/tmp/${job.execid}-sync-from.json
+        headers: '{"Content-Type": "application/yang-data+json","Authorization": "Bearer
+          ${export.cwtoken}"}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/operations/devices/check-sync
+        sslVerify: 'false'
+        timeout: '30000'
+      description: check sync
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: show file name
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |
+        echo 'file=/opt/cw/tmp/@job.execid@-sync-from.json'
+    - description: Show in sync
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      script: "file=/opt/cw/tmp/@job.execid@-sync-from.json\noutfile=/opt/cw/tmp/out-of-sync.json\n\
+        jq '[.[][][] | select(.result==\"in-sync\").device]' $file "
+    - description: Show out of sync
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-sync-from.json
+        outfile=/opt/cw/tmp/out-of-sync.json
+        jq '[.[][][] | select(.result=="out-of-sync").device]' $file > $outfile
+
+        cat $outfile
+    - description: Show others
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      script: |-
+        file=/opt/cw/tmp/@job.execid@-sync-from.json
+        outfile=/opt/cw/tmp/out-of-sync.json
+        jq '[.[][][] | select(.result!="in-sync")]' $file
+
+        cat $outfile
+    keepgoing: false
+    strategy: node-first
+  uuid: fc3cd262-a1ec-47e4-8994-04b62bebdbe9
+

@@ -1,0 +1,99 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  group: CNC/Services/L3
+  id: 6576242f-3512-4e90-a824-8c5c64ac542f
+  loglevel: INFO
+  name: CNC - Create VPN from Source
+  nodeFilterEditable: false
+  notification:
+    onsuccess:
+      email:
+        recipients: device-details@necehealthpoc.local
+        subject: ${notification.eventStatus} ${job.name}
+  notifyAvgDurationThreshold: null
+  options:
+  - enforced: true
+    label: CW POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - enforced: true
+    label: Service Type
+    name: service-type
+    required: true
+    value: l3vpn
+    values:
+    - l3vpn
+    valuesListDelimiter: ','
+  - enforced: true
+    label: GIT Branch
+    name: branch
+    required: true
+    value: develop
+    values:
+    - develop
+    - master
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Service Name
+    name: service-name
+    required: true
+    value: l3vpn-vpn-101
+    values:
+    - l3vpn-vpn-101
+    - l3vpn-vpn-102
+    valuesListDelimiter: ','
+  - label: New VLAN ID
+    name: vlan-id
+    required: true
+  - enforced: true
+    label: Endpoint 1
+    name: device-1
+    required: true
+    valuesUrl: file:/opt/cw/options/${option.cnc-pod.value}-devices.json
+  - enforced: true
+    label: Endpoint 2
+    name: device-2
+    required: true
+    valuesUrl: file:/opt/cw/options/${option.cnc-pod.value}-devices.json
+  - enforced: true
+    label: Endpoint 3
+    name: device-3
+    required: true
+    valuesUrl: file:/opt/cw/options/${option.cnc-pod.value}-devices.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - description: checkout service
+      script: |
+        cd /opt/source
+        if [ -d "/opt/source/l3vpn" ]; then
+            cd l3vpn
+            git fetch --force
+        else
+            git clone auto@198.18.133.102:dcloud/l3vpn.git -b @option.branch@
+        fi
+
+        base=$(jq -c '(..|objects|select(has("cvlan-id")))."cvlan-id" |= @option.vlan-id@' /opt/source/l3vpn/@option.service-name@.json)
+        base=$(echo $base | jq -c '(..|objects|select(has("vpn-id")))."vpn-id" |= "@option.service-name@"')
+        echo $base | jq .
+    - configuration:
+        command: 'curl -k --location --request PATCH ''https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data''
+          --header ''Content-Type: application/yang-data+json'' --header ''Accept:
+          application/yang-data+json'' --header ''Authorization: Bearer ${export.cwtoken}''
+          --data-binary ''@/opt/source/l3vpn/${option.service-name}.json'''
+      description: post data
+      nodeStep: true
+      type: localexec
+    keepgoing: false
+    strategy: node-first
+  uuid: 6576242f-3512-4e90-a824-8c5c64ac542f
+

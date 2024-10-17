@@ -1,0 +1,41 @@
+- defaultTab: nodes
+  description: Add a tag to a current node
+  executionEnabled: true
+  group: Rundeck Nodes
+  id: 33f5633a-9af7-44fe-925e-a06b9dfb90c6
+  loglevel: INFO
+  name: node tags - ADD
+  nodeFilterEditable: false
+  options:
+  - delimiter: ','
+    description: THe node list from last time this was run. Expect to be updated
+    enforced: true
+    label: List of current nodes
+    multivalued: true
+    name: current-node-list
+    required: true
+    valuesUrl: file:/opt/cw/nodes.json
+  - delimiter: ','
+    label: New tags
+    multivalued: true
+    name: tags
+    required: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: add tags
+      script: |-
+        file=/opt/cw/nodes/@option.current-node-list@.json
+        newfile=$(jq '.[].tags += ","+"@option.tags@"' $file)
+        echo "$newfile" | jq . > $file
+        echo file : $file
+        cat $file
+    - description: refresh node list
+      nodeStep: false
+      type: source-refresh-plugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 33f5633a-9af7-44fe-925e-a06b9dfb90c6
+

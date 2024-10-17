@@ -1,0 +1,26 @@
+- defaultTab: nodes
+  description: ''
+  executionEnabled: true
+  id: 64bc3515-e412-4d5f-85dd-3c7065a85656
+  loglevel: INFO
+  name: test
+  nodeFilterEditable: false
+  nodefilters:
+    dispatch:
+      excludePrecedence: true
+      keepgoing: false
+      rankOrder: ascending
+      successOnEmptyNodeFilter: false
+      threadcount: '1'
+    filter: 'name: swr5'
+  nodesSelectedByDefault: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - exec: sh version
+    keepgoing: false
+    strategy: node-first
+  uuid: 64bc3515-e412-4d5f-85dd-3c7065a85656
+

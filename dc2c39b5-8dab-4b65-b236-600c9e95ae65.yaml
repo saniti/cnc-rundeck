@@ -1,0 +1,183 @@
+- defaultTab: nodes
+  description: |
+    Create a VM and attach an existing ISO file
+  executionEnabled: true
+  group: Virtual Machines
+  id: dc2c39b5-8dab-4b65-b236-600c9e95ae65
+  loglevel: INFO
+  name: Deploy VM - NSO
+  nodeFilterEditable: false
+  options:
+  - label: VM name (vCenter)
+    name: VM-1-Name
+    required: true
+  - description: '> [Discover](3ace6b49-f8c9-46f5-acac-8313ca5aa086)'
+    enforced: true
+    label: Name of ISO file
+    name: iso-file
+    required: true
+    value: ubuntu-18.04.6-live-server-amd64.iso
+    valuesUrl: file:/opt/cw/options/iso-files.json
+  - description: '> Operating system type for the selected ISO image'
+    label: Operating System
+    name: os-type
+    required: true
+    value: ubuntu64Guest
+    valuesUrl: file:/opt/cw/options/vmware-os-types.json
+  - enforced: true
+    label: ESX Host (VM1)
+    name: Host-1
+    required: true
+    valuesUrl: file:/tmp/hosts.json
+  - enforced: true
+    label: Datastore for VM1
+    name: Datastore-1
+    required: true
+    valuesUrl: file:/tmp/datastores.json
+  - delimiter: ','
+    enforced: true
+    label: Networks To Attach
+    multivalued: true
+    name: networks
+    value: Network (1)
+    values:
+    - Network (1)
+    - Network (2)
+    - Network (3)
+    valuesListDelimiter: ','
+  - enforced: true
+    label: First Network
+    name: network-1
+    required: true
+    valuesUrl: file:/tmp/networks.json
+  - enforced: true
+    label: Second Network
+    name: network-2
+    valuesUrl: file:/tmp/networks.json
+  - enforced: true
+    label: Number of CPUs
+    name: vCPU
+    required: true
+    value: '2'
+    values:
+    - '16'
+    - '2'
+    - '4'
+    - '8'
+    valuesListDelimiter: ','
+  - hidden: true
+    name: vCenter-host
+    required: true
+    secure: true
+    storagePath: keys/vmware/vc-address
+    valueExposed: true
+  - hidden: true
+    name: vCenter-passwd
+    secure: true
+    storagePath: keys/vmware/vc-password
+    valueExposed: true
+  - hidden: true
+    name: vCenter-username
+    required: true
+    secure: true
+    storagePath: keys/vmware/vc-user
+    valueExposed: true
+  - label: Disk Size in GB
+    name: vDisk
+    required: true
+    value: 200GB
+    values:
+    - 100GB
+    - 200GB
+    - 400GB
+    - 500GB
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Memory in MB
+    name: vMEM
+    required: true
+    value: '4096'
+    values:
+    - '16392'
+    - '32768'
+    - '4096'
+    - '65536'
+    - '8192'
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: 'echo ''@option.iso-file@'' | jq --raw-input --raw-output ''split("
+        ") | (["ISO-DS",.[:1][]]|join("=")) as $ds | .[1:]|join(" ") | ["ISO-PATH",.]|join("=")
+        as $path | $ds,$path'''
+    - description: ds-1
+      exec: echo "${option.Datastore-1}"
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: ds-1
+            regex: .*\/([^\/]+$)
+          type: key-value-data
+    - description: host-1
+      exec: echo "${option.Host-1}"
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: host-1
+            regex: .*\/([^\/]+$)
+          type: key-value-data
+    - description: iso-ds
+      exec: echo "${option.ISO_Datastore}"
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: iso-ds
+            regex: .*\/([^\/]+$)
+          type: key-value-data
+    - description: network1
+      exec: echo "${option.network-1}"
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: net-1
+            regex: .*\/([^\/]+$)
+          type: key-value-data
+    - description: iso-file
+      exec: echo "${option.iso-file}"
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: iso-file
+            regex: .*].(.*)
+          type: key-value-data
+    - description: Deploy VM
+      script: "export GOVC_URL=@option.vCenter-host@\nexport GOVC_USERNAME=@option.vCenter-username@\n\
+        export GOVC_PASSWORD=@option.vCenter-passwd@\nexport GOVC_INSECURE=1\n\nenv\
+        \ | grep -i govc\n\n# Deploy \ngovc vm.create -k -g=@option.os-type@ -c=@option.vCPU@\
+        \ -m=@option.vMEM@ -ds='@data.ds-1*@' -host='@data.host-1*@' -disk='@option.vDisk@'\
+        \ -net='@data.net-1*@' -disk-datastore='@data.ds-1*@' -iso-datastore='@data.ISO-DS*@'\
+        \ -iso='@data.ISO-PATH*@' '@option.VM-1-Name@'"
+    keepgoing: false
+    strategy: sequential
+  uuid: dc2c39b5-8dab-4b65-b236-600c9e95ae65
+

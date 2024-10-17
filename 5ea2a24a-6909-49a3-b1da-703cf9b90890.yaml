@@ -1,0 +1,126 @@
+- defaultTab: nodes
+  description: |-
+    Run a device level command through NSO live-status
+    ---
+    Rundeck > Crosswork API > NSO > Device CLI
+  executionEnabled: true
+  group: -DEMO
+  id: 5ea2a24a-6909-49a3-b1da-703cf9b90890
+  loglevel: INFO
+  multipleExecutions: true
+  name: Run command (live status)
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    hidden: true
+    name: proxy
+    required: true
+    value: proxy:3001
+    values:
+    - proxy:3001
+    valuesListDelimiter: ','
+  - enforced: true
+    label: CW POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - enforced: true
+    label: All Devices?
+    name: all-devices
+    required: true
+    value: 'false'
+    values:
+    - 'true'
+    - 'false'
+    valuesListDelimiter: ','
+  - delimiter: ','
+    enforced: true
+    multivalued: true
+    name: device
+    required: true
+    valuesUrl: http://${option.proxy.value}/devices
+  - enforced: true
+    name: device_type
+    value: junos
+    valuesUrl: http://${option.proxy.value}/device/type/${option.device.value}
+  - label: CLI Command
+    name: cli-command
+    required: true
+    value: show ip int br
+    values:
+    - show ip int br
+    - show interfaces
+    - show bgp
+    valuesListDelimiter: ','
+    valuesUrl: file:/opt/cw/options/nso-live-status-commands.json
+  - hidden: true
+    name: nso-host
+    required: true
+    secure: true
+    storagePath: keys/project/CNC/nso-local
+    valueExposed: true
+  - description: keys/project/CNC/nso-local-pass
+    hidden: true
+    name: nso-pass
+    required: true
+    secure: true
+    storagePath: keys/project/CNC/nso-local-pass
+    valueExposed: true
+  - hidden: true
+    name: nso-user
+    required: true
+    secure: true
+    storagePath: keys/project/CNC/nso-local-user
+    valueExposed: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: create basic auth
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: basic-auth
+            regex: (.*)
+          type: key-value-data
+      script: echo -n @option.nso-user@:@option.nso-pass@ | base64
+    - configuration:
+        debugOnly: 'false'
+      nodeStep: false
+      type: log-data-step
+    - configuration:
+        authentication: None
+        body: |-
+          {
+            "input":
+            {
+              "args": "${option.cli-command}"
+            }
+          }
+        checkResponseCode: 'false'
+        headers: '{''Content-Type'':''application/yang-data+json'',''Authorization'':''Basic
+          ${data.basic-auth*}''}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'false'
+        proxySettings: 'false'
+        remoteUrl: ${option.nso-host}/restconf/operations/devices/device=${option.device}/live-status/${option.device-type}:exec/any
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Run command on device
+      nodeStep: false
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    keepgoing: false
+    strategy: node-first
+  uuid: 5ea2a24a-6909-49a3-b1da-703cf9b90890
+

@@ -1,0 +1,131 @@
+- defaultTab: nodes
+  description: |-
+    Baseline GIT source control with current CNC services
+    ---
+    [CM Authentication](1960ef3e-ddcc-4400-9012-259267f7399b)
+
+    [Refresh GIT Repositories](37da7e27-068e-4bac-80b0-bd503f702416)
+  executionEnabled: true
+  group: -DEMO/BackupAndRestore
+  id: 36fba0a9-e80e-4496-b1f0-5b49db66776e
+  loglevel: INFO
+  name: BACKUP - Put all running services under version control in GIT
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    hidden: true
+    name: proxy
+    required: true
+    value: proxy:3001
+    values:
+    - proxy:3001
+    valuesListDelimiter: ','
+  - enforced: true
+    label: CNC POD
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - enforced: true
+    label: git repo  owner
+    name: git-owners
+    required: true
+    valuesUrl: http://${option.proxy.value}/git/owners
+  - description: '> [New](ea8132cd-b104-4c31-8028-2d08289fca52)'
+    enforced: true
+    label: 'git repo '
+    name: git-repos
+    required: true
+    valuesUrl: http://${option.proxy.value}/git/myrepos/${option.git-owners.value}
+  - enforced: true
+    label: 'GIT Branch '
+    name: git-branch
+    required: true
+    valuesUrl: http://${option.proxy.value}/git/branches/${option.git-owners.value}/${option.git-repos.value}
+  - enforced: true
+    label: Repo directories
+    name: git-dirs
+    required: true
+    valuesUrl: http://${option.proxy.value}/git/content/dir/${option.git-owners.value}/${option.git-repos.value}/${option.git-branch.value}
+  - label: New Directory (if required)
+    name: repo-new-dir
+  - hidden: true
+    label: Current time
+    name: now
+    required: true
+    value: ${DATE:yyyy-MM-dd-HH-mm-ss}
+  - enforced: true
+    hidden: true
+    name: cw-port
+    required: true
+    value: '30603'
+    values:
+    - '30603'
+    valuesListDelimiter: ','
+  - hidden: true
+    name: git
+    secure: true
+    storagePath: keys/git/repo
+    valueExposed: true
+  - description: '- optional. If used, keep note of this tag for the restoration.
+      Otherwise, leave blank to commit to branch without a commit.'
+    label: Tag for the commit
+    name: tag
+  - hidden: true
+    name: git-auto
+    secure: true
+    storagePath: keys/gitea/git-auto
+    valueExposed: true
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: check if new folder
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: "if [ -z \"@option.repo-new-dir@\" ]; then\n    echo git-dir=@option.git-dirs@\n\
+        else\n    echo git-dir=@option.repo-new-dir@    \nfi\n"
+    - description: get cnc data
+      jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - description: Get CNC Service list
+      jobref:
+        group: -DEMO
+        importOptions: true
+        name: CNC - Get CNC Services
+        uuid: 9417edf1-10dc-4df8-87d9-04cbeba35b3b
+    - description: Commit files
+      script: "infile=/opt/cw/options/cnc-services.json\noutfile=/opt/cw/tmp/test.txt\n\
+        gitbase=/opt/cw/options/git/@option.git-owners@\ngitrepo=$gitbase/@option.git-repos@\n\
+        gitfolder=$gitrepo/@data.git-dir*@\n\nrm -rf '/opt/cw/options/git/@option.git-owners@/@option.git-repos@'\n\
+        mkdir -p $gitbase\n\njq -r '.[].value' $infile > $outfile\nlines=$(jq -r '.[].value'\
+        \ $infile)\n\n## Git Actions\npushd $gitbase; pwd\necho clone command\\\\\
+        t:  git clone @option.git@/@option.git-owners@/@option.git-repos@.git -b @option.git-branch@\n\
+        git clone @option.git-auto@/@option.git-owners@/@option.git-repos@.git -b\
+        \ @option.git-branch@\n\nmkdir -p $gitfolder\ncp /opt/cw/options/cnc-services.json\
+        \ $gitfolder\n\nls $gitdir\ncd /opt/cw/tmp\necho > /opt/cw/tmp/run.sh\nwhile\
+        \ IFS= read -r line; do\n    IFS==\n    read -a fname <<< \"$line\"\n    echo\
+        \ working on $line ...\n    pwd\n    echo file name is ${fname[1]}\n    echo\
+        \ \"curl -k --location --request GET https://@export.mgtvip@:@option.cw-port@/crosswork/proxy/nso/restconf/data/${line[0]}\
+        \ --header 'Content-Type: application/yang-data+json' --header 'Authorization:\
+        \ Bearer @export.cwtoken@' --output $gitfolder/${fname[1]}.json\" >> /opt/cw/tmp/run.sh\n\
+        \    curl -k --location --request GET \"https://@export.mgtvip@:@option.cw-port@/crosswork/proxy/nso/restconf/data/${line[0]}\"\
+        \ --header 'Content-Type: application/yang-data+json' --header 'Authorization:\
+        \ Bearer @export.cwtoken@' --output \"$gitfolder/${fname[1]}.json\"\n    IFS=\
+        \    \ndone <<< \"$lines\"\n\ncd $gitfolder\ngit pull --rebase\nnow=$(date\
+        \ +\"%d-%m-%Y-%M-%S\")\ntag=$(date +\"%d-%m-%Y\")\ngit tag $tag\ngit tag @option.tag@\n\
+        git add *\ngit commit -m \"baseline $now\"\ngit push\ngit push origin --tags\n\
+        \n"
+    keepgoing: false
+    strategy: node-first
+  uuid: 36fba0a9-e80e-4496-b1f0-5b49db66776e
+

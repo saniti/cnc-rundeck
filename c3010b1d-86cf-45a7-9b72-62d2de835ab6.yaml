@@ -1,0 +1,82 @@
+- defaultTab: nodes
+  description: |-
+    Get UUID of Crosswork data gateway
+    # Overview
+    Get UUID of providers
+  executionEnabled: true
+  group: CNC/Setup
+  id: c3010b1d-86cf-45a7-9b72-62d2de835ab6
+  loglevel: INFO
+  name: CNC - Get CDG
+  nodeFilterEditable: false
+  notification:
+    onstart:
+      email:
+        recipients: siprice@cisco.com
+        subject: siprice@cisco.com
+  notifyAvgDurationThreshold: null
+  options:
+  - enforced: true
+    label: Crosswork Deployment VIP
+    name: cnc-pod
+    required: true
+    valuesUrl: file:/opt/cw/options/cw-environments.json
+  - enforced: true
+    name: cdg
+    valuesUrl: file:/opt/cw/options/cdg.json
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Get CNC vars
+      jobref:
+        group: CNC/Configuration
+        importOptions: true
+        name: get key vars v3
+        uuid: c3b0db66-3fdd-49b7-a5b5-4261a0ff3463
+    - configuration:
+        authentication: None
+        body: '{}'
+        checkResponseCode: 'true'
+        file: /opt/cw/tmp/${job.execid}.json
+        headers: '{''Authorization'': ''Bearer ${export.cwtoken}'',''Content-Type'':
+          ''application/json''}'
+        method: POST
+        printResponse: 'true'
+        printResponseToFile: 'true'
+        proxySettings: 'false'
+        remoteUrl: https://${export.mgtvip}:30603/crosswork/dg-manager/v1/vdg/query
+        responseCode: '200'
+        sslVerify: 'false'
+        timeout: '30000'
+      description: Get Providers
+      nodeStep: false
+      type: edu.ohio.ais.rundeck.HttpWorkflowStepPlugin
+    - description: create file
+      script: 'jq ''[.data | .[] | {name: .name, value: .vdgUuid}]'' /opt/cw/tmp/@job.execid@.json
+        > /opt/cw/options/cdg.json'
+    - configuration:
+        command: jq -r '.data[].vdgUuid' /opt/cw/tmp/${job.execid}.json
+      description: CDG uuid
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            invalidKeyPattern: \s|\$|\{|\}|\\
+            logData: 'true'
+            name: cdg-uuid
+            regex: (.*)
+          type: key-value-data
+      type: localexec
+    - configuration:
+        export: cdg-uuid
+        group: export
+        value: ${data.cdg-uuid*}
+      description: export cdg-uuid
+      nodeStep: false
+      type: export-var
+    keepgoing: false
+    strategy: node-first
+  uuid: c3010b1d-86cf-45a7-9b72-62d2de835ab6
+

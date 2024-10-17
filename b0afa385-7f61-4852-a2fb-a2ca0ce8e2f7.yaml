@@ -1,0 +1,29 @@
+- defaultTab: nodes
+  description: '- Show properties of all PODs'
+  executionEnabled: true
+  group: CNC/POD
+  id: b0afa385-7f61-4852-a2fb-a2ca0ce8e2f7
+  loglevel: INFO
+  name: Show All PODs
+  nodeFilterEditable: false
+  plugins:
+    ExecutionLifecycle: null
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - configuration:
+        command: jq 'map(."-name-" = .name | del(.name))' /opt/cw/options/cw-environments.json
+      description: show props
+      nodeStep: true
+      plugins:
+        LogFilter:
+        - config:
+            datatype: application/json
+            sanitizeHtml: 'true'
+            striped: 'true'
+          type: render-datatype
+      type: localexec
+    keepgoing: false
+    strategy: node-first
+  uuid: b0afa385-7f61-4852-a2fb-a2ca0ce8e2f7
+

@@ -1,0 +1,163 @@
+- defaultTab: nodes
+  description: |
+    Create a VM and attach an existing ISO file
+    ---
+    * Node should already be created using the create rundeck node job
+    * Properties of the node such as name will be used as the vm name
+  executionEnabled: true
+  group: Virtual Machines
+  id: f5a8f548-db3e-4bbe-996d-d4cf38fe981c
+  loglevel: INFO
+  name: Deploy VM v2
+  nodeFilterEditable: false
+  options:
+  - enforced: true
+    hidden: true
+    name: path
+    required: true
+    value: /backup/keys/keys/vmware
+    values:
+    - /backup/keys/keys/vmware
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Environment
+    name: scope
+    required: true
+    valuesUrl: file:/opt/cw/options/vmw-environments.json
+  - enforced: true
+    label: Rundeck Node
+    name: node
+    valuesUrl: file:/opt/cw/nodes.json
+  - description: '> [Discover](3ace6b49-f8c9-46f5-acac-8313ca5aa086)'
+    enforced: true
+    label: Name of ISO file
+    name: iso-file
+    required: true
+    value: ubuntu-18.04.6-live-server-amd64.iso
+    valuesUrl: file:/opt/cw/options/iso-files-${option.scope.value}.json
+  - description: '> Operating system type for the selected ISO image'
+    label: Operating System
+    name: os-type
+    required: true
+    value: ubuntu64Guest
+    valuesUrl: file:/opt/cw/options/vmware-os-types.json
+  - enforced: true
+    label: ESX Host (VM1)
+    name: vm-host
+    required: true
+    valuesUrl: file:/opt/cw/tmp/${option.scope.value}-hosts.json
+  - enforced: true
+    label: Datastore for VM1
+    name: vm-datastore
+    required: true
+    valuesUrl: file:/opt/cw/tmp/${option.scope.value}-datastores.json
+  - enforced: true
+    label: First Network
+    name: network-1
+    required: true
+    valuesUrl: file:/opt/cw/tmp/${option.scope.value}-networks.json
+  - enforced: true
+    label: Number of CPUs
+    name: vm-cpu
+    required: true
+    value: '2'
+    values:
+    - '16'
+    - '2'
+    - '4'
+    - '8'
+    valuesListDelimiter: ','
+  - label: Disk Size in GB
+    name: vm-disk
+    required: true
+    value: 200GB
+    values:
+    - 100GB
+    - 200GB
+    - 400GB
+    - 500GB
+    valuesListDelimiter: ','
+  - enforced: true
+    label: Memory in MB
+    name: vm-mem
+    required: true
+    value: '4096'
+    values:
+    - '16392'
+    - '32768'
+    - '4096'
+    - '65536'
+    - '8192'
+    valuesListDelimiter: ','
+  plugins:
+    ExecutionLifecycle: {}
+  scheduleEnabled: true
+  sequence:
+    commands:
+    - description: Get vars
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: "filein=/opt/cw/options/vmw-environments.json\n#jq -r '.[] | select(.name==\"\
+        @option.cnc-vip@\").\"mgt-vip\"' /opt/cw/options/cw-environments.json \njq\
+        \ --raw-output '.[] | select(.value==\"@option.scope@\") | to_entries[] |\
+        \  [.key,.value]|join(\"=\")' $filein"
+    - description: Set vars
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        echo GOVC_URL=$(cat @option.path@/@data.proxy*@-vc-address)
+        echo GOVC_USERNAME=$(cat @option.path@/@data.proxy*@-vc-user)
+        echo GOVC_PASSWORD=$(cat @option.path@/@data.proxy*@-vc-password)
+        echo GOVC_INSECURE=1
+    - description: Get node properties
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: |-
+        infile=/opt/cw/nodes/@option.node@.json
+        jq -r '.[]|to_entries[] | [.key,.value]|join("=")' $infile
+        jq -r 'keys[] | "node="+.' $infile
+    - description: ISO datastore and file
+      plugins:
+        LogFilter:
+        - config:
+            captureMultipleKeysValues: 'true'
+            hideOutput: 'false'
+            logData: 'true'
+            regex: ^(.+?)\s*=\s*(.+)
+          type: key-value-data-multilines
+      script: 'echo ''@option.iso-file@'' | jq --raw-input --raw-output ''split("
+        ") | (["ISO-DS",.[:1][]]|join("=")) as $ds | .[1:]|join(" ") | ["ISO-PATH",.]|join("=")
+        as $path | $ds,$path'''
+    - description: Deploy VM
+      script: "export GOVC_URL=@data.GOVC_URL*@\nexport GOVC_USERNAME=@data.GOVC_USERNAME*@\n\
+        export GOVC_PASSWORD=@data.GOVC_PASSWORD*@\nexport GOVC_INSECURE=@data.GOVC_INSECURE*@\n\
+        \nenv | grep -i govc\n\n# Deploy \necho govc vm.create -k -g=@option.os-type@\
+        \ -c=@option.vm-cpu@ -m=@option.vm-mem@ -ds='@option.vm-datastore@' -host='@option.vm-host@'\
+        \ -disk='@option.vm-disk@' -net='@option.network-1@' -disk-datastore='@option.vm-datastore@'\
+        \ -iso-datastore='@data.ISO-DS*@' -iso='@data.ISO-PATH*@' '@option.vm-name@'\n\
+        govc vm.create -k -g=@option.os-type@ -c=@option.vm-cpu@ -m=@option.vm-mem@\
+        \ -ds='@option.vm-datastore@' -host='@option.vm-host@' -disk='@option.vm-disk@'\
+        \ -net='@option.network-1@' -disk-datastore='@option.vm-datastore@' -iso-datastore='@data.ISO-DS*@'\
+        \ -iso='@data.ISO-PATH*@' '@data.node*@'"
+    keepgoing: false
+    strategy: sequential
+  uuid: f5a8f548-db3e-4bbe-996d-d4cf38fe981c
+
