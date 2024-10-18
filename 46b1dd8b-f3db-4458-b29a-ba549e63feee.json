@@ -9,7 +9,7 @@
   "nodeFilterEditable" : false,
   "options" : [ {
     "enforced" : true,
-    "label" : "VIP for CNC",
+    "label" : "CNC POD",
     "name" : "cnc-vip",
     "required" : true,
     "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
@@ -94,7 +94,7 @@
           "type" : "key-value-data-multilines"
         } ]
       },
-      "script" : "#echo '@option.app-file@' | jq -c --raw-input --raw-output 'split(\",\")[] | [\"@data.pod-location-scp*@\",.]|join(\"/\")'\necho '@option.app-file@' | jq -c --raw-input --raw-output 'split(\",\")[] | \"file-list=\"+([\"@data.pod-location-scp*@\",.]|join(\"/\")|tostring)'"
+      "script" : "#echo '@option.app-file@' | jq -c --raw-input --raw-output 'split(\",\")[] | [\"@data.pod-location-scp*@\",.]|join(\"/\")'\n\nif [ \"@option.method@\"==\"scp\" ]\nthen \n    echo '@option.app-file@' | jq -c --raw-input --raw-output 'split(\",\")[] | \"file-list=\"+([\"@data.pod-location-scp*@\",.]|join(\"/\")|tostring)'\nfi \nif [ \"@option.method@\"==\"http\" ]\nthen \n    echo '@option.app-file@' | jq -c --raw-input --raw-output 'split(\",\")[] | \"file-list=\"+([\"@data.pod-location-http*@\",.]|join(\"/\")|tostring)'\nfi "
     }, {
       "description" : "test update process",
       "script" : "if [ @option.showorrun@ == \"show\" ]\nthen \n    for i in `echo '@option.app-file@' | jq -c --raw-input --raw-output 'split(\",\")[] | ([\"@data.pod-location-scp*@\",\"cnc-fp\",.]|join(\"/\")|tostring)'`; do echo $(echo curl -k --location --request POST https://@export.mgtvip@:@option.cw-port@/crosswork/platform/v2/capp/repository/packagedata --header \\'Content-Type: application/x-www-form-urlencoded\\' --header \\'Accept: text/plain\\' --header \\'Cache-Control: no-cache\\' --header \\'Authorization: Bearer @export.cwtoken@\\' --data-binary \\'\\{\\\"remote_file\\\":\\\"$i\\\",\\\"ssh_config\\\":\\{\\\"remote_host\\\":\\\"@data.pod-scp-host*@\\\",\\\"username\\\":\\\"@data.pod-scp-user*@\\\",\\\"password\\\":\\\"@data.pod-scp-pass*@\\\",\\\"port\\\":22\\}\\}\\'); done\nelse \n    for i in `echo '@option.app-file@' | jq -c --raw-input --raw-output 'split(\",\")[] | ([\"@data.pod-location-scp*@\",\"cnc-fp\",.]|join(\"/\")|tostring)'`; do eval $(echo curl -k --location --request POST https://@export.mgtvip@:@option.cw-port@/crosswork/platform/v2/capp/repository/packagedata --header \\'Content-Type: application/x-www-form-urlencoded\\' --header \\'Accept: text/plain\\' --header \\'Cache-Control: no-cache\\' --header \\'Authorization: Bearer @export.cwtoken@\\' --data-binary \\'\\{\\\"remote_file\\\":\\\"$i\\\",\\\"ssh_config\\\":\\{\\\"remote_host\\\":\\\"@data.pod-scp-host*@\\\",\\\"username\\\":\\\"@data.pod-scp-user*@\\\",\\\"password\\\":\\\"@data.pod-scp-pass*@\\\",\\\"port\\\":22\\}\\}\\'); done\nfi \n\nfalse\n\n"

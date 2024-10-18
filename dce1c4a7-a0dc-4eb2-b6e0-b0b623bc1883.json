@@ -15,7 +15,7 @@
     "valuesUrl" : "file:/opt/cw/options/vmw-environments.json"
   } ],
   "plugins" : {
-    "ExecutionLifecycle" : { }
+    "ExecutionLifecycle" : null
   },
   "scheduleEnabled" : true,
   "sequence" : {

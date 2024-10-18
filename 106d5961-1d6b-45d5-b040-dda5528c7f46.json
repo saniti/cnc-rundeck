@@ -23,6 +23,24 @@
     "required" : true,
     "valuesUrl" : "file:/opt/cw/deploy/${option.type.value}-deployments.json"
   }, {
+    "description" : "> Create the template rather than VM",
+    "enforced" : true,
+    "label" : "Create as template?",
+    "name" : "createastemplate",
+    "required" : true,
+    "value" : "true",
+    "values" : [ "true", "false" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "> Power on after deployment",
+    "enforced" : true,
+    "label" : "Power ON",
+    "name" : "poweron",
+    "required" : true,
+    "value" : "false",
+    "values" : [ "true", "false" ],
+    "valuesListDelimiter" : ","
+  }, {
     "description" : "[Refresh](63ea1c17-56d8-4f9e-bb94-e6983f8db3e1)",
     "enforced" : true,
     "label" : "VMware Hosting",
@@ -39,7 +57,7 @@
     "valuesListDelimiter" : ","
   } ],
   "plugins" : {
-    "ExecutionLifecycle" : { }
+    "ExecutionLifecycle" : null
   },
   "scheduleEnabled" : true,
   "sequence" : {
@@ -72,8 +90,8 @@
       },
       "script" : "spec=$(jq -c . '@data.pod-spec*@')\necho $spec | jq --raw-output 'del(..|objects|select(has(\"PropertyMapping\")).\"PropertyMapping\") | del(..|objects|select(has(\"NetworkMapping\")).\"NetworkMapping\") | to_entries[] | [((\"deploy-\"+.key)|tostring),(.value|tostring)]|join(\"=\")'\necho $spec | jq --raw-output '..|objects|select(has(\"PropertyMapping\")).\"PropertyMapping\"| .[] | [.Key,.Value]|join(\"=\")'\necho $spec | jq --raw-output '..|objects|select(has(\"NetworkMapping\")).\"NetworkMapping\"| .[] | [.Name,.Network]|join(\"=\")'"
     }, {
-      "description" : "deployment properties",
-      "script" : "export GOVC_URL=@data.hosting-vmw-ip*@ \nexport GOVC_USERNAME=@data.hosting-user*@ \nexport GOVC_PASSWORD=@data.hosting-password*@ \nexport GOVC_INSECURE=1 \n\nif [ \"@option.show@\" == \"false\" ]\nthen \n\n    if [ \"@data.pod-overwrite*@\" == \"true\" ]\n    then\n        echo Destroying existing VM\n        govc vm.destroy \"@data.pod-host-name*@\"\n    fi\n    \n    echo @data.pod-command-line*@\n    @data.pod-command-line*@ > /dev/null\n    govc vm.change -vm \"@data.pod-host-name*@\" -c=@data.pod-cpu*@ -m=@data.pod-mem@\n    govc vm.change -vm \"@data.pod-host-name*@\" -e vcpu.hotadd=true -e mem.hotadd=true\n    govc vm.change -vm \"@data.pod-host-name*@\" -annotation \"Deployed by rundeck job: @job.execid@. Image file:@data.pod-image*@\", using spec: /opt/cw/tmp/@job.execid@\n    govc vm.power -on \"@data.pod-host-name*@\"\n\nelse \n    if [ \"@data.pod-overwrite*@\" == \"true\" ]\n    then\n        echo Destroying existing VM\n        echo govc vm.destroy \"@data.pod-host-name*@\"\n    fi\n    \n    echo @data.pod-command-line*@\n    #@data.pod-command-line*@ > /dev/null\n    echo govc vm.change -vm \"@data.pod-host-name*@\" -c=@data.pod-cpu*@ -m=@data.pod-mem@\n    echo govc vm.change -vm \"@data.pod-host-name*@\" -e vcpu.hotadd=true -e mem.hotadd=true\n    echo govc vm.change -vm \"@data.pod-host-name*@\" -annotation \"Deployed by rundeck job: @job.execid@. Image file:@data.pod-image*@\", using spec: /opt/cw/tmp/@job.execid@\n    echo govc vm.power -on \"@data.pod-host-name*@\"\nfi "
+      "description" : "deployment commands",
+      "script" : "export GOVC_URL=@data.hosting-vmw-ip*@ \nexport GOVC_USERNAME=@data.hosting-user*@ \nexport GOVC_PASSWORD=@data.hosting-password*@ \nexport GOVC_INSECURE=1 \n\nif [ \"@option.show@\" == \"false\" ]\nthen \n\n    if [ \"@data.pod-overwrite*@\" == \"true\" ]\n    then\n        echo Destroying existing VM/template\n        govc vm.destroy \"@data.pod-host-name*@\"\n    fi\n    \n    echo @data.pod-command-line*@\n    @data.pod-command-line*@ > /dev/null\n    govc vm.change -vm \"@data.pod-host-name*@\" -c=@data.pod-cpu*@ -m=@data.pod-mem@\n    govc vm.change -vm \"@data.pod-host-name*@\" -e vcpu.hotadd=true -e mem.hotadd=true\n    govc vm.change -vm \"@data.pod-host-name*@\" -annotation \"Deployed by rundeck job: @job.execid@. Image file:@data.pod-image*@\", using spec: /opt/cw/tmp/@job.execid@\n\n    if [ \"@option.createastemplate@\" == \"true\" ]\n    then\n        echo marking as template ... \n        govc find -type m -name \"@data.pod-host-name*@\" | xargs -I % govc vm.markastemplate %\n    fi \n\n    if [ \"@option.poweron\" == \"true\" ]\n        then \n            govc vm.power -on \"@data.pod-host-name*@\"\n        else\n            echo Not powering on vm/template \n    fi \n\nelse \n    if [ \"@data.pod-overwrite*@\" == \"true\" ]\n    then\n        echo Destroying existing VM/template\n        echo govc vm.destroy \"@data.pod-host-name*@\"\n    fi\n    \n    echo @data.pod-command-line*@\n    #@data.pod-command-line*@ > /dev/null\n    echo govc vm.change -vm \"@data.pod-host-name*@\" -c=@data.pod-cpu*@ -m=@data.pod-mem@\n    echo govc vm.change -vm \"@data.pod-host-name*@\" -e vcpu.hotadd=true -e mem.hotadd=true\n    echo govc vm.change -vm \"@data.pod-host-name*@\" -annotation \"Deployed by rundeck job: @job.execid@. Image file:@data.pod-image*@\", using spec: /opt/cw/tmp/@job.execid@\n\n    if [ \"@option.createastemplate@\" == \"true\" ]\n    then\n        echo marking as template ... \n        echo 'govc find -type m -name \"@data.pod-host-name*@\" | xargs -I % govc vm.markastemplate %'\n    fi \n    \n    if [ \"@option.poweron\" == \"true\" ]\n    then \n        govc vm.power -on \"@data.pod-host-name*@\"\n    else\n        echo Not powering on vm/template \n    fi \nfi "
     } ],
     "keepgoing" : false,
     "strategy" : "node-first"

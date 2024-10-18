@@ -31,7 +31,7 @@
     "valuesUrl" : "file:/opt/cw/options/iso-files-${option.scope.value}.json"
   } ],
   "plugins" : {
-    "ExecutionLifecycle" : { }
+    "ExecutionLifecycle" : null
   },
   "scheduleEnabled" : true,
   "sequence" : {

@@ -1,16 +1,16 @@
 [ {
   "defaultTab" : "nodes",
-  "description" : "Deploys OVF files for Cisco Crosswork\n## Features\n- Uses the GOVC method for creating CNC instances.\n- Provides full control over every property\n- Can simply generate the deployment commmand, or execute it\n- Optional 'saving' of the specification for later.",
+  "description" : "Deploys OVF files for Cisco Crosswork Data Gateway\n## Features\n- Uses the GOVC method for creating CNC instances.\n- Provides full control over every property\n- Can simply generate the deployment commmand, or execute it\n- Optional 'saving' of the specification for later.",
   "executionEnabled" : true,
-  "group" : "CNC/Deploy/CNC - Dual vNIC",
-  "id" : "b772e354-2b60-4e62-951f-efab2629c70a",
+  "group" : "CNC/Deploy/CDG",
+  "id" : "b4e81f6e-89e0-4cc1-a704-a1ac9623f5d6",
   "loglevel" : "INFO",
   "loglimit" : "2MB",
   "loglimitAction" : "truncate",
   "loglimitStatus" : "failed",
   "maxMultipleExecutions" : "0",
   "multipleExecutions" : true,
-  "name" : "CNC - Single Node (2 nic) v4 GOVC Version",
+  "name" : "1 CDG - Single Node (2 nic) v4 GOVC Version",
   "nodeFilterEditable" : false,
   "options" : [ {
     "description" : "## Deployment info\n[Create POD](87656cba-09fa-4671-8ed1-83a6e120780d) | [Remove POD](e192c0e9-94be-4e0c-ae4a-578e3d0018f5)\n> /opt/cw/options/cw-environments.json",
@@ -52,69 +52,31 @@
     "values" : [ "false", "true" ],
     "valuesListDelimiter" : ","
   }, {
-    "description" : "* Only used for non-production.\n* Select 0 for production",
-    "enforced" : true,
-    "label" : "In-memory database (ramdsik)",
-    "name" : "ramdisk",
-    "required" : true,
-    "value" : "0",
-    "values" : [ "0", "2", "5", "10", "20" ],
-    "valuesListDelimiter" : ","
-  }, {
     "enforced" : true,
     "label" : "Deployment Size",
     "name" : "deployment-size",
     "required" : true,
-    "value" : "small",
-    "values" : [ "large", "small", "singleVM" ],
+    "value" : "onpremise-extended",
+    "values" : [ "onpremise-extended", "onpremise-standard", "onpremise-standard-plus" ],
     "valuesListDelimiter" : ","
-  }, {
-    "enforced" : true,
-    "label" : "Memory",
-    "name" : "deployment-size-mem",
-    "required" : true,
-    "valuesUrl" : "file:/opt/cw/options/cw-deployment-${option.deployment-size.value}-mem.json"
   }, {
     "enforced" : true,
     "label" : "CPU",
     "name" : "deployment-size-cpu",
     "required" : true,
-    "valuesUrl" : "file:/opt/cw/options/cw-deployment-${option.deployment-size.value}-cpu.json"
+    "valuesUrl" : "file:/opt/cw/options/${option.deployment-size.value}-cpu.json"
   }, {
-    "description" : "`True` if this is first node, `False` for all other nodes",
     "enforced" : true,
-    "label" : "Seed Node?",
-    "name" : "seed-node",
+    "label" : "Memory",
+    "name" : "deployment-size-mem",
     "required" : true,
-    "value" : "True",
-    "values" : [ "False", "True" ],
-    "valuesListDelimiter" : ","
+    "valuesUrl" : "file:/opt/cw/options/${option.deployment-size.value}-mem.json"
   }, {
-    "description" : "`Hybrid`, Master or Worker",
     "enforced" : true,
-    "name" : "node-type",
+    "label" : "Disk",
+    "name" : "deploy-option-disk",
     "required" : true,
-    "value" : "Hybrid",
-    "values" : [ "Hybrid", "Master", "Standalone", "Worker" ],
-    "valuesListDelimiter" : ","
-  }, {
-    "description" : "> `1` is used for an all-in-one single VM, otherwise `3`",
-    "enforced" : true,
-    "label" : "Initial Node Count",
-    "name" : "initial-node-count",
-    "required" : true,
-    "value" : "1",
-    "values" : [ "1", "3" ],
-    "valuesListDelimiter" : ","
-  }, {
-    "description" : "> `1` is used for an all-in-one single VM, otherwise `3`",
-    "enforced" : true,
-    "label" : "Initial Master Count",
-    "name" : "initial-master-count",
-    "required" : true,
-    "value" : "1",
-    "values" : [ "1", "3" ],
-    "valuesListDelimiter" : ","
+    "valuesUrl" : "file:/opt/cw/options/${option.deployment-size.value}-disk.json"
   }, {
     "description" : "- thin - lab only, meaning disk is thin provisioned\n- thick - production, meaning disk is fully allocated before usage",
     "enforced" : true,
@@ -133,14 +95,6 @@
     "required" : true,
     "value" : "cw-ipv4",
     "valuesUrl" : "file:/opt/cw/options/cw-deployment-option.json"
-  }, {
-    "description" : "default is `50`\n## VM Deployment info",
-    "label" : "% Reserved for backup",
-    "name" : "backup-percentage",
-    "required" : true,
-    "value" : "50",
-    "values" : [ "20", "50" ],
-    "valuesListDelimiter" : ","
   }, {
     "description" : "> /opt/cw/options/timezones.json",
     "label" : "Time Zones",
@@ -164,6 +118,22 @@
     "name" : "admin-password",
     "secure" : true,
     "storagePath" : "keys/cw/cw-admin-pass",
+    "valueExposed" : true
+  }, {
+    "description" : "> Leave blank for default",
+    "label" : "Host admin password",
+    "name" : "cdg-admin-password",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/cw/dg-admin-password",
+    "valueExposed" : true
+  }, {
+    "description" : "> Leave blank for default",
+    "label" : "Host operator password",
+    "name" : "cdg-oper-password",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/cw/dg-operator-password",
     "valueExposed" : true
   }, {
     "enforced" : true,
@@ -260,6 +230,14 @@
     "label" : "DATA - Gateway",
     "name" : "vnic-1-gateway",
     "required" : true
+  }, {
+    "enforced" : true,
+    "hidden" : true,
+    "name" : "controller-port",
+    "required" : true,
+    "value" : "30607",
+    "values" : [ "30607" ],
+    "valuesListDelimiter" : ","
   } ],
   "plugins" : {
     "ExecutionLifecycle" : null
@@ -321,7 +299,7 @@
       "type" : "localexec"
     }, {
       "configuration" : {
-        "command" : "echo ${option.pod}-${data.pod-pod-type*}-${option.cw-version}-${option.host-name}"
+        "command" : "echo ${option.pod}-cdg-${option.host-name}"
       },
       "description" : "generate host name",
       "nodeStep" : true,
@@ -427,12 +405,13 @@
             "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
             "logData" : "true",
             "name" : "DISK",
-            "regex" : ".*DISK.(\\d+).*"
+            "regex" : ".*DISK.(\\d+).*",
+            "replaceFilteredResult" : "false"
           },
           "type" : "key-value-data"
         } ]
       },
-      "script" : "echo @option.deploy-option-values@\n"
+      "script" : "echo @option.deploy-option-disk@\n"
     }, {
       "configuration" : {
         "command" : "bash -c 'if [ \"${option.vnic-0-static}\" == \"static\" ]; then echo ${option.vnic-0-ip},${option.vnic-0-mask},${option.vnic-0-gateway}; else false; fi'"
@@ -543,7 +522,7 @@
           "type" : "key-value-data-multilines"
         } ]
       },
-      "script" : "export GOVC_URL=@data.hosting-vmw-ip*@ \nexport GOVC_USERNAME=@data.hosting-user*@ \nexport GOVC_PASSWORD=@data.hosting-password*@ \nexport GOVC_INSECURE=1 \n#spec=$(govc import.spec \"@data.cnc-version-cnc-image*@\" | jq -c '.PropertyMapping[] |= del(select(.Key|test(\"^NBI.\")))')\n\nspec=$(govc import.spec \"@data.cnc-version-cnc-image*@\")  \nchanged=$spec\nchanged=$(echo $changed | jq -c 'del(.PropertyMapping[] | select(.Key | contains(\"NBI\")))')\n# Remove v4/v6 references if it's the Unified EMS version\n\nif [ \"@data.pod-pod-type*@\" == \"unified\" ]; then \n    echo Modifying to suite unified EMS \n    changed=$(echo $changed | jq -c 'del(.PropertyMapping[] | select(.Key | contains(\"VIPv4\",\"VIPv6\")))')\nelse \n    echo Using standard CNC release\n    changed=$(echo $changed | jq -c 'del(.PropertyMapping[] | select(.Key | contains(\"VIPv4\",\"VIPv6\")))')\nfi \n\n#changed=$(echo $changed | jq -c 'del(.PropertyMapping[] | select(.Key | contains(\"VIP\")))')\n\n# Property Mappings\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ManagementIPv4Address\") ).Value|= \"@data.nic-0-ip*@@export.ip-1@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ManagementIPv4Netmask\") ).Value|= \"@data.nic-0-mask*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ManagementIPv4Gateway\") ).Value|= \"@data.nic-0-gw*@@export.gw-1@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DataIPv4Address\") ).Value|= \"@option.vnic-1-ip@@export.ip-2@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DataIPv4Netmask\") ).Value|= \"@option.vnic-1-mask@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DataIPv4Gateway\") ).Value|= \"@option.vnic-1-gateway@@export.gw-2@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"CWUsername\") ).Value|= \"@option.admin@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"CWPassword\") ).Value|= \"@option.admin-password@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Timezone\") ).Value|= \"@option.timzone*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DNSv4\") ).Value|= \"@data.dns-servers*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NTP\") ).Value|= \"@data.ntp-servers*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Domain\") ).Value|= \"@data.pod-domain*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ramdisk\") ).Value|= \"@option.ramdisk@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"bckup_min_percent\") ).Value|= \"@option.backup-percentage@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Disclaimer\") ).Value|= \"@data.pod-disclaimer*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"VMType\") ).Value|= \"@option.node-type@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"IsSeed\") ).Value|= \"@option.seed-node@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ManagementVIP\") ).Value|= \"@data.pod-mgt-vip*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ManagementVIPName\") ).Value|= \"@data.pod-mgt-dns*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DataVIP\") ).Value|= \"@data.pod-data-vip*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DataVIPName\") ).Value|= \"@data.pod-data-dns*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"CwInstaller\") ).Value|= \"False\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"InitNodeCount\") ).Value|= \"@option.initial-node-count@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"InitMasterCount\") ).Value|= \"@option.initial-master-count@\"') \n\n# Deleted Property Mappings\n#changed=$(echo $changed | jq -c 'del(.PropertyMapping[]|select(.Key==\"NBIVIP\"))')\n#changed=$(echo $changed | jq -c 'del(.PropertyMapping[]|select(.Key==\"ManagementVIPv4\"))')\n#changed=$(echo $changed | jq -c 'del(.PropertyMapping[]|select(.Key==\"ManagementVIPv6\"))')\n#changed=$(echo $changed | jq -c 'del(.PropertyMapping[]|select(.Key==\"DataVIPv4\"))') \n#changed=$(echo $changed | jq -c 'del(.PropertyMapping[]|select(.Key==\"DataVIPv6\"))') \necho $changed | jq .\n\n\n# Network Mapping Properties\nchanged=$(echo $changed | jq -c '( .NetworkMapping[]|select(.Name==\"Management Network\") ).Network|= \"@data.vnic-1-network*@\"') \nchanged=$(echo $changed | jq -c '( .NetworkMapping[]|select(.Name==\"Data Network\") ).Network|= \"@data.vnic-2-network*@\"') \n\n# General Properties thin\nchanged=$(echo $changed | jq -c '.DiskProvisioning=\"@option.disk-mode@\"') \nchanged=$(echo $changed | jq -c '.Deployment=\"@option.deployment-option@\"') \nchanged=$(echo $changed | jq -c '.IPAllocationPolicy=\"fixedPolicy\"') \nchanged=$(echo $changed | jq -c '.Annotation=\"@job.execid@\"') \nchanged=$(echo $changed | jq -c '.InjectOvfEnv=true') \nchanged=$(echo $changed | jq -c '.Name=\"@data.host-name*@\"') \necho $changed \necho $changed > /opt/cw/tmp/@job.execid@\n\nesxhost=$(basename @data.esx-host*@ )\n\necho command-line=govc import.ova -ds='\"'@data.datastore*@'\"' -host='\"'$esxhost'\"' -name='\"'@data.host-name*@'\"' -options='\"'/opt/cw/tmp/@job.execid@'\"' '\"'@data.cnc-version-cnc-image*@'\"'\necho spec=/opt/cw/tmp/@job.execid@\n\n\n"
+      "script" : "export GOVC_URL=@data.hosting-vmw-ip*@ \nexport GOVC_USERNAME=@data.hosting-user*@ \nexport GOVC_PASSWORD=@data.hosting-password*@ \nexport GOVC_INSECURE=1 \n#spec=$(govc import.spec \"@data.cnc-version-cdg-image*@\" | jq -c '.PropertyMapping[] |= del(select(.Key|test(\"^NBI.\")))')\n\nspec=$(govc import.spec \"@data.cnc-version-cdg-image*@\")  \nchanged=$spec\nchanged=$(echo $changed | jq -c 'del(.PropertyMapping[] | select(.Key | contains(\"NBI\")))')\n# Remove v4/v6 references if it's the Unified EMS version\n\nif [ \"@data.pod-pod-type*@\" == \"unified\" ]; then \n#    echo Modifying to suite unified EMS \n    changed=$(echo $changed | jq -c 'del(.PropertyMapping[] | select(.Key | contains(\"VIPv4\",\"VIPv6\")))')\n#else \n    echo Using standard CNC release\n#    changed=$(echo $changed | jq -c 'del(.PropertyMapping[] | select(.Key | contains(\"VIPv4\",\"VIPv6\")))')\nfi \n\n#changed=$(echo $changed | jq -c 'del(.PropertyMapping[] | select(.Key | contains(\"VIP\")))')\n\n# Property Mappings\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Hostname\") ).Value|= \"@data.host-name*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ActiveVnics\") ).Value|= \"2\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ControllerIP\") ).Value|= \"@data.pod-mgt-vip*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ControllerPort\") ).Value|= \"@option.controller-port@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ControllerSignCertChain\") ).Value|= \"@option.admin@@@@data.pod-mgt-vip*@/home/@option.admin@/controller.pem\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ControllerCertChainPwd\") ).Value|= \"@option.admin-password@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DGAppdataDisk\") ).Value|= \"@option.deploy-option-disk@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DGCertChain\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DGCertChainPwd\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DGCertKey\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DNS\") ).Value|= \"@data.dns-servers*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NTP\") ).Value|= \"@data.ntp-servers*@\"')\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NTPAuth\") ).Value|= \"False\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NTPKey\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NTPKeyFile\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NTPKeyFilePwd\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DNSSEC\") ).Value|= \"False\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"DNSTLS\") ).Value|= \"False\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Deployment\") ).Value|= \"@option.deployment-option@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Description\") ).Value|= \"@job.execid@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Domain\") ).Value|= \"@data.pod-domain*@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"EnrollmentPassphrase\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"EnrollmentURI\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"LLMNR\") ).Value|= \"False\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Label\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Profile\") ).Value|= \"Standard\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ProxyBypass\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ProxyCertChain\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ProxyCertChainPwd\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ProxyPassphrase\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ProxyURL\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ProxyUsername\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"SyslogAddress\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"SyslogCertChain\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"SyslogCertChainPwd\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"SyslogPeerName\") ).Value|= \"\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"SyslogPort\") ).Value|= \"514\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"SyslogProtocol\") ).Value|= \"UDP\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"SyslogTLS\") ).Value|= \"False\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"UseRemoteAuditd\") ).Value|= \"False\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"UseRemoteSyslog\") ).Value|= \"False\"') \n\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic0IPv4Address\") ).Value|= \"@option.vnic-0-ip@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic0IPv4Gateway\") ).Value|= \"@option.vnic-0-gateway@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic0IPv4Method\") ).Value|= \"Static\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic0IPv4Netmask\") ).Value|= \"@option.vnic-0-mask@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic0IPv4SkipGateway\") ).Value|= \"False\"') \n\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic1IPv4Address\") ).Value|= \"@option.vnic-1-ip@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic1IPv4Gateway\") ).Value|= \"@option.vnic-1-gateway@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic1IPv4Method\") ).Value|= \"Static\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic1IPv4Netmask\") ).Value|= \"@option.vnic-1-mask@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"Vnic1IPv4SkipGateway\") ).Value|= \"False\"')\n\n# Set some defaults\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NicDefaultGateway\") ).Value|= \"eth0\"')\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NicAdministration\") ).Value|= \"eth0\"')\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NicExternalLogging\") ).Value|= \"eth0\"')\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NicManagement\") ).Value|= \"eth0\"')\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NicControl\") ).Value|= \"eth1\"')\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NicNBExternalData\") ).Value|= \"eth1\"')\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"NicSBData\") ).Value|= \"eth1\"')\n\n# Remove things\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"Vnic2IPv4Address\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"Vnic2IPv4Gateway\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"Vnic2IPv4Method\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"Vnic2IPv4Netmask\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"Vnic2IPv4SkipGateway\"))')\n\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"Vnic2IPv6Method\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"Vnic2IPv6Address\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"Vnic2IPv6Netmask\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"Vnic2IPv6SkipGateway\"))')\nchanged=$(echo $changed | jq -c 'del( .PropertyMapping[]|select(.Key==\"Vnic2IPv6Gateway\"))')\n\nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"dg-adminPassword\") ).Value|= \"@option.cdg-admin-password@\"') \nchanged=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"dg-operPassword\") ).Value|= \"@option.cdg-oper-password@\"') \n\n# Network Mapping Properties\nchanged=$(echo $changed | jq -c '( .NetworkMapping[]|select(.Name==\"vNIC0\") ).Network|= \"@data.vnic-1-network*@\"') \nchanged=$(echo $changed | jq -c '( .NetworkMapping[]|select(.Name==\"vNIC1\") ).Network|= \"@data.vnic-2-network*@\"') \n#changed=$(echo $changed | jq -c '( .NetworkMapping[]|select(.Name==\"vNIC2\") ).Network|= \"@data.vnic-3-network*@\"') \n\n# General Properties thin\nchanged=$(echo $changed | jq -c '.DiskProvisioning=\"@option.disk-mode@\"') \nchanged=$(echo $changed | jq -c '.Deployment=\"@option.deployment-size@\"') \nchanged=$(echo $changed | jq -c '.IPAllocationPolicy=\"fixedPolicy\"') \nchanged=$(echo $changed | jq -c '.Annotation=\"@job.execid@\"') \nchanged=$(echo $changed | jq -c '.InjectOvfEnv=true') \nchanged=$(echo $changed | jq -c '.Name=\"@data.host-name*@\"') \necho $changed \necho $changed > /opt/cw/tmp/@job.execid@\n\nesxhost=$(basename @data.esx-host*@ )\n\necho command-line=govc import.ova -ds='\"'@data.datastore*@'\"' -host='\"'$esxhost'\"' -name='\"'@data.host-name*@'\"' -options='\"'/opt/cw/tmp/@job.execid@'\"' '\"'@data.cnc-version-cdg-image*@'\"'\necho spec=/opt/cw/tmp/@job.execid@"
     }, {
       "description" : "If option is save, then Save for later",
       "plugins" : {
@@ -557,7 +536,7 @@
           "type" : "key-value-data-multilines"
         } ]
       },
-      "script" : "fileout=/opt/cw/deploy/cnc-deployments.json\nfiletmp=/opt/cw/deploy/cnc-deployments.tmp.json\n\nif [ ! -f \"$fileout\" ]; then echo \"[]\" > \"$fileout\"; fi\n\nif [ \"@option.save@\" == \"no\" ]\nthen\n    true   \nelse \n    dt=$(date +\"%Y-%m-%d-%H-%M-%S\")\n    d=$(date +\"%Y-%m-%d\")\n    key=\"$d-@data.pod-value*@-@data.pod-pod-type*@-@option.cw-version@-@option.host-name@-@option.node-type@-@option.seed-node@-@option.deployment-size@-@job.execid@\"\n    echo key=$key\n    key=$(jq -n --arg key $key '{\"name\":$key}')\n\n    cli=$(echo '@data.command-line*@' | jq --raw-input '{\"command-line\":.|tostring} | {\"data\":.}')\n    \n    data=$(echo $key $cli | jq -s '.' | jq .)\n\n    data=$(echo $data | jq --arg date $dt '(..|objects|select(has(\"data\"))).data+={\"dttm\":$date,\"hosting\":\"@option.hosting@\",\"version\":\"@option.cw-version@\",\"image\":\"@data.cnc-version-cnc-image*@\",\"type\":\"@option.seed-node@\",\"host-name\":\"@data.host-name*@\",\"vm-name\":\"@option.host-name@\",\"spec\":\"@data.spec*@\",\"cpu\":\"@option.deployment-size-cpu@\",\"mem\":\"@option.deployment-size-mem@\",\"overwrite\":\"@option.overwrite@\",\"start\":\"true\"}')\n    echo data:$data \n    data=$(echo $data | jq ' .[0][] as $name | .[1][] as $value | {\"name\":$name,\"value\":$name,\"data\":$value}')\n    \n    existing=$(jq -c . $fileout)\n    echo $data $existing | jq -s 'flatten(1)' > $fileout\n  \nfi"
+      "script" : "fileout=/opt/cw/deploy/cdg-deployments.json\nfiletmp=/opt/cw/deploy/cdg-deployments.tmp.json\n\nif [ ! -f \"$fileout\" ]; then echo \"[]\" > \"$fileout\"; fi\n\nif [ \"@option.save@\" == \"no\" ]\nthen\n    true   \nelse \n    dt=$(date +\"%Y-%m-%d-%H-%M-%S\")\n    d=$(date +\"%Y-%m-%d\")\n    key=\"$d-@data.pod-value*@-@data.pod-pod-type*@-@option.cw-version@-@option.host-name@-@option.node-type@-@option.deployment-size@-@job.execid@\"\n    echo key=$key\n    key=$(jq -n --arg key $key '{\"name\":$key}')\n\n    cli=$(echo '@data.command-line*@' | jq --raw-input '{\"command-line\":.|tostring} | {\"data\":.}')\n    \n    data=$(echo $key $cli | jq -s '.' | jq .)\n\n    data=$(echo $data | jq --arg date $dt '(..|objects|select(has(\"data\"))).data+={\"dttm\":$date,\"hosting\":\"@option.hosting@\",\"version\":\"@option.cw-version@\",\"image\":\"@data.cnc-version-cnc-image*@\",\"type\":\"@option.seed-node@\",\"host-name\":\"@data.host-name*@\",\"vm-name\":\"@option.host-name@\",\"spec\":\"@data.spec*@\",\"cpu\":\"@option.deployment-size-cpu@\",\"mem\":\"@option.deployment-size-mem@\",\"overwrite\":\"@option.overwrite@\",\"start\":\"true\"}')\n    echo data:$data \n    data=$(echo $data | jq ' .[0][] as $name | .[1][] as $value | {\"name\":$name,\"value\":$name,\"data\":$value}')\n    \n    existing=$(jq -c . $fileout)\n    echo $data $existing | jq -s 'flatten(1)' > $fileout\n  \nfi"
     }, {
       "description" : "If option is Execute, then run the command",
       "errorhandler" : {
@@ -583,5 +562,5 @@
     "strategy" : "sequential"
   },
   "timeout" : "4h",
-  "uuid" : "b772e354-2b60-4e62-951f-efab2629c70a"
+  "uuid" : "b4e81f6e-89e0-4cc1-a704-a1ac9623f5d6"
 } ]

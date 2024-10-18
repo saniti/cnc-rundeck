@@ -84,7 +84,7 @@
     "valuesListDelimiter" : ","
   } ],
   "plugins" : {
-    "ExecutionLifecycle" : { }
+    "ExecutionLifecycle" : null
   },
   "scheduleEnabled" : true,
   "sequence" : {

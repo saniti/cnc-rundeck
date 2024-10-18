@@ -33,7 +33,7 @@
     "valueExposed" : true
   } ],
   "plugins" : {
-    "ExecutionLifecycle" : { }
+    "ExecutionLifecycle" : null
   },
   "scheduleEnabled" : true,
   "sequence" : {

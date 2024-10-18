@@ -31,6 +31,10 @@
     "values" : [ "/opt/cw/images", "http://10.67.22.46:8002" ],
     "valuesListDelimiter" : ","
   }, {
+    "label" : "SCP host",
+    "name" : "scp-host",
+    "required" : true
+  }, {
     "label" : "Software Location (scp)",
     "name" : "location-scp",
     "required" : true,
@@ -79,7 +83,7 @@
     "valuesListDelimiter" : ","
   } ],
   "plugins" : {
-    "ExecutionLifecycle" : { }
+    "ExecutionLifecycle" : null
   },
   "scheduleEnabled" : true,
   "sequence" : {
@@ -99,7 +103,7 @@
       "script" : "if [ ! -z \"@option.cnc-image-file-url@\" ]\nthen \n    echo cnc-image=@option.cnc-image-file-url@\nelse\n    echo cnc-image=@option.cnc-image-file@\nfi"
     }, {
       "description" : "Add new entry",
-      "script" : "file=/opt/cw/options/cw-versions.json\nfiletmp=/opt/cw/tmp/cw-versions.tmp\nif [ ! -f \"$file\" ]; then echo \"[]\" > \"$file\"; fi\njq '. += [{\"name\":\"@option.friendly-name@\",\"value\":\"@option.cnc-value@\",\"friendly\":\"@option.friendly-name@\",\"cnc-version\":\"@option.cnc-version@\",\"location-http\":\"@option.location-http@/cnc/@option.cnc-version@\",\"location-scp\":\"@option.location-scp@/cnc/@option.cnc-version@\",\"scp-user\":\"@option.scp-user@\",\"scp-pass\":\"@option.scp-pass@\",\"cnc-image\":\"@data.cnc-image*@\",\"cdg-image\":\"@option.cdg-image-file@\",\"selected\":@option.default@}]' $file > $filetmp\n\\cp $filetmp $file\n"
+      "script" : "file=/opt/cw/options/cw-versions.json\nfiletmp=/opt/cw/tmp/cw-versions.tmp\nif [ ! -f \"$file\" ]; then echo \"[]\" > \"$file\"; fi\njq '. += [{\"name\":\"@option.friendly-name@\",\"value\":\"@option.cnc-value@\",\"friendly\":\"@option.friendly-name@\",\"cnc-version\":\"@option.cnc-version@\",\"location-http\":\"@option.location-http@/cnc/@option.cnc-version@\",\"scp-host\":\"@option.scp-host@\",\"location-scp\":\"@option.location-scp@/cnc/@option.cnc-version@\",\"scp-user\":\"@option.scp-user@\",\"scp-pass\":\"@option.scp-pass@\",\"cnc-image\":\"@data.cnc-image*@\",\"cdg-image\":\"@option.cdg-image-file@\",\"selected\":@option.default@}]' $file > $filetmp\n\\cp $filetmp $file\n"
     } ],
     "keepgoing" : false,
     "strategy" : "node-first"

@@ -114,7 +114,7 @@
     "valuesListDelimiter" : ","
   } ],
   "plugins" : {
-    "ExecutionLifecycle" : { }
+    "ExecutionLifecycle" : null
   },
   "retry" : "0",
   "scheduleEnabled" : true,

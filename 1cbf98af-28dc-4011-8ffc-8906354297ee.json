@@ -7,16 +7,12 @@
   "name" : "test",
   "nodeFilterEditable" : false,
   "plugins" : {
-    "ExecutionLifecycle" : { }
+    "ExecutionLifecycle" : null
   },
   "scheduleEnabled" : true,
   "sequence" : {
     "commands" : [ {
-      "configuration" : {
-        "adhocRemoteString" : "whoami"
-      },
-      "nodeStep" : true,
-      "type" : "exec-command"
+      "exec" : "whoami"
     } ],
     "keepgoing" : false,
     "strategy" : "node-first"
