@@ -1,0 +1,32 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "id" : "672e4889-b44b-4454-89dd-16fa667a0bca",
+  "loglevel" : "INFO",
+  "name" : "Initiate DHCP reload",
+  "nodeFilterEditable" : false,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : false,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "3"
+    },
+    "filter" : "tags: nso"
+  },
+  "nodesSelectedByDefault" : false,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "exec" : "echo hi"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "672e4889-b44b-4454-89dd-16fa667a0bca"
+} ]

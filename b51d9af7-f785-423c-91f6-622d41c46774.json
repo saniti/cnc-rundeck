@@ -1,0 +1,60 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "CNC - List all availble service models\n# Overview\nList all current CNC Services (XML)",
+  "executionEnabled" : true,
+  "group" : "CNC/Services",
+  "id" : "b51d9af7-f785-423c-91f6-622d41c46774",
+  "loglevel" : "INFO",
+  "name" : "CNC - List all availble service models",
+  "nodeFilterEditable" : true,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "Crosswork Deployment VIP",
+    "name" : "cnc-pod",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "get variables",
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "headers" : "{'Authorization': 'Bearer ${export.cwtoken}','Content-Type': 'application/xml'}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:30603/crosswork/nbi/cat-inventory/v1/restconf/operations/cat-inventory-rpc:get-available-service-types",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "b51d9af7-f785-423c-91f6-622d41c46774"
+} ]

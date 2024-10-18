@@ -1,0 +1,244 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Create a VM and attach an existing ISO file\n",
+  "executionEnabled" : true,
+  "group" : "Virtual Machines",
+  "id" : "eb3ce392-6610-43cb-b294-c27208f863ac",
+  "loglevel" : "INFO",
+  "name" : "Deploy PCE",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "hidden" : true,
+    "name" : "vcenter-host",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/vmware/vc-address",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "vcenter-password",
+    "secure" : true,
+    "storagePath" : "keys/vmware/vc-password",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "vcenter-username",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/vmware/vc-user",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "system-user",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/useraccounts/nso-system-user",
+    "valueExposed" : true
+  }, {
+    "description" : "[Create POD](00a7b4c3-dc1b-4a1a-b4fd-e1f396281b2f) | [Remove POD](e192c0e9-94be-4e0c-ae4a-578e3d0018f5)\n> /opt/cw/options/cw-environments.json",
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "controller-vip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "description" : "[Create CNC Version](1feb2b38-194d-4427-b9e9-b3c1a031a9b6) | [Remove CNC Version](96b47113-9d8d-4841-8e69-3755d9885e2f)\n> /opt/cw/options/cw-versions.json",
+    "enforced" : true,
+    "label" : "Crosswork Version",
+    "name" : "cw-version",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-versions.json"
+  }, {
+    "description" : "> [Discover](3ace6b49-f8c9-46f5-acac-8313ca5aa086)",
+    "enforced" : true,
+    "label" : "OVA",
+    "name" : "pce-file",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/images-files-ova.json"
+  }, {
+    "description" : "Execute command or just generate it.\n- Generate (default) Show the command line that needs to be run, but the user\n- Execute - Generate the command line and run it on the local system",
+    "enforced" : true,
+    "label" : "Deployment Option",
+    "name" : "Option",
+    "required" : true,
+    "value" : "Execute",
+    "values" : [ "Execute", "Generate", "Configure" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "label" : "VM name (vCenter)",
+    "name" : "vm-name",
+    "required" : true
+  }, {
+    "label" : "IP Address",
+    "name" : "ip-address",
+    "required" : true
+  }, {
+    "description" : "> Operating system type for the selected ISO image",
+    "label" : "Operating System",
+    "name" : "os-type",
+    "required" : true,
+    "value" : "ubuntu64Guest",
+    "valuesUrl" : "file:/opt/cw/options/vmware-os-types.json"
+  }, {
+    "enforced" : true,
+    "label" : "Node Family",
+    "name" : "node-family",
+    "required" : true,
+    "value" : "unix",
+    "values" : [ "unix", "windows" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "`ubuntu`,`centos`,`Linux` - optional",
+    "enforced" : true,
+    "label" : "OS Name",
+    "name" : "os-name",
+    "required" : true,
+    "value" : "Linux",
+    "values" : [ "Linux", "Windows", "centos", "ubuntu" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "ESX Host (VM1)",
+    "name" : "vm-host",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/hosts.json"
+  }, {
+    "enforced" : true,
+    "label" : "Datastore for VM1",
+    "name" : "vm-datastore",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/datastores.json"
+  }, {
+    "description" : "- thin - lab only, meaning disk is thin provisioned\n- thick - production, meaning disk is fully allocated before usage",
+    "enforced" : true,
+    "label" : "Virtual Disk Mode",
+    "name" : "disk-mode",
+    "required" : true,
+    "value" : "thin",
+    "values" : [ "thick", "thin" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "Management Network",
+    "name" : "vnic-1-network",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/networks.json"
+  }, {
+    "enforced" : true,
+    "label" : "Control Network",
+    "name" : "vnic-2-network",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/networks.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device Network",
+    "name" : "vnic-3-network",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/networks.json"
+  }, {
+    "enforced" : true,
+    "label" : "Data Network",
+    "name" : "vnic-4-network",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/networks.json"
+  }, {
+    "enforced" : true,
+    "label" : "Number of CPUs",
+    "name" : "vm-cpu",
+    "required" : true,
+    "value" : "2",
+    "values" : [ "16", "2", "4", "8" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "label" : "Disk Size in GB",
+    "name" : "vm-disk",
+    "required" : true,
+    "value" : "200GB",
+    "values" : [ "100GB", "200GB", "400GB", "500GB" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "Memory in MB",
+    "name" : "vm-mem",
+    "required" : true,
+    "value" : "16392",
+    "values" : [ "16392", "32768", "4096", "65536", "8192" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "delimiter" : ",",
+    "description" : "tags are how rundeck finds nodes. Select one or more from the list, or create your own",
+    "multivalued" : true,
+    "name" : "tags",
+    "required" : true,
+    "value" : "pce",
+    "values" : [ "pce" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "name" : "system-user-password",
+    "required" : true,
+    "value" : "keys/useraccounts/nso-system-user-password",
+    "values" : [ "keys/useraccounts/nso-system-user-password" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "name" : "IPAllocationPolicy",
+    "required" : true,
+    "value" : "static",
+    "values" : [ "dhcpPolicy", "static" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "capture parameters",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "echo '@option.vm-datastore@' | jq --raw-input --raw-output 'split(\"/\")[-1] as $ds | [\"DS\",$ds]|join(\"=\")'\necho '@option.vm-host@' | jq --raw-input --raw-output 'split(\"/\")[-1] as $ds | [\"HOST\",$ds]|join(\"=\")'\necho '@option.vnic-1-network@' | jq --raw-input --raw-output 'split(\"/\")[-1] as $ds | [\"NET-1\",$ds]|join(\"=\")'\necho '@option.vnic-2-network@' | jq --raw-input --raw-output 'split(\"/\")[-1] as $ds | [\"NET-2\",$ds]|join(\"=\")'\necho '@option.vnic-3-network@' | jq --raw-input --raw-output 'split(\"/\")[-1] as $ds | [\"NET-3\",$ds]|join(\"=\")'\necho '@option.vnic-4-network@' | jq --raw-input --raw-output 'split(\"/\")[-1] as $ds | [\"NET-4\",$ds]|join(\"=\")'\necho '@option.controller-vip@' '@option.cw-version@' '@option.vm-name@' | jq --raw-input --raw-output 'split(\" \")|join(\"-\") as $name | [\"VM-NAME\",$name]|join(\"=\")'"
+    }, {
+      "description" : "create govc command line",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "export GOVC_URL=@option.vcenter-host@ \nexport GOVC_USERNAME=@option.vcenter-username@ \nexport GOVC_PASSWORD=@option.vcenter-password@ \nexport GOVC_INSECURE=1 \nenv | grep -i GOVC\n# Delete the extra AWS params\nspec=$(govc import.spec \"@option.pce-file@\") \nchanged=$spec\n\n# Property Mappings\n#changed=$(echo $spec | jq -c '( .PropertyMapping[]|select(.Key==\"ManagementIPv4Address\") ).Value|= \"@data.nic-0-ip*@@export.ip-1@\"') \n#changed=$(echo $changed | jq -c '( .PropertyMapping[]|select(.Key==\"ManagementIPv4Netmask\") ).Value|= \"@data.nic-0-mask*@\"') \n\n\n# Remove mappings not required, just in case\n#changed=$(echo $changed | jq -c 'del(.PropertyMapping[]|select(.Key?|startswith(\"Admin\",\"NBI\",\"Aws\"))) | del(.NetworkMapping[]|select(.Name?|startswith(\"Admin\",\"NBI\")))') \n\n# Network Mapping Properties\nchanged=$(echo $changed | jq -c '( .NetworkMapping[]|select(.Name==\"MgmtEth0_RP0_CPU0_0\") ).Network|= \"@data.NET-1*@\"') \nchanged=$(echo $changed | jq -c '( .NetworkMapping[]|select(.Name==\"CtrlEth\") ).Network|= \"@data.NET-2*@\"') \nchanged=$(echo $changed | jq -c '( .NetworkMapping[]|select(.Name==\"DevEth\") ).Network|= \"@data.NET-3*@\"') \nchanged=$(echo $changed | jq -c '( .NetworkMapping[]|select(.Name==\"GigabitEthernet0_0_0_0\") ).Network|= \"@data.NET-4*@\"') \n\n# General Properties thin\nchanged=$(echo $changed | jq -c '.DiskProvisioning=\"@option.disk-mode@\"') \n#changed=$(echo $changed | jq -c '.Deployment=\"@option.deployment-option@\"') \nchanged=$(echo $changed | jq -c '.IPAllocationPolicy=\"fixedPolicy\"') \n#changed=$(echo $changed | jq -c '.Annotation=\"@option.annotation@\"') \nchanged=$(echo $changed | jq -c '.InjectOvfEnv=true') \nchanged=$(echo $changed | jq -c '.Name=\"@data.VM-NAME*@\"') \n\necho $changed > /opt/cw/tmp/@job.execid@\n\necho GOVC_COMMAND=govc import.ova -ds='\"'@data.DS*@'\"' -host='\"'@data.HOST*@'\"' -name='\"'@data.VM-NAME*@'\"' -options='\"'/opt/cw/tmp/@job.execid@'\"' '\"'@option.pce-file@'\"'\n\n\n"
+    }, {
+      "description" : "Execute or show command",
+      "script" : "if [ @option.Option@ != \"Execute\" ]\nthen \n    echo Generating command, but not executing ...\n    echo @data.GOVC_COMMAND*@\nelse\n    export GOVC_URL=@option.vcenter-host@ \n    export GOVC_USERNAME=@option.vcenter-username@ \n    export GOVC_PASSWORD=@option.vcenter-password@ \n    export GOVC_INSECURE=1 \n    \n    if [ \"@option.overwrite@\" == \"true\" ]\n    then\n        echo Destroying existing VM\n        govc vm.destroy \"@data.VM-NAME*@\"\n    fi\n    \n    @data.GOVC_COMMAND*@\n   \nfi"
+    }, {
+      "description" : "Configure VM",
+      "script" : "if [ \"@option.Option@\" == \"Execute\" ] || [ \"@option.Option@\" == \"Configure\" ]\nthen \n    echo Configuring VM ...\n    \n    export GOVC_URL=@option.vcenter-host@ \n    export GOVC_USERNAME=@option.vcenter-username@ \n    export GOVC_PASSWORD=@option.vcenter-password@ \n    export GOVC_INSECURE=1    \n    \n    hostip=$(govc host.vnic.info -json=true -host @option.vm-host@ | jq -r '.info[].address')\n\n    govc vm.change -vm \"@data.VM-NAME*@\" -c=@option.vm-cpu@ -m=@option.vm-mem@\n    govc vm.change -vm \"@data.VM-NAME*@\" -annotation \"Deployed by rundeck job: @job.execid@. Image file:@option.pce-file@\"\n    govc device.serial.add -vm \"@data.VM-NAME*@\"\n    \n    sp=$(govc device.info -json=true -vm \"@data.VM-NAME*@\" serialport-* | jq -r '.devices[].Name')\n    govc device.serial.connect -vm \"@data.VM-NAME*@\" -device $sp telnet://$hostip:33333\n    \n    govc vm.power -on \"@data.VM-NAME*@\"    \n    \nelse\n\n    echo Skipping configuration step ...\n\nfi"
+    }, {
+      "description" : "update node list",
+      "jobref" : {
+        "args" : "-hostname ${option.ip-address} -node-name ${data.VM-NAME*} -description pce -user-name ${option.system-user} -password-storage-path ${option.system-user-password} -ssh-authentication password -tags \"${option.tags},${option.controller-vip},${option.cw-version}\"",
+        "group" : "Rundeck Nodes",
+        "importOptions" : true,
+        "name" : "Create a New node",
+        "uuid" : "e60e849d-c7c2-430e-a545-a2fb9b0a6c61"
+      }
+    } ],
+    "keepgoing" : false,
+    "strategy" : "sequential"
+  },
+  "uuid" : "eb3ce392-6610-43cb-b294-c27208f863ac"
+} ]

@@ -1,0 +1,67 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "modify the latency on a specific interface and device\n---\n## Demo Setup\nFor L2VPN, routing should look like `Node-4` -> `Node-3` -> `Node-1` -> `Node-5`\n\nWe will inject latency between `Node-3` interface `GigabitEthernet0/0/0/3` and `Node-4` interface `GigabitEthernet0/0/0/2` of 30ms\n\nWe expect to see path transition in about 30 seconds",
+  "executionEnabled" : true,
+  "group" : "-DEMO/.working",
+  "id" : "956d514e-7337-446c-a43e-151276b8d8cf",
+  "loglevel" : "INFO",
+  "name" : "CNC - alarms (tmp)",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CW POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "value" : "R1R2",
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "get cnc token",
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\"openAlarmsOnly\":true,\"criteria\":\"select * from alarm limit 100 page 0 where alarmCategory=1 \"}",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-alerts.json",
+        "headers" : "{\"Content-Type\": \"application/yang-data+json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}\n\n",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:30603/crosswork/alarms/v1/query",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Get Stats",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "Extract properties",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-alerts.json\n#jq '[.\"device_alerts\"[] |   select(.summary.levels[] | (.level==\"CRITICAL\") and (.alert>0)) | {\"1 device-name\":.\"device_id\",\"2 device-ip\":.\"device_IP\",\"3 device-alerts\":(.summary.levels )} ]' $file\njq -r '[.data[]|del(.. | .\"Inventory\"?)|[ [leaf_paths as $path | {\"key\": $path | join(\"_\"), \"value\": getpath($path)}] | from_entries ] []] |  (.[0] | keys_unsorted) as $keys |   ([$keys] + map([.[ $keys[] ]])) [] | @csv' $file"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "956d514e-7337-446c-a43e-151276b8d8cf"
+} ]

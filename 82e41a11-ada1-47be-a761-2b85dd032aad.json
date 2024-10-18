@@ -1,0 +1,71 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Create a new definition of a VMware environment",
+  "executionEnabled" : true,
+  "group" : "CNC/Setup",
+  "id" : "82e41a11-ada1-47be-a761-2b85dd032aad",
+  "loglevel" : "INFO",
+  "name" : "VMware CREATE environment",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "label" : "Name of the VMware Deployment (Friendly)",
+    "name" : "vmw-name",
+    "required" : true
+  }, {
+    "description" : "> Tag (NO SPACES or special characters!) to identify this VMware environment",
+    "label" : "Tag",
+    "name" : "tag",
+    "required" : true
+  }, {
+    "label" : "IP or DNS of VMware vCenter",
+    "name" : "vmw-ip",
+    "required" : true
+  }, {
+    "enforced" : true,
+    "label" : "vCenter/vSphere or ESX",
+    "name" : "type",
+    "required" : true,
+    "value" : "VC",
+    "values" : [ "VC", "ESX" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "Default is `administrator@vsphere.local`",
+    "label" : "Admin User Name",
+    "name" : "vmw-username",
+    "required" : true,
+    "value" : "admin"
+  }, {
+    "enforced" : true,
+    "label" : "Set Default",
+    "name" : "default",
+    "required" : true,
+    "value" : "false",
+    "values" : [ "false", "true" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "delimiter" : ",",
+    "label" : "List Current Environments",
+    "multivalued" : true,
+    "name" : "environments-current",
+    "valuesUrl" : "file:/opt/cw/options/vmw-environments.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : { }
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    }, {
+      "description" : "Add new entry",
+      "script" : "file=/opt/cw/options/vmw-environments.json\n\nfiletmp=/opt/cw/tmp/vmw-environments.tmp\necho '[{\"name\":\"@option.vmw-name@\",\"value\":\"@option.vmw-name@\",\"selected\":\"@option.default@\",\"vmw-ip\":\"@option.vmw-ip@\",\"tag\":\"@option.tag@\"}]'\nif [ ! -f \"$file\" ]; then echo '[]' > \"$file\"; fi\nif [ ! -f \"$file\" ]; then echo '[]' > \"$filetmp\"; fi\necho 'files created'\n\nreadin=$(jq . $file)\n\ndata=$(jq -n '[{\"name\":\"@option.vmw-name@\",\"value\":\"@option.tag@\",\"selected\":\"@option.default@\",\"type\":\"@option.type@\",\"vmw-ip\":\"@option.vmw-ip@\",\"proxy\":\"@option.tag@\",\"tag\":\"@option.tag@\"}]')\n\necho $data $readin | jq -s 'flatten(1)' > $file\n\n\n"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "82e41a11-ada1-47be-a761-2b85dd032aad"
+} ]

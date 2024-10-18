@@ -1,0 +1,48 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "retrieve NSO deployment details from /opt/cw/nso-versions.json",
+  "executionEnabled" : true,
+  "group" : "CNC/Configuration",
+  "id" : "0b60a68c-5e7f-4497-8bf9-e90fe1f49878",
+  "loglevel" : "INFO",
+  "name" : "extract deployment details - test",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "NSO Version",
+    "name" : "nso-version",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/nso-versions.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get nso deployment properties",
+        "uuid" : "fae76fe9-6379-4cfb-9091-99e0d4470fcf"
+      }
+    }, {
+      "script" : "echo ---\nfor i in `echo @export.nso-packages@`;do echo $i; done\necho ---"
+    }, {
+      "exec" : "echo ${export.nso-packages}"
+    }, {
+      "configuration" : {
+        "destinationPath" : "/tmp",
+        "echo" : "true",
+        "pattern" : "${export.nso-packages}",
+        "recursive" : "true",
+        "sourcePath" : "/opt/cw/nso/"
+      },
+      "nodeStep" : true,
+      "type" : "copyfile"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "0b60a68c-5e7f-4497-8bf9-e90fe1f49878"
+} ]

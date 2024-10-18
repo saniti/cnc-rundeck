@@ -1,0 +1,344 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Reconcile devices present in the actual network into netbox, including interfaces, manufacturer and type / model of device.",
+  "executionEnabled" : true,
+  "group" : "-DEMO/Slicing",
+  "id" : "34683f66-c826-46e2-8531-9eb3b67dfb44",
+  "loglevel" : "INFO",
+  "name" : "Reconcile Network devices to Netbox",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "hidden" : true,
+    "name" : "proxy",
+    "required" : true,
+    "value" : "proxy:3001",
+    "values" : [ "proxy:3001" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "hidden" : true,
+    "name" : "netbox",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/netbox/netbox-host",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "netbox-token",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/netbox/netbox-token",
+    "valueExposed" : true
+  }, {
+    "description" : "> Devices in the active network (live)\n",
+    "enforced" : true,
+    "label" : "Device (NSO)",
+    "name" : "nso-device",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/devices"
+  }, {
+    "description" : "## Netbox onboarding information",
+    "enforced" : true,
+    "label" : "Device (netbox)",
+    "name" : "netbox-device-present",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/device/${option.nso-device.value}"
+  }, {
+    "enforced" : true,
+    "label" : "Sites (netbox)",
+    "name" : "netbox-site",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/sites"
+  }, {
+    "enforced" : true,
+    "label" : "Location (netbox)",
+    "name" : "netbox-location",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/locations/${option.netbox-site.value}"
+  }, {
+    "enforced" : true,
+    "label" : "Device Role (netbox)",
+    "name" : "netbox-role",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/roles"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Get device properties",
+      "script" : "echo @option.netbox@\necho @option.netbox-token@"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-nso-devices.json",
+        "headers" : "{\"accept\": \"application/json\"}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://${option.proxy}/nso/devicesandinterfaces",
+        "sslVerify" : "true",
+        "timeout" : "30000"
+      },
+      "description" : "Get NSO properties for device",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "Get device properties",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-nso-devices.json\njq -r '[.[] | select(.name==\"@option.nso-device@\")][0] | to_entries[]|(\"device-\"+(.key|tostring)+\"=\"+(.value|tostring))' $file"
+    }, {
+      "description" : "Sanitise device-type",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "device-model-new",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo @data.device-model*@ | jq --raw-input -r 'split(\" \")|join(\"-\") | ascii_downcase'"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-netbox-devicetype.json",
+        "headers" : "{\"Authorization\":\"${option.netbox-token}\"}}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "${option.netbox}/dcim/manufacturers/?name=${data.device-manufacturer*}",
+        "sslVerify" : "true",
+        "timeout" : "30000"
+      },
+      "description" : "Check to see if manufacturer exists",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "Check and create manufacturer",
+      "errorhandler" : {
+        "configuration" : {
+          "authentication" : "None",
+          "body" : "{\"name\":\"${data.device-manufacturer*}\",\"slug\":\"${data.device-manufacturer*}\"}",
+          "checkResponseCode" : "false",
+          "headers" : "{\"Authorization\":\"${option.netbox-token}\",\"Content-Type\":\"application/json\"}",
+          "method" : "POST",
+          "printResponse" : "true",
+          "printResponseToFile" : "false",
+          "proxySettings" : "false",
+          "remoteUrl" : "${option.netbox}/dcim/manufacturers/",
+          "sslVerify" : "false",
+          "timeout" : "30000"
+        },
+        "keepgoingOnSuccess" : true,
+        "nodeStep" : false,
+        "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-netbox-devicetype.json\ncount=$(jq -r '.count' $file)\necho count:$count\n\nif [ \"$count\" == \"0\" ];then\n    echo Creating new device type ...\n    false\nelse\n    echo Device type found\n    true\nfi"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-netbox-devicetype.json",
+        "headers" : "{\"Authorization\":\"${option.netbox-token}\"}}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "${option.netbox}/dcim/manufacturers/?name=${data.device-manufacturer*}",
+        "sslVerify" : "true",
+        "timeout" : "30000"
+      },
+      "description" : "Check to see if manufacturer exists",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "Capture Manufacturer ID",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-netbox-devicetype.json\njq -r '.results[] | \"manufacturer-id=\"+(.id|tostring)' $file"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-netbox-platform.json",
+        "headers" : "{\"Authorization\":\"${option.netbox-token}\"}}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "${option.netbox}/dcim/device-types/?model=${data.device-model-new*}",
+        "sslVerify" : "true",
+        "timeout" : "30000"
+      },
+      "description" : "Check to see if platform exists",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "Check and create platform",
+      "errorhandler" : {
+        "configuration" : {
+          "authentication" : "None",
+          "body" : "{\"manufacturer\":\"${data.manufacturer-id*}\",\"slug\":\"${data.device-model-new*}\",\"model\":\"${data.device-model-new*}\"}",
+          "checkResponseCode" : "false",
+          "headers" : "{\"Authorization\":\"${option.netbox-token}\",\"Content-Type\":\"application/json\"}",
+          "method" : "POST",
+          "printResponse" : "true",
+          "printResponseToFile" : "false",
+          "proxySettings" : "false",
+          "remoteUrl" : "${option.netbox}/dcim/device-types/",
+          "sslVerify" : "false",
+          "timeout" : "30000"
+        },
+        "keepgoingOnSuccess" : true,
+        "nodeStep" : false,
+        "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-netbox-platform.json\ncount=$(jq -r '.count' $file)\necho count:$count\n\nif [ \"$count\" == \"0\" ];then\n    echo Creating new device type ...\n    false\nelse\n    echo Device type found\n    true\nfi"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-netbox-platform.json",
+        "headers" : "{\"Authorization\":\"${option.netbox-token}\"}}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "${option.netbox}/dcim/device-types/?model=${data.device-model-new*}",
+        "sslVerify" : "true",
+        "timeout" : "30000"
+      },
+      "description" : "Check to see if platform exists",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "Capture Platform ID",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-netbox-platform.json\njq -r '.results[] | \"platform-id=\"+(.id|tostring)' $file"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\"name\": \"${option.nso-device}\",\"device_type\": \"${data.platform-id*}\",  \"device_role\": \"${option.netbox-role*}\",\"site\": \"${option.netbox-site}\",  \"location\": \"${option.netbox-location}\",\"status\": \"active\"}",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-netbox-device.json",
+        "headers" : "{\"Content-Type\":\"application/json\",\"Authorization\":\"${option.netbox-token}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "${option.netbox}/dcim/devices/",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Create Device",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "Capture Device ID",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-netbox-device.json\njq -r '. | \"device-id=\"+(.id|tostring)' $file"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-nso-device-interfaces.json",
+        "headers" : "{\"accept\": \"application/json\"}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://${option.proxy}/interfaces/${option.nso-device}",
+        "sslVerify" : "true",
+        "timeout" : "30000"
+      },
+      "description" : "Get Device interfaces",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "Build interface payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "interface-payload",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-nso-device-interfaces.json\njq -cr '[.[] | (.speed|fromjson|type) as $type |{\"name\":.value,\"type\":\"other\",\"device\":\"@data.device-id*@\",\"description\":.description,\"speed\":(if $type == \"null\" then 0 elif $type == \"number\" then .speed|tonumber*100 else (.speed|fromjson|to_entries[].value*10) end)}]' $file"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.interface-payload*}",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-netbox-device.json",
+        "headers" : "{\"Content-Type\":\"application/json\",\"Authorization\":\"${option.netbox-token}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "${option.netbox}/dcim/interfaces/",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Attach Interfaces to device",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "sequential"
+  },
+  "uuid" : "34683f66-c826-46e2-8531-9eb3b67dfb44"
+} ]

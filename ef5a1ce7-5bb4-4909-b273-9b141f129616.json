@@ -1,0 +1,39 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "id" : "ef5a1ce7-5bb4-4909-b273-9b141f129616",
+  "loglevel" : "INFO",
+  "name" : "webex test",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "name" : "text",
+    "required" : true
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\"markdown\" : \"${option.text}\"}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\" : \"application/json\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://webexapis.com/v1/webhooks/incoming/Y2lzY29zcGFyazovL3VzL1dFQkhPT0svNjYwN2E5NjgtZWJkZi00YWQ3LThiMGEtNTJhZTFiZGMwNzkz",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "ef5a1ce7-5bb4-4909-b273-9b141f129616"
+} ]

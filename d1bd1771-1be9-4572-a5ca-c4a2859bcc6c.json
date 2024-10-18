@@ -1,0 +1,44 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "-DEMO/2-CNC Device",
+  "id" : "d1bd1771-1be9-4572-a5ca-c4a2859bcc6c",
+  "loglevel" : "INFO",
+  "name" : "fds",
+  "nodeFilterEditable" : false,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://198.18.133.102:7000/cw/models/eyJhbGciOiJIUzUxMiJ9.eyJjbGllbnRJcEFkZHJlc3MiOiIxMC4yNDQuMC4wIiwic3ViIjoiYWRtaW4iLCJhdXRoSGFuZGxlTmFtZSI6IlF1ZXJ5RGF0YWJhc2VBdXRoZW50aWNhdGlvbkhhbmRsZXIiLCJpc0Zyb21OZXdMb2dpbiI6dHJ1ZSwiYXV0aGVudGljYXRpb25EYXRlIjoiMjAyMy0wNi0xOVQyMToxOTozNC45NjgwNjlaIiwicG9saWN5X2lkIjoiYWRtaW4iLCJzdWNjZXNzZnVsQXV0aGVudGljYXRpb25IYW5kbGVycyI6IlF1ZXJ5RGF0YWJhc2VBdXRoZW50aWNhdGlvbkhhbmRsZXIiLCJpc3MiOiJodHRwOlwvXC9sb2NhbGhvc3Q6NTQ4OVwvU1NPIiwidXNlckFnZW50IjoiQXBhY2hlLUh0dHBDbGllbnRcLzQuNS44IChKYXZhXC8xLjguMF8zNDIpIiwiY3JlZGVudGlhbFR5cGUiOiJVc2VybmFtZVBhc3N3b3JkQ3JlZGVudGlhbCIsImF1ZCI6Imh0dHBzOlwvXC8xLjIuMy40XC9hcHAtZGFzaGJvYXJkXC9hcHAtZGFzaGJvYXJkIiwiYXV0aGVudGljYXRpb25NZXRob2QiOiJRdWVyeURhdGFiYXNlQXV0aGVudGljYXRpb25IYW5kbGVyIiwiZ2VvTG9jYXRpb24iOiJ1bmtub3duIiwic2VydmVySXBBZGRyZXNzIjoiMTAuMjQ0Ljk5LjIyIiwibG9uZ1Rlcm1BdXRoZW50aWNhdGlvblJlcXVlc3RUb2tlblVzZWQiOmZhbHNlLCJjaGFuZ2VfcHdkIjoiZmFsc2UiLCJleHAiOjE2ODcyMzgzNzUsImlhdCI6MTY4NzIwOTU3NSwianRpIjoiU1QtNjgtY20xc1BMRXZXaFBpVVhWUWJLeFlZVGNjSTRmaXhPS1NIeno0OTFwNzhXLUI4NS1rd0J6blQ5aEpQWjVWVUFzQXdDT1BoSVFJN3BZcklmamhnalFYd3BpY0stbXR0Q0J0TVE5ODhQcS1UVWtmYlhWU2xXaGhpUFRMc1NtTGVmbGs1SFREQm9BY0xnZi1xWHZmQmVjbnF4Zno3LW0zTnlGeC1jYXMtMSJ9.5mpPkXg1uRH7fPoVbjvbcNoLBu05j22sH-QpXiufqLUiU6Yx7D04MIYxn6K8IQr4x5tsv-i9DU-2itZuSSxKsQ",
+        "sslVerify" : "true",
+        "timeout" : "30000"
+      },
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "false"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "d1bd1771-1be9-4572-a5ca-c4a2859bcc6c"
+} ]

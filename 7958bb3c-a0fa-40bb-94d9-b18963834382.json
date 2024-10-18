@@ -1,0 +1,43 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Show existing NTP entries",
+  "executionEnabled" : true,
+  "group" : "CNC/Setup",
+  "id" : "7958bb3c-a0fa-40bb-94d9-b18963834382",
+  "loglevel" : "INFO",
+  "name" : "NTP - Show Options",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "delimiter" : ",",
+    "description" : "> Current NTP Server list, as shown in provisioning screens",
+    "enforced" : true,
+    "label" : "Current NTPServer Entries",
+    "multivalueAllSelected" : true,
+    "multivalued" : true,
+    "name" : "ntp-servers-current",
+    "valuesUrl" : "file:/opt/cw/options/ntp-servers.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Show Entries",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "script" : "file=/opt/cw/options/ntp-servers.json\njq . $file\n"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "7958bb3c-a0fa-40bb-94d9-b18963834382"
+} ]

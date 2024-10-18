@@ -1,0 +1,132 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Provides CNC authentication towards a nominated host, and returns the token as `export.cnc-token`",
+  "executionEnabled" : true,
+  "group" : ".Auth",
+  "id" : "5fee437d-4fa6-4728-9601-0fac3a061ca9",
+  "loglevel" : "INFO",
+  "name" : "CNC - Auth",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "cnc-vip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "name" : "cnc-password",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/cw/admin",
+    "valueExposed" : true
+  }, {
+    "label" : "CNC User Name",
+    "name" : "cnc-user",
+    "required" : true,
+    "value" : "admin"
+  }, {
+    "label" : "Crosswork Port",
+    "name" : "cw-port",
+    "required" : true,
+    "value" : "30603"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "get VIP",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "cnc-vip",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "jq '.[] | select(.name==\"@option.cnc-vip@\").\"mgt-vip\"' /opt/cw/options/cw-environments.json | tr -d '\"'"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/x-www-form-urlencoded\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${data.cnc-vip*}:30603/crosswork/sso/v1/tickets?username=${option.cnc-user}&password=${option.cnc-password}",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "ticket",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "service=https://1.2.3.4/app-dashboard/app-dashboard",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/x-www-form-urlencoded\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${data.cnc-vip*}:30603/crosswork/sso/v1/tickets/${data.ticket}",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "token",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "save ticket and token data",
+      "script" : "echo @data.ticket*@ > /opt/cw/tmp/@option.cnc-vip@.cwticket\necho @data.token*@ > /opt/cw/tmp/@option.cnc-vip@.cwtoken\necho @data.cnc-vip*@ > /opt/cw/tmp/@option.cnc-vip@.cwvip"
+    }, {
+      "configuration" : {
+        "export" : "cnc-token",
+        "group" : "export",
+        "value" : "${data.token}"
+      },
+      "description" : "export token",
+      "nodeStep" : false,
+      "type" : "export-var"
+    }, {
+      "configuration" : {
+        "export" : "cnc-vip",
+        "group" : "export",
+        "value" : "${data.cnc-vip*}"
+      },
+      "description" : "export vip",
+      "nodeStep" : false,
+      "type" : "export-var"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "timeZone" : "Australia/Sydney",
+  "uuid" : "5fee437d-4fa6-4728-9601-0fac3a061ca9"
+} ]

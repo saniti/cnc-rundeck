@@ -1,0 +1,178 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Uploads application packaes to CNC PODs\n[Create New](0775b79b-5e36-4a1a-bfd5-68b76864c8bc) | \n[Show Existing](2ac3e08d-3f86-46cb-bff0-e90efd7a0a2e)\n---\n## Overview\nThis will upload files from the server to crosswork, ready for installation\n<br>It will not perform the installation, you will need to do this yourself.\n\n### Inputs\n- `useraccounts/remote-host` - IP or DNS name of the remote SSH host\n- `useraccounts/remote-ssh-user` - shell user name on `remote-host`\n- `useraccounts/remote-ssh-pass` - password for `remote-ssh-user`\n",
+  "executionEnabled" : true,
+  "group" : "CNC/Update",
+  "id" : "46b1dd8b-f3db-4458-b29a-ba549e63feee",
+  "loglevel" : "INFO",
+  "name" : "CNC-01 - App Installation v2",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "VIP for CNC",
+    "name" : "cnc-vip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "enforced" : true,
+    "label" : "Crosswork Version",
+    "name" : "cw-version",
+    "value" : "CNC40",
+    "valuesUrl" : "file:/opt/cw/options/cw-versions.json"
+  }, {
+    "delimiter" : ",",
+    "description" : "Allowed file that can be uploaded to crosswork, used for patching and upgrades.",
+    "enforced" : true,
+    "label" : "File to Upload",
+    "multivalueAllSelected" : true,
+    "multivalued" : true,
+    "name" : "app-file",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-packages-${option.cw-version.value}.json"
+  }, {
+    "enforced" : true,
+    "label" : "Update method",
+    "name" : "method",
+    "required" : true,
+    "value" : "scp",
+    "values" : [ "scp", "http" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "hidden" : true,
+    "name" : "cw-port",
+    "required" : true,
+    "value" : "30603"
+  }, {
+    "enforced" : true,
+    "label" : "Show or Execute?",
+    "name" : "showorrun",
+    "required" : true,
+    "value" : "show",
+    "values" : [ "show", "run" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "get version properties",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "true",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "jq -r '.[] | select(.value==\"@option.cw-version@\") | to_entries[] | [((\"pod-\"+.key)|tostring),(.value|tostring)]|join(\"=\")' /opt/cw/options/cw-versions.json"
+    }, {
+      "description" : "cnc auth",
+      "jobref" : {
+        "args" : "-cnc-pod ${option.cnc-vip}",
+        "group" : "CNC/Configuration",
+        "name" : "get key vars v3",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "description" : "flatten input files",
+      "script" : "echo @option.app-file@ | tr \",\" \" \""
+    }, {
+      "description" : "flatten input files",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "#echo '@option.app-file@' | jq -c --raw-input --raw-output 'split(\",\")[] | [\"@data.pod-location-scp*@\",.]|join(\"/\")'\necho '@option.app-file@' | jq -c --raw-input --raw-output 'split(\",\")[] | \"file-list=\"+([\"@data.pod-location-scp*@\",.]|join(\"/\")|tostring)'"
+    }, {
+      "description" : "test update process",
+      "script" : "if [ @option.showorrun@ == \"show\" ]\nthen \n    for i in `echo '@option.app-file@' | jq -c --raw-input --raw-output 'split(\",\")[] | ([\"@data.pod-location-scp*@\",\"cnc-fp\",.]|join(\"/\")|tostring)'`; do echo $(echo curl -k --location --request POST https://@export.mgtvip@:@option.cw-port@/crosswork/platform/v2/capp/repository/packagedata --header \\'Content-Type: application/x-www-form-urlencoded\\' --header \\'Accept: text/plain\\' --header \\'Cache-Control: no-cache\\' --header \\'Authorization: Bearer @export.cwtoken@\\' --data-binary \\'\\{\\\"remote_file\\\":\\\"$i\\\",\\\"ssh_config\\\":\\{\\\"remote_host\\\":\\\"@data.pod-scp-host*@\\\",\\\"username\\\":\\\"@data.pod-scp-user*@\\\",\\\"password\\\":\\\"@data.pod-scp-pass*@\\\",\\\"port\\\":22\\}\\}\\'); done\nelse \n    for i in `echo '@option.app-file@' | jq -c --raw-input --raw-output 'split(\",\")[] | ([\"@data.pod-location-scp*@\",\"cnc-fp\",.]|join(\"/\")|tostring)'`; do eval $(echo curl -k --location --request POST https://@export.mgtvip@:@option.cw-port@/crosswork/platform/v2/capp/repository/packagedata --header \\'Content-Type: application/x-www-form-urlencoded\\' --header \\'Accept: text/plain\\' --header \\'Cache-Control: no-cache\\' --header \\'Authorization: Bearer @export.cwtoken@\\' --data-binary \\'\\{\\\"remote_file\\\":\\\"$i\\\",\\\"ssh_config\\\":\\{\\\"remote_host\\\":\\\"@data.pod-scp-host*@\\\",\\\"username\\\":\\\"@data.pod-scp-user*@\\\",\\\"password\\\":\\\"@data.pod-scp-pass*@\\\",\\\"port\\\":22\\}\\}\\'); done\nfi \n\nfalse\n\n"
+    }, {
+      "description" : "upload applications",
+      "script" : "#for i in `echo @data.file-list*@`; do echo curl -k --location --request POST 'https://@option.cnc-vip@:@option.cw-port@/crosswork/platform/v2/capp/repository/packagedata' --header 'Content-Type: application/x-www-form-urlencoded' --header 'Accept: text/plain' --header 'Cache-Control: no-cache' --header 'Authorization: Bearer @data.TOKEN@' --data-raw {\"remote_file\":\"/opt/cw/install/$i\",\"ssh_config\":{\"remote_host\":\"10.66.182.68\",\"username\":\"@option.remote_ssh_user@\",\"password\":\"@option.remote_ssh_pass@\",\"port\":22}}; done\n#for i in `echo $@data.file-list*@`; do curl -k --location --request POST https://@option.cnc-vip@:@option.cw-port@/crosswork/platform/v2/capp/repository/packagedata --header 'Content-Type: application/x-www-form-urlencoded' --header 'Accept: text/plain' --header 'Cache-Control: no-cache' --header 'Authorization: Bearer @data.token*@' --data-raw '{\"remote_file\":\"/opt/cw/install/$i\",\"ssh_config\":{\"remote_host\":\"10.66.182.68\",\"username\":\"@option.remote_ssh_user@\",\"password\":\"@option.remote_ssh_pass@\",\"port\":22}}'; done\necho  curl -k --location --request POST https://@export.mgtvip@:@option.cw-port@/crosswork/platform/v2/capp/repository/packagedata --header 'Content-Type: application/x-www-form-urlencoded' --header 'Accept: text/plain' --header 'Cache-Control: no-cache' --header 'Authorization: Bearer @export.cnc-token@' --data-raw '{\"remote_file\":\"/opt/cw/install/$i\",\"ssh_config\":\\{\"remote_host\":\"@option.remote-host@\",\"username\":\"@option.remote_ssh_user@\",\"password\":\"@option.remote_ssh_pass@\",\"port\":22}}'\nfor i in `echo @data.file-list*@`; do eval $(echo curl -k --location --request POST https://@export.mgtvip@:@option.cw-port@/crosswork/platform/v2/capp/repository/packagedata --header \\'Content-Type: application/x-www-form-urlencoded\\' --header \\'Accept: text/plain\\' --header \\'Cache-Control: no-cache\\' --header \\'Authorization: Bearer @export.cwtoken@\\' --data-binary \\'\\{\\\"remote_file\\\":\\\"$i\\\",\\\"ssh_config\\\":\\{\\\"remote_host\\\":\\\"@option.remote-host@\\\",\\\"username\\\":\\\"@option.remote_ssh_user@\\\",\\\"password\\\":\\\"@option.remote_ssh_pass@\\\",\\\"port\\\":22\\}\\}\\'); done\n\n\n\n"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/cw-apps.log",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:${option.cw-port}/crosswork/platform/v2/capp/events/query",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "get job status",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "get events",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "script" : "jq '[.events[] | {\"Event\":.event_tags[].tag_value,\"Message\":.message}]' /opt/cw/tmp/cw-apps.log"
+    }, {
+      "configuration" : {
+        "command" : "curl -k --location --request POST 'https://${export.mgtvip}:${option.cw-port}/crosswork/platform/v2/capp/applicationsummary/query' --header 'Content-Type: application/x-www-form-urlencoded' --header 'Accept: text/plain' --header 'Cache-Control: no-cache' --header 'Authorization: Bearer ${export.cwtoken}' --data-raw  '{}'"
+      },
+      "description" : "Get Product Versions",
+      "nodeStep" : true,
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "curl -k --location --request POST 'https://${export.mgtvip}:${option.cw-port}/crosswork/platform/v2/capp/applicationsummary/query' --header 'Content-Type: application/x-www-form-urlencoded' --header 'Accept: text/plain' --header 'Cache-Control: no-cache' --header 'Authorization: Bearer ${data.TOKEN}' --data-raw  '{}'"
+      },
+      "description" : "Get Product Versions",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "test",
+            "regex" : "((?:\"name\":\")(.*?)(?:\"))"
+          },
+          "type" : "key-value-data"
+        }, {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "false"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "description" : "log data",
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "46b1dd8b-f3db-4458-b29a-ba549e63feee"
+} ]

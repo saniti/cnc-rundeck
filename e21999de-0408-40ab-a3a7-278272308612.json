@@ -1,0 +1,85 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Uses `nso` to generate a topology from the live network, and converts into mermaid (markdown) format for WIKI page. \n---\n### Wiki Page\n[Topology](http://198.18.133.102:3000/simon/demo/wiki/Topology)",
+  "executionEnabled" : true,
+  "group" : "DEMO/Datacenter/Datacenter",
+  "id" : "e21999de-0408-40ab-a3a7-278272308612",
+  "loglevel" : "INFO",
+  "name" : "show topoloogy v2",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "NSO Environment",
+    "name" : "env",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/nso-environment.json"
+  }, {
+    "label" : "Line Length",
+    "name" : "line-length",
+    "required" : true,
+    "value" : "--"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/nso-topology.json",
+        "headers" : "{\"accept\": \"application/json\"}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://proxy:7000/topology/${option.env}",
+        "sslVerify" : "false",
+        "timeout" : "1000000"
+      },
+      "description" : "Get Topology",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "jq and save",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/nso-topology.json\njq '[.[] | to_entries[] | {\"name\":.value.name,\"value\":.value.name}]' $file"
+    }, {
+      "description" : "Build topology file",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/nso-topology.json\noutfile=/opt/cw/tmp/nso-topology-out.json\necho '```mermaid' > $outfile\necho 'flowchart LR' >> $outfile\necho '%% updated: ' `date` >> $outfile\njq -r '(.[][]| .name as $name | (..|select(has(\"live-status\"))?) |.\"live-status\"[][][] | (.\"device-id\"|split(\".\")[0] | .|split(\"(\")[0]) as $remote | $name+\" x@option.line-length@x|<- \"+.\"local-interface\"+\"<br>\"+.\"port-id\"+\" ->|\"+$remote)' $file >> $outfile\necho '```' >> $outfile"
+    }, {
+      "description" : "Show file",
+      "exec" : "cat /opt/cw/tmp/nso-topology-out.json"
+    }, {
+      "jobref" : {
+        "args" : "-repo simon/demo -branch develop -file-path /opt/cw/tmp/nso-topology-out.json -file-name Topology -message \"updated\"",
+        "group" : "git",
+        "name" : "git - replace wiki file v2",
+        "uuid" : "e81b5233-73ba-40a0-bc17-f6a78e606c30"
+      }
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "e21999de-0408-40ab-a3a7-278272308612"
+} ]

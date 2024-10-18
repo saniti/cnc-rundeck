@@ -1,0 +1,34 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "CNC/devices",
+  "id" : "d279aae3-45eb-42bd-a09d-c83710be965c",
+  "loglevel" : "INFO",
+  "name" : "show interfaces brief",
+  "nodeFilterEditable" : false,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : true,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "1"
+    },
+    "filter" : "tags: pe-router"
+  },
+  "nodesSelectedByDefault" : true,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "show interfaces",
+      "exec" : "show ip int br"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "parallel"
+  },
+  "uuid" : "d279aae3-45eb-42bd-a09d-c83710be965c"
+} ]

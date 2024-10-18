@@ -1,0 +1,80 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Identifies sequencing and requirements for application install\n---\nDetermines the dependencies between application installation.",
+  "executionEnabled" : true,
+  "group" : "CNC/Update",
+  "id" : "a821828e-cd6d-450e-b520-b22e2e86fab1",
+  "loglevel" : "INFO",
+  "name" : "CNC Application Requirements",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "hidden" : true,
+    "name" : "cw-port",
+    "required" : true,
+    "value" : "30603"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "cnc auth",
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/cw-apps-dependencies.log",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:${option.cw-port}/crosswork/platform/v2/capp/repository/packagedata/query",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "get app dependencies",
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "get application dependencies",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "script" : "jq '[.package_data_list[] | {\"app\":.summary.name,\"requirements\":.instructions}]' /opt/cw/tmp/cw-apps-dependencies.log"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "a821828e-cd6d-450e-b520-b22e2e86fab1"
+} ]

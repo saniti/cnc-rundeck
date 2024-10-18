@@ -1,0 +1,753 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "OVF Command line builder for SRPCE \n## Features\n- Create an OVF command line for deploying a single SRPCE",
+  "executionEnabled" : true,
+  "group" : "CNC/Deploy/PCE",
+  "id" : "f44eaff5-7861-447f-8c86-54b3efa6abcd",
+  "loglevel" : "INFO",
+  "name" : "PCE - Single Node",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "Execute command or just generate it.\n- Generate (default) Show the command line that needs to be run, but the user\n- Execute - Generate the command line and run it on the local system",
+    "enforced" : true,
+    "name" : "Option",
+    "required" : true,
+    "value" : "Execute",
+    "values" : [ "Execute", "Generate" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "name" : "image-file",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/pce-images.json"
+  }, {
+    "enforced" : true,
+    "label" : "Deployment Type",
+    "name" : "deployment-option",
+    "required" : true,
+    "value" : "pce-default",
+    "values" : [ "pce-default" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "vCPU",
+    "name" : "deploy-option-cpu",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/${option.deployment-option.value}-cpu.json"
+  }, {
+    "enforced" : true,
+    "label" : "Memory",
+    "name" : "deploy-option-mem",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/${option.deployment-option.value}-mem.json"
+  }, {
+    "enforced" : true,
+    "label" : "Disk",
+    "name" : "deploy-option-disk",
+    "required" : true,
+    "value" : "50",
+    "values" : [ "50" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "delimiter" : ",",
+    "description" : "`test` `test2`",
+    "multivalued" : true,
+    "name" : "ovf-options",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/ovf-deploy-options-poweroff.json"
+  }, {
+    "label" : "OVF Extra Configuration Options",
+    "name" : "ovf-extra-config",
+    "required" : true,
+    "value" : "default",
+    "values" : [ "advanced", "default" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "delimiter" : ",",
+    "enforced" : true,
+    "multivalued" : true,
+    "name" : "ovf-extra-config-options",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/extra-config-options.${option.ovf-extra-config.value}.json"
+  }, {
+    "label" : "PCE hostname",
+    "name" : "host-name-1",
+    "value" : "SRPCE-"
+  }, {
+    "description" : "Role for Netbox",
+    "enforced" : true,
+    "name" : "vm-role",
+    "required" : true,
+    "value" : "9",
+    "valuesUrl" : "file:/opt/cw/options/roles.json"
+  }, {
+    "enforced" : true,
+    "label" : "Domain Name",
+    "name" : "domain-name",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/domains.json"
+  }, {
+    "label" : "Description",
+    "name" : "description",
+    "required" : true,
+    "value" : "SRPCE Segment Routing Computation Engine"
+  }, {
+    "hidden" : true,
+    "label" : "CDG hostname",
+    "name" : "host-name",
+    "required" : true,
+    "value" : "${option.host-name-1}"
+  }, {
+    "delimiter" : ",",
+    "label" : "DNS Server",
+    "multivalued" : true,
+    "name" : "dns-server",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/dns-servers.json"
+  }, {
+    "delimiter" : ",",
+    "label" : "NTP Server",
+    "multivalued" : true,
+    "name" : "ntp-server",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/ntp-servers.json"
+  }, {
+    "delimiter" : ",",
+    "enforced" : true,
+    "label" : "Virtual Networking Options",
+    "multivalueAllSelected" : true,
+    "multivalued" : true,
+    "name" : "vnic-options",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-options.json"
+  }, {
+    "label" : "VM Datastore",
+    "name" : "datastore-1",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/datastores.json"
+  }, {
+    "label" : "VMware ESX host",
+    "name" : "vmware-esx-host",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/hosts.json"
+  }, {
+    "enforced" : true,
+    "hidden" : true,
+    "label" : "Number of Network Adapters",
+    "name" : "active-vnics",
+    "value" : "2",
+    "values" : [ "2" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "label" : "Management Network",
+    "name" : "vnic-1-network",
+    "value" : "/HX-cluster/network/vm-network-411",
+    "valuesUrl" : "file:/tmp/networks.json"
+  }, {
+    "label" : "Data Network",
+    "name" : "vnic-2-network",
+    "value" : "/HX-cluster/network/vm-network-413",
+    "valuesUrl" : "file:/tmp/networks.json"
+  }, {
+    "label" : "Device Network",
+    "name" : "vnic-3-network",
+    "value" : "/HX-cluster/network/vm-network-410",
+    "valuesUrl" : "file:/tmp/networks.json"
+  }, {
+    "hidden" : true,
+    "name" : "cnc-password",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/cw/cw-admin",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "vcenter-host",
+    "secure" : true,
+    "storagePath" : "keys/vmware/vcenter",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "vcenter-password",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/vmware/administrator-vc-local",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "vcenter-username",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/vmware/vc-username",
+    "valueExposed" : true
+  }, {
+    "description" : "***Dynamic*** - IP Addressing from Netbox\n***Static*** - IP Addressing entered by user",
+    "enforced" : true,
+    "label" : "Network Options for Management Network",
+    "name" : "vnic-0-static",
+    "required" : true,
+    "values" : [ "dynamic", "static" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "IP Address for Management Interface",
+    "label" : "Management - IP",
+    "name" : "vnic-0-ip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-0-static.value}-ip.json"
+  }, {
+    "description" : "Subnet Mask",
+    "label" : "Management - Mask",
+    "name" : "vnic-0-mask",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-0-static.value}-mask.json"
+  }, {
+    "description" : "Gateway IP",
+    "label" : "Management - Gateway",
+    "name" : "vnic-0-gateway",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-0-static.value}-gw.json"
+  }, {
+    "description" : "***Dynamic*** - IP Addressing from Netbox\n***Static*** - IP Addressing entered by user",
+    "enforced" : true,
+    "label" : "Network Options for Data Network",
+    "name" : "vnic-1-static",
+    "required" : true,
+    "values" : [ "dynamic", "static" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "IP Address for Data Interface",
+    "label" : "DATA - IP",
+    "name" : "vnic-1-ip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-1-static.value}-1-ip.json"
+  }, {
+    "description" : "Subnet Mask",
+    "label" : "DATA - Mask",
+    "name" : "vnic-1-mask",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-1-static.value}-1-mask.json"
+  }, {
+    "description" : "Gateway IP",
+    "label" : "DATA - Gateway",
+    "name" : "vnic-1-gateway",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-1-static.value}-1-gw.json"
+  }, {
+    "description" : "***Dynamic*** - IP Addressing from Netbox\n***Static*** - IP Addressing entered by user",
+    "enforced" : true,
+    "label" : "Network Options for Device Network",
+    "name" : "vnic-2-static",
+    "required" : true,
+    "values" : [ "dynamic", "static" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "IP Address for Device Interface",
+    "label" : "DEVICE - IP",
+    "name" : "vnic-2-ip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-2-static.value}-1-ip.json"
+  }, {
+    "description" : "Subnet Mask",
+    "label" : "DEVICE - Mask",
+    "name" : "vnic-2-mask",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-2-static.value}-2-mask.json"
+  }, {
+    "description" : "Gateway IP",
+    "label" : "DEVICE - Gateway",
+    "name" : "vnic-2-gateway",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-2-static.value}-2-gw.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Host IP",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "esx-ip",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "cd /tmp\necho @option.vcenter-host@\nexport GOVC_URL=@option.vcenter-host@\nexport GOVC_USERNAME=@option.vcenter-username@\nexport GOVC_PASSWORD=@option.vcenter-password@\nexport GOVC_INSECURE=true\ngovc host.info --json @option.vmware-esx-host@ | jq '.HostSystems[0].Config.Network.Vnic[0].Spec.Ip.IpAddress'\n\n\n\n"
+    }, {
+      "configuration" : {
+        "command" : "basename \"${option.datastore-1}\""
+      },
+      "description" : "generate datastore name",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "datastore-name",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "echo ${option.host-name}"
+      },
+      "description" : "generate host name",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "host-name",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "basename ${option.vnic-1-network}"
+      },
+      "description" : "generate vnic1 network",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "vnic-1-network",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "basename ${option.vnic-2-network}"
+      },
+      "description" : "generate vnic2 network",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "vnic-2-network",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "basename ${option.vnic-3-network}"
+      },
+      "description" : "generate vnic3 network",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "vnic-3-network",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "basename ${option.datastore-1}"
+      },
+      "description" : "datastore",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "datastore",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "description" : "ovf-options",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "ovf-options",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo @option.ovf-options@ | tr \",\" \" \"\n"
+    }, {
+      "description" : "flatten ovf extra config",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "ovf-extra-config-init",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo @option.ovf-extra-config-options@ | tr \",\" \" \" | tr \"default\" \" \""
+    }, {
+      "description" : "flatten ntp servers",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "ntp-servers",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo @option.ntp-server@ | tr \",\" \" \""
+    }, {
+      "description" : "flatten dns servers",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "dns-servers",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo @option.dns-server@ | tr \",\" \" \""
+    }, {
+      "description" : "CPU",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "CPU",
+            "regex" : ".*CPU.(\\d+).*"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo @option.deploy-option-values@\n\n\n"
+    }, {
+      "description" : "MEM",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "RAM",
+            "regex" : ".*RAM.(\\d+).*"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo @option.deploy-option-values@\n"
+    }, {
+      "description" : "DISK",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "DISK",
+            "regex" : ".*DISK.(\\d+).*"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo @option.deploy-option-values@\n"
+    }, {
+      "configuration" : {
+        "command" : "bash -c 'if [ \"${option.vnic-0-static}\" == \"static\" ]; then echo ${option.vnic-0-ip},${option.vnic-0-mask},${option.vnic-0-gateway}; else false; fi'"
+      },
+      "description" : "0",
+      "errorhandler" : {
+        "jobref" : {
+          "args" : "-search_tag cnc-mgmt -ifnum 1 -state reserved -description ${data.host-name*}",
+          "group" : "Netbox",
+          "name" : "GET Next IP",
+          "uuid" : "0ff19321-403f-42bd-9ac1-ed2a4507b496"
+        },
+        "keepgoingOnSuccess" : true
+      },
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "nic-0-ip",
+            "regex" : "(.+),.*,.*"
+          },
+          "type" : "key-value-data"
+        }, {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "nic-0-mask",
+            "regex" : ".*,(.+),.*"
+          },
+          "type" : "key-value-data"
+        }, {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "nic-0-gw",
+            "regex" : ".*,.*,(.+)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "bash -c 'if [ \"${option.vnic-1-static}\" == \"static\" ]; then echo ${option.vnic-1-ip},${option.vnic-1-mask},${option.vnic-1-gateway}; else false; fi'"
+      },
+      "description" : "1",
+      "errorhandler" : {
+        "jobref" : {
+          "args" : "-search_tag cnc-data -ifnum 2 -state reserved -description ${data.host-name*}",
+          "group" : "Netbox",
+          "name" : "GET Next IP",
+          "uuid" : "0ff19321-403f-42bd-9ac1-ed2a4507b496"
+        },
+        "keepgoingOnSuccess" : true
+      },
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "nic-1-ip",
+            "regex" : "(.+),.*,.*"
+          },
+          "type" : "key-value-data"
+        }, {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "nic-1-mask",
+            "regex" : ".*,(.+),.*"
+          },
+          "type" : "key-value-data"
+        }, {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "nic-1-gw",
+            "regex" : ".*,.*,(.+)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "bash -c 'if [ \"${option.vnic-2-static}\" == \"static\" ]; then echo ${option.vnic-2-ip},${option.vnic-2-mask},${option.vnic-2-gateway}; else false; fi'"
+      },
+      "description" : "3",
+      "errorhandler" : {
+        "jobref" : {
+          "args" : "-search_tag cnc-data -ifnum 2 -state reserved -description ${data.host-name*}",
+          "group" : "Netbox",
+          "name" : "GET Next IP",
+          "uuid" : "0ff19321-403f-42bd-9ac1-ed2a4507b496"
+        },
+        "keepgoingOnSuccess" : true
+      },
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "nic-1-ip",
+            "regex" : "(.+),.*,.*"
+          },
+          "type" : "key-value-data"
+        }, {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "nic-1-mask",
+            "regex" : ".*,(.+),.*"
+          },
+          "type" : "key-value-data"
+        }, {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "nic-1-gw",
+            "regex" : ".*,.*,(.+)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "bash -c 'if [ \"${option.vnic-0-static}\" != \"static\" ]; then echo \"255.255.255.0\"; else true; fi'"
+      },
+      "description" : "Set netmask when dynamic",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "nic-0-mask",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "bash -c 'if [ \"${option.vnic-1-static}\" != \"static\" ]; then echo \"255.255.255.0\"; else true; fi'"
+      },
+      "description" : "Set netmask when dynamic",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "nic-1-mask",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "description" : "Build Annotation for the VM",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "annotation",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo Management IP: @data.vnic-1-ip*@, Data IP: @data.vnic-2-ip*@, Device IP : @data.vnic-3.ip*@. Serial Console: @data.esx-ip*@"
+    }, {
+      "configuration" : {
+        "command" : "echo ovftool ${data.ovf-options*} --allowExtraConfig ${data.ovf-extra-config*} -n='${data.host-name*}' --numberOfCpus:'*'=${option.deploy-option-cpu} --memorySize:'*'=${option.deploy-option-mem} -ds='${data.datastore*}' --diskMode='thin' --net:MgmtEth0_RP0_CPU0_0='${data.vnic-1-network}' --net:CtrlEth='${data.vnic-2-network}' --net:DevEth='${data.vnic-3-network}' --annotation=\"${data.annotation}\" ${option.image-file}  vi://${option.vcenter-username}:${option.vcenter-password}@${option.vcenter-host}${option.vmware-esx-host}"
+      },
+      "description" : "Generate Command Line",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "command-line",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "jobref" : {
+        "args" : "-node-name ${data.host-name*} -hostname ${data.nic-0-ip*}${export.ip-1} -description \"${option.description}\" -user-name dg-admin -tags \"cdg,${option.label}\" -password-storage-path keys/cw/dg-admin",
+        "group" : "Rundeck Nodes",
+        "name" : "Create a New node",
+        "uuid" : "e60e849d-c7c2-430e-a545-a2fb9b0a6c61"
+      }
+    }, {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    }, {
+      "description" : "If option is Execute, then run the command",
+      "errorhandler" : {
+        "keepgoingOnSuccess" : true,
+        "script" : "@data.command-line*@"
+      },
+      "script" : "bash -c 'if [ \"@option.Option@\" == \"Execute\" ]; then false; else true; fi'"
+    }, {
+      "description" : "Add serial port",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "esx-ip",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "cd /tmp\necho @option.vcenter-host@\nexport GOVC_URL=@option.vcenter-host@\nexport GOVC_USERNAME=@option.vcenter-username@\nexport GOVC_PASSWORD=@option.vcenter-password@\nexport GOVC_INSECURE=true\ngovc device.serial.add -vm @data.host-name*@ serialport\n\n\n\n"
+    }, {
+      "description" : "Power ON",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "esx-ip",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "cd /tmp\necho @option.vcenter-host@\nexport GOVC_URL=@option.vcenter-host@\nexport GOVC_USERNAME=@option.vcenter-username@\nexport GOVC_PASSWORD=@option.vcenter-password@\nexport GOVC_INSECURE=true\ngovc vm.power -on @data.host-name*@\n\n\n"
+    }, {
+      "description" : "add vm to netbox",
+      "jobref" : {
+        "args" : "-VM ${data.host-name*} -vm-role ${option.vm-role}",
+        "group" : "Netbox",
+        "name" : "Add VM to NetBox",
+        "uuid" : "acac2af5-f8a8-44d6-a8d7-d02b9356b452"
+      }
+    }, {
+      "configuration" : {
+        "data" : "SerialConsolePort=${data.esx-ip*}",
+        "format" : "properties"
+      },
+      "description" : "Next Steps",
+      "nodeStep" : true,
+      "type" : "stub-node-step"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "sequential"
+  },
+  "uuid" : "f44eaff5-7861-447f-8c86-54b3efa6abcd"
+} ]

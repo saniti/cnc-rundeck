@@ -1,0 +1,82 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "-DEMO/2-CNC Device",
+  "id" : "4f75fb50-02cd-4f5f-834e-459ead1c48e3",
+  "loglevel" : "INFO",
+  "name" : "add new netsims to network",
+  "nodeFilterEditable" : false,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : false,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "1"
+    },
+    "filter" : "name: dcloud-nso "
+  },
+  "nodesSelectedByDefault" : true,
+  "options" : [ {
+    "description" : "> Prefix for device. For example, demo- will create a device as demo-0, demo-1",
+    "label" : "Device Prefix",
+    "name" : "device-prefix",
+    "required" : true
+  }, {
+    "enforced" : true,
+    "label" : "Cisco NED",
+    "name" : "device-type",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/packages"
+  }, {
+    "label" : "Number of devices to create",
+    "name" : "devicenum",
+    "required" : true
+  }, {
+    "enforced" : true,
+    "label" : "Start?",
+    "name" : "start",
+    "required" : true,
+    "values" : [ "no", "yes" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "hidden" : true,
+    "name" : "proxy",
+    "required" : true,
+    "value" : "proxy:3001",
+    "values" : [ "proxy:3001" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Create netsim devices and onboard to NSO",
+      "script" : "loadfile=/tmp/@job.execid@-devices.xml\n\ncd /home/cisco/ncs-run\n. /home/cisco/nso-5.7.6/ncsrc\nid\nenv | grep -i NCS\necho   \"$NCS_DIR/bin/ncs-netsim\" add-to-network ./packages/@option.device-type@ @option.devicenum@ @option.device-prefix@\n\n#    echo Removing existing netsims ...\n#    sudo -E -u cisco bash -c  '$NCS_DIR/bin/ncs-netsim stop'\n#    sudo -E -u cisco bash -c  '$NCS_DIR/bin/ncs-netsim delete-network'\n#    sudo -E -u cisco bash -c  '$NCS_DIR/bin/ncs-netsim create-network ./packages/@option.device-type@ @option.devicenum@ @option.device-prefix@'\n#    sudo -E -u cisco bash -c  '$NCS_DIR/bin/ncs-netsim ncs-xml-init > /tmp/@job.execid@-devices.xml'\n#    sudo -E -u cisco bash -c  '$NCS_DIR/bin/ncs_load -l -m -F x /tmp/@job.execid@-devices.xml'\n\n    echo Adding to existing netsim network ... \n    \"$NCS_DIR/bin/ncs-netsim\" add-to-network ./packages/@option.device-type@ @option.devicenum@ @option.device-prefix@\n    \"$NCS_DIR/bin/ncs-netsim\" ncs-xml-init > /tmp/@job.execid@-devices.xml\n    \"$NCS_DIR/bin/ncs_load\" -l -m -F x /tmp/@job.execid@-devices.xml\n"
+    }, {
+      "description" : "start if requested",
+      "script" : "loadfile=/tmp/@job.execid@-devices.xml\nncsrun=/home/cisco/ncs-run\nnsodir=/home/cisco/nso-5.7.6\n. $nsodir/ncsrc\ncd $ncsrun\nstart_netsim () {\ncommand $NCS_DIR/bin/ncs-netsim start\n}\n\nif [ \"@option.start@\" = \"yes\" ]; then start_netsim; filoadfile=/tmp/@job.execid@-devices.xml\nncsrun=/home/cisco/ncs-run\nnsodir=/home/cisco/nso-5.7.6\n. $nsodir/ncsrc\ncd $ncsrun\nstart_netsim () {\ncommand $NCS_DIR/bin/ncs-netsim start\n}\n\nif [ \"@option.start@\" = \"yes\" ]; then start_netsim; fi"
+    }, {
+      "description" : "show netsims",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "ncsrun=/home/cisco/ncs-run\nnsodir=/home/cisco/nso-5.7.6\n. $nsodir/ncsrc\ncd $ncsrun\n\n$NCS_DIR/bin/ncs-netsim list\n\"$NCS_DIR/bin/ncs-netsim\" list\n\n"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "4f75fb50-02cd-4f5f-834e-459ead1c48e3"
+} ]

@@ -1,0 +1,115 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Delete the service from CNC/NSO",
+  "executionEnabled" : true,
+  "group" : "-DEMO/L2VPN",
+  "id" : "280d1496-7e68-460b-9c81-c1f7c3c9d210",
+  "loglevel" : "INFO",
+  "name" : "CNC - L2 Service (step 5 - delete service)",
+  "nodeFilterEditable" : false,
+  "notification" : {
+    "onsuccess" : {
+      "email" : {
+        "recipients" : "device-details@necehealthpoc.local",
+        "subject" : "${notification.eventStatus} ${job.name}"
+      }
+    }
+  },
+  "notifyAvgDurationThreshold" : null,
+  "options" : [ {
+    "enforced" : true,
+    "hidden" : true,
+    "name" : "proxy",
+    "required" : true,
+    "value" : "proxy:3001",
+    "values" : [ "proxy:3001" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "CW POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "enforced" : true,
+    "label" : "Commit Options",
+    "name" : "dry-run-options",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/nso-commit-options.json"
+  }, {
+    "enforced" : true,
+    "name" : "vpn-id",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/nso/vpnservices/l2vpn"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Dry run options",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "if [ \"@option.dry-run-options@\" == \"implementation-plan\" ]\nthen\n    echo DRY_RUN_COMMAND=\"?dry-run=native\"\n    echo RUN_IMPLEMENTATION_PLAN=false\nelif [ \"@option.dry-run-options@\" == \"commit\" ]\n    then\n        echo DRY_RUN_COMMAND=\nelse\n    echo DRY_RUN_COMMAND=\"@option.dry-run-options@\"\n    \nfi"
+    }, {
+      "description" : "generate implementation plan?",
+      "errorhandler" : {
+        "jobref" : {
+          "args" : "-friendly-name L2VPN  service-type L2VPN name ${option.vpn-id}",
+          "group" : "-DEMO",
+          "name" : "Create dry run exports v2 - DEL",
+          "nodeStep" : "true",
+          "uuid" : "be886a78-3c2e-44cf-96f6-6458118d987e"
+        },
+        "keepgoingOnSuccess" : true
+      },
+      "script" : "@data.RUN_IMPLEMENTATION_PLAN*@"
+    }, {
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/yang-data+json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}\n",
+        "method" : "DELETE",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data/ietf-l2vpn-ntw:l2vpn-ntw/vpn-services/vpn-service=${option.vpn-id}${data.DRY_RUN_COMMAND*}",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Delete Service",
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "false"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "280d1496-7e68-460b-9c81-c1f7c3c9d210"
+} ]

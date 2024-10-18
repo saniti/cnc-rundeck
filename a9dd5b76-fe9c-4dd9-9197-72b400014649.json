@@ -1,0 +1,176 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Deploy a single node SSM VM. Configuration will need to be done manually.\n## Features\n- IPAM integration",
+  "executionEnabled" : true,
+  "group" : "CNC/Deploy/SSM",
+  "id" : "a9dd5b76-fe9c-4dd9-9197-72b400014649",
+  "loglevel" : "INFO",
+  "name" : "Deploy SSM OnPrem Node",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "User account that will be created (by you), and used by rundeck.",
+    "name" : "admin-username",
+    "required" : true,
+    "value" : "admin"
+  }, {
+    "enforced" : true,
+    "name" : "vm-role",
+    "value" : "4",
+    "valuesUrl" : "file:/opt/cw/options/roles.json"
+  }, {
+    "label" : "Name of the first host",
+    "name" : "VM-1-Name",
+    "required" : true,
+    "value" : "ssm-onprem-01"
+  }, {
+    "description" : "This value will be used within runbook for selecting devices. Typical format would be something like pod-role - POD2-NSO",
+    "label" : "Tag for runbook",
+    "name" : "tag-name",
+    "required" : true
+  }, {
+    "enforced" : true,
+    "label" : "ESX Host (VM1)",
+    "name" : "Host-1",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/hosts.json"
+  }, {
+    "enforced" : true,
+    "label" : "Datastore for VM1",
+    "name" : "Datastore-1",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/datastores.json"
+  }, {
+    "enforced" : true,
+    "label" : "Datastore for ISO files",
+    "name" : "ISO_Datastore",
+    "required" : true,
+    "value" : "/HX-cluster/datastore/Vulture",
+    "valuesUrl" : "file:/tmp/datastores.json"
+  }, {
+    "label" : "Name of ISO file",
+    "name" : "ISO_File",
+    "required" : true,
+    "value" : "images/SSM_On-Prem_8-202112.iso",
+    "values" : [ "images/SSM_On-Prem_8-202112.iso" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "name" : "DataNetwork",
+    "required" : true,
+    "value" : "/HX-cluster/network/vm-network-413",
+    "valuesUrl" : "file:/tmp/networks.json"
+  }, {
+    "enforced" : true,
+    "name" : "ManagementNetwork",
+    "required" : true,
+    "value" : "/HX-cluster/network/vm-network-411",
+    "valuesUrl" : "file:/tmp/networks.json"
+  }, {
+    "enforced" : true,
+    "label" : "Number of CPUs",
+    "name" : "vCPU",
+    "required" : true,
+    "value" : "2",
+    "values" : [ "16", "2", "4", "8" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "hidden" : true,
+    "name" : "vCenter-host",
+    "required" : true,
+    "value" : "vcenter65.nbnncn.lab"
+  }, {
+    "hidden" : true,
+    "name" : "vCenter-passwd",
+    "secure" : true,
+    "storagePath" : "keys/vmware/administrator-vc-local",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "vCenter-username",
+    "required" : true,
+    "value" : "administrator@nbnncn.lab"
+  }, {
+    "enforced" : true,
+    "label" : "Disk Size in GB",
+    "name" : "vDisk",
+    "required" : true,
+    "value" : "200GB",
+    "values" : [ "100GB", "200GB", "400GB", "500GB" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "Memory in MB",
+    "name" : "vMEM",
+    "required" : true,
+    "value" : "4096",
+    "values" : [ "16392", "32768", "4096", "65536", "8192" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Create VM in Netbox",
+      "errorhandler" : {
+        "configuration" : {
+          "command" : "id"
+        },
+        "keepgoingOnSuccess" : true,
+        "nodeStep" : true,
+        "type" : "localexec"
+      },
+      "jobref" : {
+        "args" : "-VM ${option.VM-1-Name} -vm-role ${option.vm-role}",
+        "group" : "Netbox",
+        "ignoreNotifications" : true,
+        "name" : "Add VM to NetBox",
+        "uuid" : "acac2af5-f8a8-44d6-a8d7-d02b9356b452"
+      }
+    }, {
+      "description" : "get interface ip",
+      "jobref" : {
+        "args" : "-search_tag cnc-mgmt -ifnum 1 -description ${option.VM-1-Name}",
+        "group" : "Netbox",
+        "name" : "GET Next IP",
+        "uuid" : "0ff19321-403f-42bd-9ac1-ed2a4507b496"
+      }
+    }, {
+      "description" : "get interface ip",
+      "jobref" : {
+        "args" : "-search_tag cnc-data -ifnum 3 -description ${option.VM-1-Name}",
+        "group" : "Netbox",
+        "name" : "GET Next IP",
+        "uuid" : "0ff19321-403f-42bd-9ac1-ed2a4507b496"
+      }
+    }, {
+      "description" : "Create node #1",
+      "exec" : "govc vm.create -k -c=${option.vCPU} -m=${option.vMEM} -ds=${option.Datastore-1} -host=${option.Host-1} -disk=${option.vDisk} -net=${option.ManagementNetwork} -disk-datastore=${option.Datastore-1} -iso-datastore=${option.ISO_Datastore} -iso=${option.ISO_File} -g=centos7_64Guest -u ${option.vCenter-username}:${option.vCenter-passwd}@${option.vCenter-host} -on=false ${option.VM-1-Name}"
+    }, {
+      "description" : "Add network ",
+      "exec" : "govc vm.network.add -k -vm ${option.VM-1-Name} -u ${option.vCenter-username}:${option.vCenter-passwd}@${option.vCenter-host} -net \"${option.DataNetwork}\""
+    }, {
+      "description" : "Power ON",
+      "exec" : "govc vm.power -on -k -u ${option.vCenter-username}:${option.vCenter-passwd}@${option.vCenter-host}  ${option.VM-1-Name}"
+    }, {
+      "description" : "add node to rundeck",
+      "jobref" : {
+        "args" : "-node-name ${option.VM-1-Name} -hostname ${export.ip-1} -description \"NSO node\" -user-name ${option.admin-username} -tags ${option.tag-name}  -password-storage-path keys/cw/admin",
+        "group" : "rundeck/nodes",
+        "name" : "Create Node",
+        "uuid" : "e60e849d-c7c2-430e-a545-a2fb9b0a6c61"
+      }
+    }, {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "description" : "Show data",
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "sequential"
+  },
+  "uuid" : "a9dd5b76-fe9c-4dd9-9197-72b400014649"
+} ]

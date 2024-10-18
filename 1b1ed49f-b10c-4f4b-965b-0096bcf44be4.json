@@ -1,0 +1,102 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "CNC/Configuration",
+  "id" : "1b1ed49f-b10c-4f4b-965b-0096bcf44be4",
+  "loglevel" : "INFO",
+  "name" : "CNC - Offboard Device",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CNC Environment",
+    "name" : "cnc-vip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "name" : "device",
+    "required" : true
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "get device details",
+      "jobref" : {
+        "args" : "-cnc-pod ${option.cnc-vip}",
+        "group" : "CNC/Services",
+        "name" : "CNC - Get Device Details",
+        "uuid" : "23d13185-8891-4031-9eea-580f733a346c"
+      }
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\n  \"devices\": [\n    \"${option.device}\"\n  ]\n}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/hi/v1/kpiassoc/delete",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "disassociate KPI",
+      "errorhandler" : {
+        "configuration" : {
+          "fail" : "false",
+          "halt" : "false"
+        },
+        "keepgoingOnSuccess" : true,
+        "nodeStep" : false,
+        "type" : "flow-control"
+      },
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "command" : "echo {\"data\":[{\"uuid\":${export.device-uuid}}]} "
+      },
+      "nodeStep" : true,
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\"data\":[{\"uuid\":\"${export.device-uuid}\"}]} ",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "DELETE",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/inventory/v1/nodes",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "delete device",
+      "errorhandler" : {
+        "configuration" : {
+          "fail" : "true",
+          "halt" : "false",
+          "status" : "failed to delete device"
+        },
+        "keepgoingOnSuccess" : true,
+        "nodeStep" : false,
+        "type" : "flow-control"
+      },
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "sanitise and create new device list for input",
+      "script" : "jq '[.data[] | (.[\"name\"] = .host_name)|(.[\"ip\"] = .node_ip.inet_addr)|(.[\"value\"] = .host_name) | {\"name\",\"ip\",\"value\"} | .ip= (.ip| tostring) ]' /opt/cw/options/@option.cnc-vip@-devices-tmp.json > /opt/cw/options/@option.cnc-vip@-devices.json"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "1b1ed49f-b10c-4f4b-965b-0096bcf44be4"
+} ]

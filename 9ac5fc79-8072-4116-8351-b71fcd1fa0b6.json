@@ -1,0 +1,101 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Example process of activating a service using Kafka for async processing\n---\n### Pre-requisites\n- Create new customer: [Add new Customer](/job/show/69d6030f-0829-48ce-8101-772f2c0a54cc)\n- Start Listener: [Start Listener](/job/show/69d6030f-0829-48ce-8101-772f2c0a54cc)\n- Add new Location (DC): [New Location](/job/show/eb42d81d-db58-427a-b379-ca27b00c7c28)",
+  "executionEnabled" : true,
+  "group" : "Kafka",
+  "id" : "9ac5fc79-8072-4116-8351-b71fcd1fa0b6",
+  "loglevel" : "INFO",
+  "name" : "create kakfa message",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "> Create new customer: [Add new Customer](/job/show/69d6030f-0829-48ce-8101-772f2c0a54cc)",
+    "enforced" : true,
+    "label" : "Customer Name",
+    "name" : "key",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/customers.json"
+  }, {
+    "label" : "Input string for message",
+    "name" : "input",
+    "required" : true
+  }, {
+    "hidden" : true,
+    "name" : "payload",
+    "required" : true,
+    "value" : "{\"json\":\"data\"}"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "converge payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "converged",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo '{\"@option.key@\":@option.input@}' | jq -c"
+    }, {
+      "description" : "escape payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "escaped",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo '@data.converged*@' | jq -Rc"
+    }, {
+      "description" : "build final",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "payload",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo '{\"partition\":\"0\",\"key\":\"@option.key@\",\"content\":@data.escaped*@}'"
+    }, {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.payload*}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/json\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://198.18.133.102:8080/api/clusters/local/topics/${option.key}/messages",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "9ac5fc79-8072-4116-8351-b71fcd1fa0b6"
+} ]

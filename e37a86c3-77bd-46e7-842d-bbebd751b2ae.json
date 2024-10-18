@@ -1,0 +1,46 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "id" : "e37a86c3-77bd-46e7-842d-bbebd751b2ae",
+  "loglevel" : "INFO",
+  "name" : "test",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "name" : "controller-vip",
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "command" : "echo  \"${option.controller.vip}\""
+      },
+      "nodeStep" : true,
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "jq '.[] | select(.value==\"${option.controller-vip}\") | .name' /opt/cw/options/cw-environments.json"
+      },
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "pod-name",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "e37a86c3-77bd-46e7-842d-bbebd751b2ae"
+} ]

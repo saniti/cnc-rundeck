@@ -1,0 +1,21 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "id" : "05726f2a-d36b-4d12-859d-021545bcbfbb",
+  "loglevel" : "INFO",
+  "name" : "testxxxx",
+  "nodeFilterEditable" : false,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "exec" : "echo ${DATE:yyyyMMddHHmmss}"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "05726f2a-d36b-4d12-859d-021545bcbfbb"
+} ]

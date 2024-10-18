@@ -1,0 +1,113 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "modify the latency on a specific interface and device\n---\n## Demo Setup\nFor L2VPN, routing should look like `Node-4` -> `Node-3` -> `Node-1` -> `Node-5`\n\nWe will inject latency between `Node-3` interface `GigabitEthernet0/0/0/3` and `Node-4` interface `GigabitEthernet0/0/0/2` of 30ms\n\nWe expect to see path transition in about 30 seconds",
+  "executionEnabled" : false,
+  "group" : "-DEMO/2-CNC Device",
+  "id" : "0710d89a-d4d0-4cb8-ac97-cdf51154783e",
+  "loglevel" : "INFO",
+  "name" : "NSO - Change Latency",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CW POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "value" : "R1R2",
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "enforced" : true,
+    "name" : "device-1",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-pod.value}-devices.json"
+  }, {
+    "enforced" : true,
+    "label" : "Interface",
+    "name" : "interface-1",
+    "required" : true,
+    "value" : "GigabitEthernet0/0/0/3",
+    "values" : [ "GigabitEthernet0/0/0/0", "GigabitEthernet0/0/0/1", "GigabitEthernet0/0/0/2", "GigabitEthernet0/0/0/3", "GigabitEthernet0/0/0/4", "GigabitEthernet0/0/0/5", "GigabitEthernet0/0/0/6", "GigabitEthernet0/0/0/7", "Gi2" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "name" : "device-2",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-pod.value}-devices.json"
+  }, {
+    "enforced" : true,
+    "label" : "Interface",
+    "name" : "interface-2",
+    "required" : true,
+    "value" : "GigabitEthernet0/0/0/3",
+    "values" : [ "GigabitEthernet0/0/0/0", "GigabitEthernet0/0/0/1", "GigabitEthernet0/0/0/2", "GigabitEthernet0/0/0/3", "GigabitEthernet0/0/0/4", "GigabitEthernet0/0/0/5", "GigabitEthernet0/0/0/6", "GigabitEthernet0/0/0/7", "Gi2" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "> default is 1",
+    "label" : "Delay Metric (in mS)",
+    "name" : "delay-metric",
+    "required" : true,
+    "value" : "100"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "get cnc token",
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "description" : "xx",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "echo 'https://@export.mgtvip@:30603/crosswork/proxy/nso/restconf/data/tailf-ncs:devices'\necho '{\"devices\":{\"device\":{\"name\":\"@option.device@\",\"config\":{\"performance-measurement\":{\"interface\":{\"name\":\"GigabitEthernet0/0/0/3\",\"delay-measurement\":{\"advertise-delay\":@option.delay-metric@}}}}}}}'"
+    }, {
+      "description" : "dry run",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "for i in `echo $RD_OPTION_DRY_RUN`\ndo\n    echo processing\n    echo $i\n    export \"$i\"\n    echo finished\ndone\n\nif [ \"$xml\" ]; then echo \"XML\"; fi\nif [ \"$cli\" ]; then echo \"CLI\"; fi\nif [ \"$cli-c\" ]; then echo \"CLI-C\"; fi\nif [ \"$reverse\" ]; then echo \"REVERSE\"; fi\nif [ \"$native\" ]; then echo \"NATIVE\"; fi\n\n\n#if [ \"@option.dry-run@\" = \"true\" ]\n#then\n#    echo DRY_RUN_COMMAND=\"?dry-run=@option.dry-run_format@\"\n#else\n#    echo DRY_RUN_COMMAND=\"\"\n#fi\n\n"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\n  \"devices\": [\n    {\n      \"device\": {\n        \"name\": \"${option.device-1}\",\n        \"config\": {\n          \"tailf-ned-cisco-ios-xr:performance-measurement\": {\n            \"interface\": {\n              \"name\": \"${option.interface-1}\",\n              \"delay-measurement\": {\n                \"advertise-delay\": ${option.delay-metric}\n              }\n            }\n          }\n        }\n      }\n    },\n    {\n      \"device\": {\n        \"name\": \"${option.device-2}\",\n        \"config\": {\n          \"tailf-ned-cisco-ios-xr:performance-measurement\": {\n            \"interface\": {\n              \"name\": \"${option.interface-2}\",\n              \"delay-measurement\": {\n                \"advertise-delay\": ${option.delay-metric}\n              }\n            }\n          }\n        }\n      }\n    }\n  ]\n}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/yang-data+json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data/tailf-ncs:devices",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Modify Service",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "0710d89a-d4d0-4cb8-ac97-cdf51154783e"
+} ]

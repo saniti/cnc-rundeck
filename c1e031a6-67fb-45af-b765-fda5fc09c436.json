@@ -1,0 +1,55 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "Netbox",
+  "id" : "c1e031a6-67fb-45af-b765-fda5fc09c436",
+  "loglevel" : "INFO",
+  "name" : "Netbox data sync",
+  "nodeFilterEditable" : false,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Update Device Roles",
+      "jobref" : {
+        "group" : "Netbox",
+        "name" : "Update Device Roles",
+        "uuid" : "ea9d0d3b-f11a-4b77-9c7a-e85eec3d41af"
+      }
+    }, {
+      "description" : "Update Device Types",
+      "jobref" : {
+        "group" : "Netbox",
+        "name" : "Update Device Type",
+        "uuid" : "92991681-9522-4337-8d11-48036c05d883"
+      }
+    }, {
+      "description" : "Update Sites",
+      "jobref" : {
+        "group" : "Netbox",
+        "name" : "Update Sites",
+        "uuid" : "269bdf0e-0943-43c1-ae40-0c26ba8aba6c"
+      }
+    }, {
+      "description" : "Update locations",
+      "jobref" : {
+        "group" : "Netbox",
+        "name" : "Update Locations",
+        "uuid" : "099440d0-aebd-4667-ad87-8e5ca6487112"
+      }
+    }, {
+      "description" : "Update tags",
+      "jobref" : {
+        "group" : "Netbox",
+        "name" : "Update Tags",
+        "uuid" : "673b0f6b-f1bb-4f40-bce0-bb50645ab64f"
+      }
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "c1e031a6-67fb-45af-b765-fda5fc09c436"
+} ]

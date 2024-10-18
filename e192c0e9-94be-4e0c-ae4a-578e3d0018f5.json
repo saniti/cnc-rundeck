@@ -1,0 +1,29 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Remove a POD definion (not the pod, just the rundeck entry)",
+  "executionEnabled" : true,
+  "group" : "CNC/POD",
+  "id" : "e192c0e9-94be-4e0c-ae4a-578e3d0018f5",
+  "loglevel" : "INFO",
+  "name" : "Remove POD Definition",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "label" : "List Current Environments",
+    "name" : "environments-current",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Remove existing entry",
+      "script" : "jq 'del(.[] | select(.value == \"@option.environments-current@\"))' /opt/cw/options/cw-environments.json > /opt/cw/tmp/cw-environments.tmp\n\\cp /opt/cw/tmp/cw-environments.tmp /opt/cw/options/cw-environments.json\n"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "e192c0e9-94be-4e0c-ae4a-578e3d0018f5"
+} ]

@@ -1,0 +1,85 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Synchronises the tags in netbox. This updated list will appear as inputs into the relevant process where it is used.",
+  "executionEnabled" : true,
+  "group" : "Netbox",
+  "id" : "673b0f6b-f1bb-4f40-bce0-bb50645ab64f",
+  "loglevel" : "INFO",
+  "name" : "Update Tags",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "hidden" : true,
+    "name" : "netbox-server",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/netbox/netbox-host",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "api-token",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/netbox/netbox-token",
+    "valueExposed" : true
+  }, {
+    "delimiter" : ",",
+    "description" : "Simply listing the 'current' roles. Run this process again to verify that any new rolese appear in this list.",
+    "enforced" : true,
+    "multivalued" : true,
+    "name" : "roles",
+    "valuesUrl" : "file:/opt/cw/options/netbox-tags.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "true",
+        "file" : "/opt/cw/tmp/${job.execid}.json",
+        "headers" : "{\"Content-Type\":\"application/json\",\"Authorization\":\"${option.api-token}\"}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "${option.netbox-server}/extras/tags",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Get Current roles",
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "roles",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "script" : "jq '[.results[] | .[\"value\"] = .id | {name,value} | .value = (.value | tostring)]' /opt/cw/tmp/@job.execid@.json > /opt/cw/options/netbox-tags.json"
+    }, {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "673b0f6b-f1bb-4f40-bce0-bb50645ab64f"
+} ]

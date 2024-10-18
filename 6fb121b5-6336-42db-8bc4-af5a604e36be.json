@@ -1,0 +1,38 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "id" : "6fb121b5-6336-42db-8bc4-af5a604e36be",
+  "loglevel" : "INFO",
+  "name" : "cli-demo",
+  "nodeFilterEditable" : false,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : true,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "1"
+    },
+    "filter" : "tags: cnc"
+  },
+  "nodesSelectedByDefault" : false,
+  "options" : [ {
+    "label" : "CLI",
+    "name" : "cli",
+    "required" : true
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "command",
+      "exec" : "\"echo 'Str0ngPassw0rd!' | sudo -S sh -c '${option.cli}'\""
+    } ],
+    "keepgoing" : true,
+    "strategy" : "parallel"
+  },
+  "uuid" : "6fb121b5-6336-42db-8bc4-af5a604e36be"
+} ]

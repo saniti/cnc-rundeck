@@ -1,0 +1,257 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : false,
+  "group" : "NSO/Configure",
+  "id" : "e2f94605-d513-48be-ae3b-d05992858a15",
+  "loglevel" : "INFO",
+  "multipleExecutions" : true,
+  "name" : "Configure NSO (single node) v2",
+  "nodeFilterEditable" : false,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : false,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "1"
+    },
+    "filter" : "tags: nso"
+  },
+  "nodesSelectedByDefault" : true,
+  "options" : [ {
+    "description" : "- [Create a NEW version](/project/CNC/job/show/f0213e3f-4322-4acc-8111-7d57c1bff65d)\n- [Show details of a version](/project/CNC/job/show/f0213e3f-4322-4acc-8111-7d57c1bff65d)\n",
+    "enforced" : true,
+    "label" : "NSO Version",
+    "name" : "nso-version",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/nso-versions.json"
+  }, {
+    "description" : "> Password for SUDO, for elevated commands\n> default: keys/default/admin",
+    "label" : "SUDO Password",
+    "name" : "creds",
+    "secure" : true,
+    "storagePath" : "keys/default/admin",
+    "valueExposed" : true
+  }, {
+    "label" : "Crosswork user password",
+    "name" : "cwpass",
+    "required" : true,
+    "value" : "cisco!123"
+  }, {
+    "label" : "Crosswork User Account",
+    "name" : "cwuser",
+    "required" : true,
+    "value" : "cwuser"
+  }, {
+    "name" : "https-port",
+    "value" : "8888"
+  }, {
+    "name" : "netconf-port",
+    "required" : true,
+    "value" : "2022"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "retry" : "0",
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "get NSO properties",
+      "jobref" : {
+        "args" : " ",
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get nso deployment properties",
+        "uuid" : "fae76fe9-6379-4cfb-9091-99e0d4470fcf"
+      }
+    }, {
+      "description" : "Find management IP",
+      "exec" : "echo ${node.hostname}",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "ip",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      }
+    }, {
+      "description" : "Create software directory /opt/software",
+      "exec" : "'echo ${option.creds}' | sudo -S mkdir -p /opt/software/packages"
+    }, {
+      "description" : "Set Permissions on directory",
+      "exec" : "echo ${option.creds} | sudo -S chmod -R 777 /opt/software/"
+    }, {
+      "description" : "remove python",
+      "exec" : "echo ${option.creds} | sudo -S yum remove python3 -y"
+    }, {
+      "description" : "Install updates and packages",
+      "script" : "echo --- 1/7 Yum update\necho '@option.creds@' | sudo -S yum update -y\necho --- 2/7 yum yum-utils\necho '@option.creds@' | sudo -S yum install -y yum-utils\necho --- 3/7 epel-release\necho '@option.creds@' | sudo -S yum install epel-release -y\necho --- 4/7 java\necho '@option.creds@' | sudo -S yum install -y java-1.8.0\necho --- 5/7 xmlstarlet\necho '@option.creds@' | sudo -S yum -y install xmlstarlet\necho --- 6/7 development tools\n#echo '@option.creds@' | sudo -S yum groupinstall -y \"Development Tools\"\necho '@option.creds@' | sudo -S yum -y install make\necho '@option.creds@' | sudo -S yum -y install ant\n"
+    }, {
+      "description" : "Install python",
+      "script" : "echo --- 1/1 python 3\n#echo '@option.creds@' | sudo -S yum -y install \"https://repo.ius.io/ius-release-el$(rpm -E '%{rhel}').rpm\"\n#echo '@option.creds@' | sudo -S yum update -y\n#echo '@option.creds@' | sudo -S yum install -y python3\n#python --version\n#echo '@option.creds@' | sudo -S alternatives --install /usr/bin/python python /usr/bin/python2 50\n#echo '@option.creds@' | sudo -S alternatives --install /usr/bin/python python /usr/bin/python3 60\n#python --version\n#cd /tmp\n#wget https://www.python.org/ftp/python/3.8.12/Python-3.8.12.tgz\n#tar xvf Python-3.8.12.tgz\n#cd Python-3.8*\n#echo '@option.creds@' | sudo -S ./configure --enable-optimizations\n#echo '@option.creds@' | sudo -S make altinstall\n#echo '@option.creds@' | sudo -S rm -f /usr/bin/python3\n#echo '@option.creds@' | sudo -S ln -s /usr/local/bin/python3.8 /usr/bin/python3"
+    }, {
+      "configuration" : {
+        "destinationPath" : "/opt/software",
+        "echo" : "true",
+        "pattern" : "*.*",
+        "recursive" : "true",
+        "sourcePath" : "/opt/cw/nso/${option.cw-version}/"
+      },
+      "description" : "Copy data from /opt/cw/nso/40",
+      "nodeStep" : true,
+      "type" : "copyfile"
+    }, {
+      "description" : "reload daemon",
+      "exec" : "echo ${option.creds} | sudo -S sysctl -p"
+    }, {
+      "description" : "determine the NSO version from binary file",
+      "exec" : "basename $(ls /opt/software/nso*.bin)",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "nso-ver",
+            "regex" : "nso-(.*).linux.*"
+          },
+          "type" : "key-value-data"
+        } ]
+      }
+    }, {
+      "description" : "stop NSO",
+      "exec" : "echo ${option.creds} | sudo -S systemctl stop ncs"
+    }, {
+      "description" : "disable NSO if already installed",
+      "exec" : "echo ${option.creds} | sudo -S systemctl disable ncs"
+    }, {
+      "description" : "remove NSO if already installed",
+      "exec" : "echo ${option.creds} | sudo -S /opt/ncs/current/bin/ncs-uninstall --all --non-interactive"
+    }, {
+      "description" : "remove ncsadmin if installed",
+      "exec" : "echo ${option.creds} | sudo -S groupdel ncsadmin"
+    }, {
+      "description" : "add security options to /etc/security/limits.conf",
+      "script" : "echo @option.creds@ | sudo -S sh -c \"sed -i '/^# End of file/i soft nproc 65535' /etc/security/limits.conf\"\necho @option.creds@ | sudo -S sh -c \"sed -i '/^# End of file/i hard nproc 65535' /etc/security/limits.conf\"\necho @option.creds@ | sudo -S sh -c \"sed -i '/^# End of file/i soft nofile 65535' /etc/security/limits.conf\"\necho @option.creds@ | sudo -S sh -c \"sed -i '/^# End of file/i hard nofile 65535' /etc/security/limits.conf\"\necho @option.creds@ | sudo -S sh -c \"sed -i '/^# End of file/i hard memlock 65535' /etc/security/limits.conf\"\necho @option.creds@ | sudo -S sh -c \"sed -i '/^# End of file/i soft memlock 65535' /etc/security/limits.conf\""
+    }, {
+      "description" : "install NSO as a system install",
+      "exec" : "echo ${option.creds} | sudo -S sh /opt/software/nso-*${option.nso-ver}*installer*.bin --system-install"
+    }, {
+      "description" : "unpack packages ",
+      "exec" : "\"echo ${option.creds} | sudo -S  sh -c 'pushd /opt/software; for i in `ls *.gz`; do tar -xvf \"$i\" -C /opt/ncs/packages/ > /dev/null; done; popd'\""
+    }, {
+      "description" : "unpack tsdn core function packs",
+      "exec" : "\"echo ${option.creds} | sudo -S  sh -c 'cd /opt/ncs/packages/*${data.nso-ver*}*/tsdn/core-fp-packages; for i in `ls *.gz`; do tar -xvf \"$i\" -C /opt/ncs/packages/ > /dev/null; done'\""
+    }, {
+      "description" : "unpack tsdn example function packs",
+      "exec" : "\"echo ${option.creds} | sudo -S  sh -c 'cd /opt/ncs/packages/*${data.nso-ver*}*/tsdn/example-packages; for i in `ls *.gz`; do tar -xvf \"$i\" -C /opt/ncs/packages/ > /dev/null; done'\""
+    }, {
+      "description" : "unpack TM packages",
+      "exec" : "\"echo ${option.creds} | sudo -S  sh -c 'cd /opt/ncs/packages/TM-TC*/packages; for i in `ls *.gz`; do tar -xvf \"$i\" -C /opt/ncs/packages/ > /dev/null; done'\""
+    }, {
+      "description" : "compile packages \"echo ${option.creds} | sudo -S  sh -c 'pushd /var/opt/ncs/packages; for i in `find . -iname src`; do pushd \"$i\"; make clean all; popd; done'\"",
+      "exec" : "echo pass on compiling packages"
+    }, {
+      "description" : "create symbolic links  ",
+      "exec" : "\"echo '${option.creds}' | sudo -S  sh -c 'cd /opt/ncs/packages; for i in *; do ln -s \"/opt/ncs/packages/$i\" \"/var/opt/ncs/packages/$i\"; done'\""
+    }, {
+      "description" : "add ulimit to /etc/init.d/ncs",
+      "script" : "echo '@option.creds@' | sudo -S sh -c \"sed -i '/^prog=ncs/i ulimit -n 64000' /etc/init.d/ncs\""
+    }, {
+      "description" : "enable local authentication in ncs.conf",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:local-authentication/x:enabled' --value 'true' /etc/ncs/ncs.conf"
+    }, {
+      "description" : "enable webUI in ncs.conf",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:enabled' --value 'true' /etc/ncs/ncs.conf"
+    }, {
+      "description" : "disable non secure web port in ncs.conf",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:transport/x:tcp/x:enabled' --value 'false' /etc/ncs/ncs.conf"
+    }, {
+      "description" : "enable secure web port in ncs.conf",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:transport/x:ssl/x:enabled' --value 'true' /etc/ncs/ncs.conf"
+    }, {
+      "description" : "enable restconf in ncs.conf",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:restconf/x:enabled' --value 'true' /etc/ncs/ncs.conf"
+    }, {
+      "description" : "enable northbound in ncs.conf",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:netconf-north-bound/x:enabled' --value 'true' /etc/ncs/ncs.conf"
+    }, {
+      "description" : "enable ssh in northbound",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:netconf-north-bound/x:transport/x:ssh/x:enabled' --value 'true' /etc/ncs/ncs.conf"
+    }, {
+      "description" : "set IP binding to management IP in netconf tcp transport",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:netconf-north-bound/x:transport/x:ssh/x:ip' --value ${data.ip} /etc/ncs/ncs.conf"
+    }, {
+      "description" : "enable ssh in ncs.conf",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:cli/x:ssh/x:enabled' --value 'true' /etc/ncs/ncs.conf"
+    }, {
+      "description" : "set https port in ncs.conf",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:transport/x:ssl/x:port' --value ${option.https-port}  /etc/ncs/ncs.conf"
+    }, {
+      "description" : "set IP binding to management IP for HTTPS in ncs.conf",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:transport/x:ssl/x:ip' --value ${data.ip}  /etc/ncs/ncs.conf"
+    }, {
+      "description" : "set IP binding for NSO SSH to management address",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:cli/x:ssh/x:ip' --value ${data.ip}  /etc/ncs/ncs.conf"
+    }, {
+      "description" : "enable service-state-changes in ncs.conf",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update \"/x:ncs-config/x:notifications/x:event-streams/x:stream[x:name='service-state-changes']/x:builtin-replay-store/x:enabled\" -v 'true' /etc/ncs/ncs.conf"
+    }, {
+      "description" : "hide-group 1 - create",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config -s \"/x:ncs-config\" -t elem -n \"tmp-hide-group\"   /etc/ncs/ncs.conf"
+    }, {
+      "description" : "hide-group 1 - rename",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:tmp-hide-group\" --type elem --name \"name\" -v \"tsdn\" -r \"/x:ncs-config/x:tmp-hide-group\" -v hide-group  /etc/ncs/ncs.conf"
+    }, {
+      "description" : "hide-group 2 - create",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config -s \"/x:ncs-config\" -t elem -n \"tmp-hide-group\"    /etc/ncs/ncs.conf"
+    }, {
+      "description" : "hide-group 2 - rename",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:tmp-hide-group\" --type elem --name \"name\" -v \"fastmap-private\" -r \"/x:ncs-config/x:tmp-hide-group\" -v hide-group  /etc/ncs/ncs.conf"
+    }, {
+      "description" : "update python timeout value",
+      "exec" : "echo ${option.creds} | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:python-vm\" --type elem --name \"start-timeout\" -v \"PT300S\"  /etc/ncs/ncs.conf"
+    }, {
+      "description" : "Create ncsadmin group",
+      "exec" : "echo ${option.creds} | sudo -S groupadd ncsadmin"
+    }, {
+      "description" : "enable ncs",
+      "exec" : "echo ${option.creds} | sudo -S systemctl enable ncs"
+    }, {
+      "description" : "add this user to the group",
+      "exec" : "echo ${option.creds} | sudo -S usermod -a -G ncsadmin $(whoami)"
+    }, {
+      "description" : "add firewall exception for HTTPS",
+      "exec" : "echo ${option.creds} | sudo -S firewall-cmd --zone=public --permanent --add-port ${option.https-port}/tcp"
+    }, {
+      "description" : "add firewall exception for netconf",
+      "exec" : "echo ${option.creds} | sudo -S firewall-cmd --zone=public --permanent --add-port ${option.netconf-port}/tcp"
+    }, {
+      "description" : "reload firewalld",
+      "exec" : "echo ${option.creds} | sudo -S firewall-cmd --reload"
+    }, {
+      "description" : "add cwuser and set password",
+      "script" : "echo '@option.creds@' | sudo -S useradd @option.cwuser@\n\"echo '@option.creds@' | sudo -S \"sh -c 'echo @option.cwuser@:@option.cwpass@ | chpasswd'"
+    }, {
+      "description" : "add cwuser to ncsadmin",
+      "exec" : "echo ${option.creds} | sudo -S usermod -aG ncsadmin ${option.cwuser}"
+    }, {
+      "description" : "start ncs",
+      "exec" : "echo ${option.creds} | sudo -S systemctl start ncs"
+    }, {
+      "description" : "load merge files",
+      "exec" : "\"echo '${option.creds}' | sudo -S  sh -c 'source /opt/ncs/current/ncsrc; cd /opt/ncs/packages/*${data.nso-ver*}*/tsdn/bootstrap-data; for i in `ls *.xml`; do ncs_load -l -m -F x \"$i\";  done'\""
+    }, {
+      "script" : "source /opt/ncs/current/ncsrc\n\"echo '@option.creds@' | sudo -S  sh -c 'cd /opt/ncs/packages/*@data.nso-ver*@*/tsdn/bootstrap-data; for i in `ls *.xml`; do ncs_load -l -m -F x \"$i\";  done'\""
+    } ],
+    "keepgoing" : true,
+    "strategy" : "sequential"
+  },
+  "timeout" : "1h",
+  "uuid" : "e2f94605-d513-48be-ae3b-d05992858a15"
+} ]

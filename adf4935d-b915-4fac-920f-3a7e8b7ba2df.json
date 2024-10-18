@@ -1,0 +1,215 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Provide characteristics of the service and provision, with optional `dry-run`",
+  "executionEnabled" : false,
+  "group" : "-DEMO",
+  "id" : "adf4935d-b915-4fac-920f-3a7e8b7ba2df",
+  "loglevel" : "INFO",
+  "name" : "CNC - L2 Service (step 1 - provision service without TE policy)",
+  "nodeFilterEditable" : false,
+  "notification" : {
+    "onsuccess" : {
+      "email" : {
+        "recipients" : "device-details@necehealthpoc.local",
+        "subject" : "${notification.eventStatus} ${job.name}"
+      }
+    }
+  },
+  "notifyAvgDurationThreshold" : null,
+  "options" : [ {
+    "enforced" : true,
+    "hidden" : true,
+    "name" : "proxy",
+    "required" : true,
+    "value" : "proxy:3001",
+    "values" : [ "proxy:3001" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "CW POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "description" : "> [Add](8e3b0a1a-421c-4d0d-bb2c-c7d0af07116c)|[Remove](eec83222-22a5-46b9-9712-0b869442c27d)",
+    "enforced" : true,
+    "name" : "customer",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/customers.json"
+  }, {
+    "enforced" : true,
+    "label" : "Commit Options",
+    "name" : "dry-run-options",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/nso-commit-options.json"
+  }, {
+    "description" : "VPN prefix. Appended with `vlan-id`. With defaults, this will be `l2vpn-tldp-1001`",
+    "name" : "vpn-id",
+    "value" : "l2vpn-tldp"
+  }, {
+    "name" : "vlan-id",
+    "required" : true,
+    "value" : "1001"
+  }, {
+    "enforced" : true,
+    "name" : "control-word",
+    "required" : true,
+    "value" : "yes",
+    "values" : [ "yes", "no" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "name" : "device-1",
+    "required" : true,
+    "value" : "Node-4",
+    "valuesUrl" : "http://${option.proxy.value}/devices"
+  }, {
+    "enforced" : true,
+    "name" : "device-1-interface",
+    "required" : true,
+    "value" : "GigabitEthernet0/0/0/1",
+    "valuesUrl" : "http://${option.proxy.value}/interfaces/${option.device-1.value}"
+  }, {
+    "enforced" : true,
+    "name" : "device-2",
+    "required" : true,
+    "value" : "Node-5",
+    "valuesUrl" : "http://${option.proxy.value}/devices"
+  }, {
+    "enforced" : true,
+    "name" : "device-2-interface",
+    "required" : true,
+    "value" : "GigabitEthernet0/0/0/1",
+    "valuesUrl" : "http://${option.proxy.value}/interfaces/${option.device-2.value}"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Dry run options",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "if [ \"@option.implementation-plan@\" == \"yes\" ]\nthen\n    echo DRY_RUN_COMMAND=\"?dry-run=native\"\n    echo RUN_IMPLEMENTATION_PLAN=false\nelse\n    if [ \"@option.dry-run-options@\" == \"commit\" ]\n    then\n        echo DRY_RUN_COMMAND=\n    else\n        echo DRY_RUN_COMMAND=\"@option.dry-run-options@\"\n    fi\nfi\n"
+    }, {
+      "description" : "Get IP addressing of devices",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file=/opt/cw/options/@option.cnc-pod@-devices.json\njq -r '.[] | select(.value==\"@option.device-1@\").ip | \"device-1-ip=\"+.' $file\njq -r '.[] | select(.value==\"@option.device-2@\").ip | \"device-2-ip=\"+.' $file\n"
+    }, {
+      "description" : "generate payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "payload",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "#payload='{\"vpn-service\":{\"vpn-id\":\"@option.vpn-id@-@option.vlan-id@\",\"control-word\":\"@option.control-word@\",\"vpn-svc-type\":\"vpn-common:t-ldp\",\"vpn-nodes\":{\"vpn-node\":[{\"vpn-node-id\":\"@option.device-1@\",\"ne-id\":\"@option.device-1@\",\"signaling-options\":[{\"type\":\"vpn-common:t-ldp\",\"t-ldp-pwe\":{\"ac-pw-list\":[{\"peer-addr\":\"@data.device-2-ip@\",\"vc-id\":\"@option.vlan-id@\"}]}}],\"vpn-network-accesses\":{\"vpn-network-access\":[{\"id\":\"@option.vpn-id@-ac@option.vlan-id@\",\"Interface-mtu\":1500,\"connection\":{\"encapsulation-type\":\"vpn-common:dot1q\",\"dot1q-interface\":{\"l2-access-type\":\"vpn-common:dot1q\",\"dot1q\":{\"physical-inf\":\"@option.device-1-interface@\",\"c-vlan-id\":@option.vlan-id@,\"rewrite\":{\"ingress\":{\"push\":[null],\"dot1q\":@option.vlan-id@,\"mode\":\"symmetric\"}}}}}}]}},{\"vpn-node-id\":\"@option.device-2@\",\"ne-id\":\"@option.device-2@\",\"signaling-options\":[{\"type\":\"vpn-common:t-ldp\",\"t-ldp-pwe\":{\"ac-pw-list\":[{\"peer-addr\":\"@data.device-1-ip@\",\"vc-id\":\"@option.vlan-id@\"}]}}],\"vpn-network-accesses\":{\"vpn-network-access\":[{\"id\":\"@option.vpn-id@-ac@option.vlan-id@\",\"Interface-mtu\":1500,\"connection\":{\"encapsulation-type\":\"vpn-common:dot1q\",\"dot1q-interface\":{\"l2-access-type\":\"vpn-common:dot1q\",\"dot1q\":{\"physical-inf\":\"@option.device-2-interface@\",\"c-vlan-id\":@option.vlan-id@,\"rewrite\":{\"ingress\":{\"push\":[null],\"dot1q\":@option.vlan-id@,\"mode\":\"symmetric\"}}}}}}]}}]}}}'\npayload='{\"ietf-l2vpn-ntw:l2vpn-ntw\":{\"vpn-services\":{\"vpn-service\":[{\"vpn-id\":\"l2vpn-tldp-1001\",\"vpn-type\":\"ietf-vpn-common:vpws\",\"vpn-nodes\":{\"vpn-node\":[{\"vpn-node-id\":\"Node-4\",\"signaling-option\":{\"ldp-or-l2tp\":{\"pw-peer-list\":[{\"peer-addr\":\"198.19.1.5\",\"vc-id\":1001}]}},\"vpn-network-accesses\":{\"vpn-network-access\":[{\"id\":\"l2vpn-p2p-ac1001\",\"interface-id\":\"GigabitEthernet0/0/0/1\",\"connection\":{\"encapsulation\":{\"encap-type\":\"ietf-vpn-common:dot1q\",\"dot1q\":{\"cvlan-id\":1001}}}}]}},{\"vpn-node-id\":\"Node-5\",\"signaling-option\":{\"ldp-or-l2tp\":{\"pw-peer-list\":[{\"peer-addr\":\"198.19.1.4\",\"vc-id\":1001}]}},\"vpn-network-accesses\":{\"vpn-network-access\":[{\"id\":\"l2vpn-p2p-ac1001\",\"interface-id\":\"TenGigE\",\"connection\":{\"encapsulation\":{\"encap-type\":\"ietf-vpn-common:dot1q\",\"dot1q\":{\"cvlan-id\":1001}}}}]}}]},\"cisco-l2vpn-ntw:control-word\":\"yes\",\"cisco-l2vpn-ntw:service-assurance\":{\"monitoring-state\":\"disable\",\"preservation\":\"remove\",\"profile-name\":\"Gold_L2VPN_ConfigProfile system\",\"rule-name\":\"Rule-L2VPN-NM-P2P-Basic system\"}}]}}}\n'\necho $payload"
+    }, {
+      "description" : "generate import payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "payload-import",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "#echo '@data.payload*@' | jq -c '. |={\"ietf-l2vpn-ntw:l2vpn-ntw\":{\"vpn-services\":.}}'\n# Update the payload\nres=$(echo '@data.payload*@' | jq -r '(..|objects|select(has(\"vpn-id\"?))).\"vpn-id\" |=\"@option.customer@-@option.vpn-id@\"')\nres=$(echo $res | jq -r '(..|objects|select(has(\"vpn-node\"))).\"vpn-node\"[0].\"vpn-node-id\" |=\"@option.device-1@\"')\nres=$(echo $res | jq -r '(..|objects|select(has(\"vpn-node\"))).\"vpn-node\"[1].\"vpn-node-id\" |=\"@option.device-2@\"')\nres=$(echo $res | jq -r '((..|objects|select(has(\"vpn-node\"))).\"vpn-node\"[0] | (..|objects|select(has(\"peer-addr\"))).\"peer-addr\") |=\"@data.device-2-ip*@\"')\nres=$(echo $res | jq -r '((..|objects|select(has(\"vpn-node\"))).\"vpn-node\"[1] | (..|objects|select(has(\"peer-addr\"))).\"peer-addr\") |=\"@data.device-1-ip*@\"')\nres=$(echo $res | jq -r '(..|objects|select(has(\"vpn-node\"))).\"vpn-node\"[0].\"vpn-network-accesses\"[][].\"id\" |=\"l2vpn=p2p-ac-1-\"+(@option.vlan-id@|tostring)')\nres=$(echo $res | jq -r '(..|objects|select(has(\"vpn-node\"))).\"vpn-node\"[1].\"vpn-network-accesses\"[][].\"id\" |=\"l2vpn=p2p-ac-2-\"+(@option.vlan-id@|tostring)')\nres=$(echo $res | jq -r '(..|objects|select(has(\"vpn-node\"))).\"vpn-node\"[0].\"vpn-network-accesses\"[][].\"interface-id\" |=\"@option.device-1-interface@\"')\nres=$(echo $res | jq -r '(..|objects|select(has(\"vpn-node\"))).\"vpn-node\"[1].\"vpn-network-accesses\"[][].\"interface-id\" |=\"@option.device-2-interface@\"')\nres=$(echo $res | jq -r '(..|objects|select(has(\"vc-id\"))).\"vc-id\"|=@option.vlan-id@')\nres=$(echo $res | jq -r '(..|objects|select(has(\"cvlan-id\"))).\"cvlan-id\"|=@option.vlan-id@')\necho $res | jq -rc .\n"
+    }, {
+      "description" : "get service properties",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "true",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "res=$(echo '@data.payload-import*@')\n\necho $res | jq -r '.|keys[0] | \"service-type=\"+(.|tostring)'\necho $res | jq -r '(if .[]|type==\"object\" then \"yes\" else \"no\" end) as $x | if $x==\"yes\" then (.[]| leaf_paths as $path | ($path|join(\"|\")|tostring)+\"=\"+(getpath($path)|tostring) ) else (.| leaf_paths as $path | ($path|join(\"|\")|tostring)+\"=\"+(getpath($path)|tostring) ) end'\n\n"
+    }, {
+      "exec" : "echo '-friendly-name L2VPN -payload ${data.payload} -service-type ${data.service-type*} -name ${data.vpn-services|vpn-service|0|vpn-id*}'"
+    }, {
+      "description" : "generate implementation plan?",
+      "errorhandler" : {
+        "jobref" : {
+          "args" : "-friendly-name L2VPN -payload ${data.payload-import*} -service-type ${data.service-type*} -name ${data.vpn-services|vpn-service|0|vpn-id*}",
+          "group" : "-DEMO",
+          "importOptions" : true,
+          "name" : "Create dry run exports",
+          "nodeStep" : "true",
+          "uuid" : "f3176d98-5e8b-4c7b-bc55-e918addca4ee"
+        }
+      },
+      "script" : "@data.RUN_IMPLEMENTATION_PLAN*@"
+    }, {
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.payload-import*}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/yang-data+json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data${data.DRY_RUN_COMMAND*}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Create L2VPN service (no assurance)",
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "adf4935d-b915-4fac-920f-3a7e8b7ba2df"
+} ]

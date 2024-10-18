@@ -1,0 +1,292 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : false,
+  "group" : "NSO/Configure",
+  "id" : "c0a7d56d-e52d-4032-92ee-e7dd8b7a8b71",
+  "loglevel" : "INFO",
+  "multipleExecutions" : true,
+  "name" : "Configure NSO (single node) v3",
+  "nodeFilterEditable" : false,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : false,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "1"
+    },
+    "filter" : "tags: \"nso\""
+  },
+  "nodesSelectedByDefault" : false,
+  "options" : [ {
+    "description" : "[Create POD](00a7b4c3-dc1b-4a1a-b4fd-e1f396281b2f) | [Remove POD](e192c0e9-94be-4e0c-ae4a-578e3d0018f5) | [Show PODs](b0afa385-7f61-4852-a2fb-a2ca0ce8e2f7)\n> /opt/cw/options/cw-environments.json",
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "controller-vip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "description" : "[Add Version](1feb2b38-194d-4427-b9e9-b3c1a031a9b6) | [Show Versions](87932153-4882-4b5e-bc8e-321615baa3d6) | [Remove Version](96b47113-9d8d-4841-8e69-3755d9885e2f)\n> /opt/cw/options/cw-versions.json",
+    "enforced" : true,
+    "label" : "Crosswork Version",
+    "name" : "cw-version",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-versions.json"
+  }, {
+    "label" : "nso node IP",
+    "name" : "nso-ip",
+    "required" : true
+  }, {
+    "enforced" : true,
+    "name" : "package-manager",
+    "required" : true,
+    "value" : "apt",
+    "values" : [ "yum", "apt" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "Enable package authentication?",
+    "name" : "package-authentication",
+    "required" : true,
+    "value" : "false",
+    "values" : [ "true", "false" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "name" : "system-user",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/useraccounts/nso-system-user",
+    "valueExposed" : true
+  }, {
+    "name" : "system-user-password",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/useraccounts/nso-system-user-password",
+    "valueExposed" : true
+  }, {
+    "label" : "Crosswork user password",
+    "name" : "cwpass",
+    "required" : true,
+    "value" : "cisco!123"
+  }, {
+    "label" : "Crosswork User Account",
+    "name" : "cwuser",
+    "required" : true,
+    "value" : "cwuser"
+  }, {
+    "name" : "https-port",
+    "value" : "8888"
+  }, {
+    "name" : "netconf-port",
+    "required" : true,
+    "value" : "2022"
+  }, {
+    "enforced" : true,
+    "label" : "Copy Files?",
+    "name" : "copy-files",
+    "required" : true,
+    "value" : "yes",
+    "values" : [ "yes", "no" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "Version of Python to install",
+    "name" : "python-ver",
+    "required" : true,
+    "value" : "3.8.12",
+    "values" : [ "3.8.12" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "delimiter" : ",",
+    "label" : "Skip the following (select)",
+    "multivalued" : true,
+    "name" : "skipstep",
+    "values" : [ "updates", "python", "java", "filecopy", "nsoremove", "nsoinstall", "xmlupdate" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "retry" : "0",
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    }, {
+      "description" : "show variables",
+      "script" : "env"
+    }, {
+      "description" : "copy files?",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "if [ \"@option.copy-files@\" == \"yes\" ]\nthen\n    echo copyfile=\nelse \n    echo copyfile=\"/nonsense\"\nfi"
+    }, {
+      "description" : "Find management IP",
+      "exec" : "echo ${option.nso-ip}",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "ip",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      }
+    }, {
+      "description" : "Create install dir with permissions",
+      "script" : "echo @option.system-user-password@ | sudo -S mkdir -p /opt/software/fp\necho @option.system-user-password@ | sudo -S mkdir -p /opt/software/neds\necho @option.system-user-password@ | sudo -S chmod -R 777 /opt/software/"
+    }, {
+      "description" : "Install updates and packages",
+      "script" : "if [ \"@data.updates*@\" == \"true\" ]\nthen \n    echo Skipping updates ...\nelse \n    echo --- 1/7 APT update\n    echo '@option.system-user-password@' | sudo -S @option.package-manager@ -qq update -y\n    echo --- 2/7 yum yum-utils\n    #echo '@option.system-user-password@' | sudo -S apt install -y yum-utils\n    echo --- 3/7 Updates 1\n    echo '@option.system-user-password@' | sudo -S @option.package-manager@ -qq -y install software-properties-common aptitude iputils-ping iputils-arping iproute2 sshpass\n    echo --- 3/7 Open VM Tools\n    echo '@option.system-user-password@' | sudo -S @option.package-manager@ -qq -y install open-vm-tools\n    echo --- 4/7 xmlstarlet\n    echo '@option.system-user-password@' | sudo -S @option.package-manager@ -qq -y install xmlstarlet\n    echo --- 5/7 jq    \n    echo '@option.system-user-password@' | sudo -S @option.package-manager@ -qq -y install jq\n    echo --- 6/7 development tools\n    echo '@option.system-user-password@' | sudo -S @option.package-manager@ -qq -y install build-essential\n    echo '@option.system-user-password@' | sudo -S @option.package-manager@ -qq -y install make\n    echo '@option.system-user-password@' | sudo -S @option.package-manager@ -qq -y install ant\n    echo '@option.system-user-password@' | sudo -S @option.package-manager@ -qq -y install xsltproc\n    echo '@option.system-user-password@' | sudo -S @option.package-manager@ -qq -y install ibreadline-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-devibreadline-dev libncursesw5-dev libssl-dev libsqlite3-dev tk-dev libgdbm-dev libc6-dev libbz2-dev libffi-dev zlib1g-dev\n    echo --- 6/7 pip \n    echo '@option.system-user-password@' | sudo -S @option.package-manager@ -qq -y install python3-pip\nfi"
+    }, {
+      "description" : "install options",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "echo '@option.skipstep@' | jq --raw-input --raw-output 'split(\",\") | .[] | [.,true|tostring]|join(\"=\")'"
+    }, {
+      "description" : "Install python",
+      "script" : "if [ \"@data.python*@\" == \"true\" ]\nthen \n    echo Skipping ..\n\nelse\n    echo --- 1/1 python 3\n    #echo '@option.system-user-password@' | sudo -S yum -y install \"https://repo.ius.io/ius-release-el$(rpm -E '%{rhel}').rpm\"\n    #echo '@option.system-user-password@' | sudo -S yum update -y\n    #echo '@option.system-user-password@' | sudo -S yum install -y python3\n    #python --version\n    #echo '@option.system-user-password@' | sudo -S alternatives --install /usr/bin/python python /usr/bin/python2 50\n    #echo '@option.system-user-password@' | sudo -S alternatives --install /usr/bin/python python /usr/bin/python3 60\n    #python --version\n    cd /tmp\n    wget https://www.python.org/ftp/python/@option.python-ver@/Python-@option.python-ver@.tgz\n    tar xvf Python-@option.python-ver@.tgz\n    cd Python-@option.python-ver@\n    echo '@option.system-user-password@' | sudo -S ./configure --enable-optimizations 2>&1 > /dev/null\n    echo '@option.system-user-password@' | sudo -S make altinstall\n    echo '@option.system-user-password@' | sudo -S rsync -var /tmp/Python-@option.python-ver@ /usr/local/bin/ 2>&1 > /dev/null\n    echo '@option.system-user-password@' | sudo -S rm -f /usr/bin/python3\n    echo '@option.system-user-password@' | sudo -S ln -s /usr/local/bin/Python-@option.python-ver@/python /usr/bin/python3\nfi\n"
+    }, {
+      "description" : "Install java",
+      "script" : "echo --- 4/7 java\nif [ \"@data.java*@\" == \"true\" ]\nthen\n    echo Skipping Java ...\n\nelse\n    echo '@option.system-user-password@' | @option.package-manager@ -S apt install -y openjdk-17-jdk openjdk-17-jre\nfi\n\n"
+    }, {
+      "configuration" : {
+        "destinationPath" : "/opt/software/",
+        "echo" : "true",
+        "pattern" : "*.*",
+        "recursive" : "true",
+        "sourcePath" : "${data.copyfile*}/opt/cw/install/nso/${option.cw-version}"
+      },
+      "description" : "copy files",
+      "nodeStep" : true,
+      "type" : "copyfile"
+    }, {
+      "configuration" : {
+        "destinationPath" : "/opt/software/fp",
+        "echo" : "true",
+        "pattern" : "*.*",
+        "recursive" : "true",
+        "sourcePath" : "${data.copyfile*}/opt/cw/install/nso/${option.cw-version}/fp"
+      },
+      "description" : "copy fp files",
+      "nodeStep" : true,
+      "type" : "copyfile"
+    }, {
+      "configuration" : {
+        "destinationPath" : "/opt/software/neds",
+        "echo" : "true",
+        "pattern" : "*.*",
+        "recursive" : "true",
+        "sourcePath" : "/x/${data.copyfile*}/opt/cw/install/nso/${option.cw-version}/neds"
+      },
+      "description" : "copy NEDS",
+      "nodeStep" : true,
+      "type" : "copyfile"
+    }, {
+      "description" : "reload daemon",
+      "exec" : "echo ${option.system-user-password} | sudo -S sysctl -p"
+    }, {
+      "description" : "Undo NSO setup",
+      "script" : "if [ \"@data.nsoremove*@\" == \"true\" ]\nthen \n    echo Skipping NSO Removal ...\nelse\n    source /opt/ncs/current/ncsrc\n    echo '@option.system-user-password@' | sudo -S /opt/ncs/current/bin/ncs-uninstall --all --non-interactive\nfi"
+    }, {
+      "description" : "unpack and install NSO",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "# Unpack binary\ncd /opt/software\nnsosigned=`basename $(ls /opt/software/nso*.bin | grep nso-*signed.bin)`\nsh $nsosigned --skip-verification\nnsoinstall=`basename $(ls /opt/software/nso*.bin | grep nso-*installer.bin)`\n\necho nso-signed=$nsosigned\necho nso-install=$nsoinstall\n\n# Install NSO\necho '@option.system-user-password@' | sudo -S sh $nsoinstall --system-install\n"
+    }, {
+      "description" : "unpack Function packs and NEDs",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "# Unpack binary\ncd /opt/software/fp\nmkdir nca\nmkdir nso\nncasigned=`basename $(ls /opt/software/fp/nca*.bin | grep nca-*.signed.bin)`\nsh $ncasigned --skip-verification\nnsosigned=`basename $(ls /opt/software/fp/signed*.gz | grep signed-*.gz)`\n\n## NCA Install\n\\cp $ncasigned nca\ncd nca\nsh $ncasigned --skip-verification\nrm -f $ncasigned\n\nncaunpack=`basename $(ls /opt/software/fp/nca/nca*.gz | grep nca-*.gz)`\ntar -xvf $ncaunpack\npathtonca=`basename $(ls -d */)`\nexport ncainstall=$(echo `pwd`/$pathtonca/standalone)\n\necho '@option.system-user-password@' | sudo -SE sh -c '\\cp $ncainstall/packages/*.tar.gz /opt/ncs/packages'\n\n## NSO Install\ncd /opt/software/fp\n\\cp $nsosigned nso\ncd nso\ntar -xvf $nsosigned\nrm -f $nsosigned\n\nnsopackage=$(ls *.gz | grep -i *cnc*.tar.gz)\ntar -xvf $nsopackage\nrm -f $nsopackage\n\nfor i in `ls *.bin`; do sh $i --skip-verification; done\nfor i in `ls *.gz`; do tar -xvf $i; done\n\necho '@option.system-user-password@' | sudo -S sh -c 'for i in `ls -d */`; do \\cp -r $(basename $i)/standalone/packages/*.tar.gz /opt/ncs/packages; done'\n\n## NSO NEDS\ncd /opt/software/neds\n\nfor i in *.bin; do sh $i --skip-verification; done\nfor i in *.tar.gz; do tar -xvf $i; done\n\necho '@option.system-user-password@' | sudo -S sh -c '\\cp *.tar.gz /opt/ncs/packages'\necho '@option.system-user-password@' | sudo -S sh -c 'for i in `ls /opt/ncs/packages/*.tar.gz `; do ln -s $i /var/opt/ncs/packages/$(basename $i); done'\n\n\n\n\n"
+    }, {
+      "description" : "add security options to /etc/security/limits.conf",
+      "script" : "echo @option.system-user-password@ | sudo -S sh -c \"sed -i '/^# End of file/i * soft nproc 65535' /etc/security/limits.conf\"\necho @option.system-user-password@ | sudo -S sh -c \"sed -i '/^# End of file/i * hard nproc 65535' /etc/security/limits.conf\"\necho @option.system-user-password@ | sudo -S sh -c \"sed -i '/^# End of file/i * soft nofile 65535' /etc/security/limits.conf\"\necho @option.system-user-password@ | sudo -S sh -c \"sed -i '/^# End of file/i * hard nofile 65535' /etc/security/limits.conf\"\necho @option.system-user-password@ | sudo -S sh -c \"sed -i '/^# End of file/i * hard memlock 65535' /etc/security/limits.conf\"\necho @option.system-user-password@ | sudo -S sh -c \"sed -i '/^# End of file/i * soft memlock 65535' /etc/security/limits.conf\""
+    }, {
+      "description" : "add ulimit to /etc/init.d/ncs",
+      "script" : "echo '@option.system-user-password@' | sudo -S sh -c \"sed -i '/^prog=ncs/i ulimit -n 64000' /etc/init.d/ncs\""
+    }, {
+      "description" : "update XML",
+      "script" : "if [ \"@data.xmlupdate*@\" == \"true\" ]\nthen \n    echo Skipping XML Updates ...\nelse\n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:aaa/x:local-authentication/x:enabled' --value 'true' /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:enabled' --value 'true' /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:transport/x:tcp/x:enabled' --value 'true' /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:transport/x:tcp/x:ip' --value @data.ip*@  /etc/ncs/ncs.conf    \n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:transport/x:ssl/x:enabled' --value 'true' /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:transport/x:ssl/x:port' --value @option.https-port@  /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:webui/x:transport/x:ssl/x:ip' --value @data.ip*@  /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:restconf/x:enabled' --value 'true' /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:netconf-north-bound/x:enabled' --value 'true' /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:netconf-north-bound/x:transport/x:ssh/x:enabled' --value 'true' /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:netconf-north-bound/x:transport/x:ssh/x:ip' --value @data.ip*@ /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:cli/x:ssh/x:enabled' --value 'true' /etc/ncs/ncs.conf\n\n    echo @option.system-user-password@ | sudo -S xmlstarlet edit --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update '/x:ncs-config/x:cli/x:ssh/x:ip' --value @data.ip*@  /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --update \"/x:ncs-config/x:notifications/x:event-streams/x:stream[x:name='service-state-changes']/x:builtin-replay-store/x:enabled\" -v 'true' /etc/ncs/ncs.conf\n\n    # ssh encryption\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config\" -type elem -n \"ssh-tmp\"   /etc/ncs/ncs.conf    \n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:ssh-tmp\" -type elem -n \"algorithms\"  /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:ssh-tmp/x:algorithms\" -type elem -n \"kex\" -v \"diffie-hellman-group14-sha1\" /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:ssh-tmp/x:algorithms\" -type elem -n \"mac\" -v \"hmac-sha2-512,hmac-sha2-256,hmac-sha1\" /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:ssh-tmp/x:algorithms\" -type elem -n \"encryption\" -v \"aes128-ctr,aes192-ctr,aes256-ctr\" /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config -r \"/x:ncs-config/x:ssh-tmp\" -v \"ssh\" /etc/ncs/ncs.conf\n\n    # new subscription\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:notifications/x:event-streams\" -type elem -n \"tmp-stream\"   /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream\" -type elem -n \"name\" -v \"service-aa-changes\"   /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream\" -type elem -n \"description\" -v \"Notifications relating to the service aa configuration change\"   /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream\" -type elem -n \"replay-support\" -v \"true\"   /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream\" -type elem -n \"builtin-replay-store\"    /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream/x:builtin-replay-store\" -type elem -n \"enabled\" -v \"true\"    /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream/x:builtin-replay-store\" -type elem -n \"dir\" -v '${NCS_RUN_DIR}/state'    /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream/x:builtin-replay-store\" -type elem -n \"max-size\" -v 'S10M'    /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream/x:builtin-replay-store\" -type elem -n \"max-files\" -v '50' /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config -r \"/x:ncs-config/x:notifications/x:event-streams/x:tmp-stream\" -v \"stream\" /etc/ncs/ncs.conf\n    # package authentication\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:aaa\" -type elem -n \"package-authentication\"   /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:aaa/x:package-authentication\" -type elem -n \"enabled\" -v \"@option.package-authentication@\"   /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:aaa/x:package-authentication\" -type elem -n \"packages\"  /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:aaa/x:package-authentication/x:packages\" -type elem -n \"package\" -v \"cisco-cfp-jwt-auth\"   /etc/ncs/ncs.conf\n   \n\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config -s \"/x:ncs-config\" -t elem -n \"tmp-hide-group\"   /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:tmp-hide-group\" --type elem --name \"name\" -v \"tsdn\" -r \"/x:ncs-config/x:tmp-hide-group\" -v hide-group  /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config -s \"/x:ncs-config\" -t elem -n \"tmp-hide-group\"    /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:tmp-hide-group\" --type elem --name \"name\" -v \"fastmap-private\" -r \"/x:ncs-config/x:tmp-hide-group\" -v hide-group  /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config -s \"/x:ncs-config\" -t elem -n \"tmp-hide-group\"   /etc/ncs/ncs.conf\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:tmp-hide-group\" --type elem --name \"name\" -v \"debug\" -r \"/x:ncs-config/x:tmp-hide-group\" -v hide-group  /etc/ncs/ncs.conf    \n\n    echo @option.system-user-password@ | sudo -S xmlstarlet ed --inplace -N x=http://tail-f.com/yang/tailf-ncs-config --subnode \"/x:ncs-config/x:python-vm\" --type elem --name \"start-timeout\" -v \"PT300S\"  /etc/ncs/ncs.conf\nfi"
+    }, {
+      "description" : "Create ncsadmin group",
+      "exec" : "echo ${option.system-user-password} | sudo -S groupadd ncsadmin"
+    }, {
+      "description" : "enable ncs",
+      "exec" : "echo ${option.system-user-password} | sudo -S systemctl enable ncs"
+    }, {
+      "description" : "add this user to the group",
+      "exec" : "echo ${option.system-user-password} | sudo -S usermod -a -G ncsadmin $(whoami)"
+    }, {
+      "description" : "add firewall exception for HTTPS",
+      "exec" : "echo ${option.system-user-password} | sudo -S firewall-cmd --zone=public --permanent --add-port ${option.https-port}/tcp"
+    }, {
+      "description" : "add firewall exception for netconf",
+      "exec" : "echo ${option.system-user-password} | sudo -S firewall-cmd --zone=public --permanent --add-port ${option.netconf-port}/tcp"
+    }, {
+      "description" : "reload firewalld",
+      "exec" : "echo ${option.system-user-password} | sudo -S firewall-cmd --reload"
+    }, {
+      "description" : "add cwuser and set password",
+      "script" : "echo '@option.system-user-password@' | sudo -S useradd @option.cwuser@\necho '@option.system-user-password@' | sudo -S sh -c 'echo @option.cwuser@:@option.cwpass@ | chpasswd'"
+    }, {
+      "description" : "add cwuser to ncsadmin",
+      "exec" : "echo ${option.system-user-password} | sudo -S usermod -aG ncsadmin,sudo ${option.cwuser}"
+    }, {
+      "description" : "Create and import additional data ",
+      "script" : "source /opt/ncs/current/ncsrc\nmkdir -p /tmp/nso_load\n# Create NSO security algorithms for import\necho '<devices xmlns=\"http://tail-f.com/ns/ncs\"><global-settings><ssh-algorithms><public-key>ssh-ed25519</public-key><public-key>ecdsa-sha2-nistp256</public-key><public-key>ecdsa-sha2-nistp384</public-key><public-key>ecdsa-sha2-nistp521</public-key><public-key>rsa-sha2-512</public-key><public-key>rsa-sha2-256</public-key><public-key>ssh-rsa</public-key></ssh-algorithms></global-settings></devices>' > /tmp/nso_load/algos.xml\necho '<nacm xmlns=\"urn:ietf:params:xml:ns:yang:ietf-netconf-acm\"><groups><group><name>ncsadmin</name><user-name>@option.cwuser@</user-name></group></groups></nacm>' > /tmp/nso_load/nacm.xml\n"
+    }, {
+      "description" : "start NSO with packages reload",
+      "script" : "source /opt/ncs/current/ncsrc\n#NCS_RELOAD_PACKAGES=force /etc/init.d/ncs restart\necho '@option.system-user-password@' | sudo -S sh -c '/etc/init.d/ncs restart-with-package-reload'\n\n\n"
+    }, {
+      "description" : "load bootstrap data",
+      "script" : "source /opt/ncs/current/ncsrc\nrunfile=/tmp/bootstrap.sh\n\n#\"echo '@option.system-user-password@' | sudo -S  sh -c 'cd /opt/ncs/packages/*@data.nso-ver*@*/tsdn/bootstrap-data; for i in `ls *.xml`; do ncs_load -l -m -F x \"$i\";  done'\"\necho '#!/bin/sh' > $runfile\necho 'source /opt/ncs/current/ncsrc' >> $runfile\necho 'for folder in `find /opt/software/* -type d -iname \"bootstrap-data\" | grep -i standalone`; do pushd \"$folder\"; for file in *.xml; do echo \"loading $file\";  ncs_load -l -m -F x \"$file\"; done; popd; done' >> $runfile\n\necho '@option.system-user-password@' | sudo -S bash '/tmp/bootstrap.sh'\n\n# Load other data\nfor file in `find /tmp/nso_load/ -type f -iname \"*.xml\"`; do echo \"loading $file\"; ncs_load -l -m -F x \"$file\"; done\n"
+    } ],
+    "keepgoing" : true,
+    "strategy" : "sequential"
+  },
+  "timeout" : "12h",
+  "uuid" : "c0a7d56d-e52d-4032-92ee-e7dd8b7a8b71"
+} ]

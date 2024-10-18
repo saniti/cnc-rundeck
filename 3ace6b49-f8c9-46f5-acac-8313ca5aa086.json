@@ -1,0 +1,86 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Locate and list ISO images within the file system\n",
+  "executionEnabled" : true,
+  "group" : "CNC/Setup",
+  "id" : "3ace6b49-f8c9-46f5-acac-8313ca5aa086",
+  "loglevel" : "INFO",
+  "name" : "Locate images on file system",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "> Choose starting location to search for .iso and .ova files",
+    "label" : "Location to start looking for files",
+    "name" : "local-path",
+    "required" : true,
+    "value" : "/opt/cw/images",
+    "values" : [ "/opt/cw/images" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "> Simply displays the existing ISO files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "Detected ISO files",
+    "name" : "image-files-iso",
+    "valuesUrl" : "file:/opt/cw/options/images-files-iso.json"
+  }, {
+    "description" : "> Simply displays the existing OVA/OVF files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "Detected OVA/OVF files",
+    "name" : "image-files-ova",
+    "valuesUrl" : "file:/opt/cw/options/images-files-ova.json"
+  }, {
+    "description" : "> Simply displays the existing OVA/OVF files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "CNC Function Packs",
+    "name" : "image-files-cnc-fp",
+    "valuesUrl" : "file:/opt/cw/options/images-files-cnc-fp.json"
+  }, {
+    "description" : "> Simply displays the existing .bin files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "Detected executable files",
+    "name" : "image-files-bin",
+    "valuesUrl" : "file:/opt/cw/options/images-files-bin.json"
+  }, {
+    "description" : "> Simply displays the existing .tar.gz files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "CNC Installation files",
+    "name" : "install-files",
+    "valuesUrl" : "file:/opt/cw/options/images-files-cnc-install.json"
+  }, {
+    "description" : "> Simply displays the existing .tar.gz files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "NSO installation",
+    "name" : "install-files-nso",
+    "valuesUrl" : "file:/opt/cw/options/images-files-nso.json"
+  }, {
+    "description" : "> Simply displays the existing .tar.gz files. Will be updated after each run.\n",
+    "enforced" : true,
+    "label" : "NSO Neds",
+    "name" : "install-files-nso-neds",
+    "valuesUrl" : "file:/opt/cw/options/images-files-nso-neds.json"
+  }, {
+    "description" : "> Simply displays the existing .tar.gz files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "CNC patches",
+    "name" : "cnc-patches",
+    "valuesUrl" : "file:/opt/cw/options/images-files-cnc-patches.json"
+  }, {
+    "description" : "> Simply displays the existing .tar.gz files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "ZTP Configuration Files",
+    "name" : "ztp-config-files",
+    "valuesUrl" : "file:/opt/cw/options/ztp-config-files.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Find ISO, OVA and OVF files",
+      "script" : "find @option.local-path@/ -iname '*.iso' | jq -R -s -c 'split(\"\\n\")'  > /opt/cw/options/images-files-iso.json\nfind @option.local-path@/cnc/*/ -iname '*.ova' -o -iname '*.ovf' | jq -R -s -c 'split(\"\\n\")'  > /opt/cw/options/images-files-ova.json\nfind @option.local-path@/ -iname '*.bin' | jq -R -s -c 'split(\"\\n\")'  > /opt/cw/options/images-files-bin.json\nfind @option.local-path@/ -iname '*.bin' -o -iname '*.ova' -o -iname '*.ovf' -o -iname '*.iso' | jq -R -s -c 'split(\"\\n\")'  > /opt/cw/options/images-files-all.json\nfind @option.local-path@/ -iname '*.tar.gz' | jq -R -s -c 'split(\"\\n\")'  > /opt/cw/options/images-files-cnc-install.json\nfind @option.local-path@/patches/ -iname '*.tar.gz' | jq -R -s -c 'split(\"\\n\")'  > /opt/cw/options/images-files-cnc-patches.json\nfind @option.local-path@/cnc/*/nso-core/ -iname '*.bin' | jq -R -s -c 'split(\"\\n\")'  > /opt/cw/options/images-files-nso.json\nfind @option.local-path@/cnc/*/nso-neds/ -iname '*.bin' | jq -R -s -c 'split(\"\\n\")'  > /opt/cw/options/images-files-nso-neds.json\nfind @option.local-path@/cnc/*/cnc-fp/ -iname '*.tar.gz' | jq -R -s -c 'split(\"\\n\")'  > /opt/cw/options/images-files-cnc-fp.json\nfind @option.local-path@/images/ -iregex '.*\\.\\(\\|sh\\|txt\\)$' | jq -R -s -c 'split(\"\\n\")'  > /opt/cw/options/ztp-config-files.json"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "sequential"
+  },
+  "uuid" : "3ace6b49-f8c9-46f5-acac-8313ca5aa086"
+} ]

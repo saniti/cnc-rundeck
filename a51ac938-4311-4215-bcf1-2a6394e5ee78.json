@@ -1,0 +1,96 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Applies a tag (pre-existing) to all devices in CNC\n---\nTo create tags, run the following job [CNC/Configuration/CNC - Create Tags](/project/CNC/job/show/801e3747-5afc-4a08-861f-92306ce08eba)",
+  "executionEnabled" : true,
+  "group" : "CNC/Configuration",
+  "id" : "a51ac938-4311-4215-bcf1-2a6394e5ee78",
+  "loglevel" : "INFO",
+  "name" : "CNC - Tag Devices [CHOOSE]",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "enforced" : true,
+    "label" : "Tag Name",
+    "name" : "tag",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-pod.value}-tags.json"
+  }, {
+    "delimiter" : ",",
+    "enforced" : true,
+    "label" : "Device List",
+    "multivalued" : true,
+    "name" : "device-list",
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-pod.value}-devices.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "create search critiera",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "search",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo @option.device-list@ | sed -e 's/^\\|$/\"/g' -e 's/,/\",\"/g'\n\n"
+    }, {
+      "description" : "create filtered list",
+      "script" : "jq '[.[] | select( .host as $a | [@data.search*@] | index($a) )]' /opt/cw/options/@option.cnc-pod@-devices-short.json > /opt/cw/tmp/@job.execid@-devicelist.json\n\n"
+    }, {
+      "description" : "create payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "payload",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "jq -c '{\"data\":[.[] | {\"uuid\":.id,\"tag_names\":[\"@option.tag@\"]}]}' /opt/cw/tmp/@job.execid@-devicelist.json"
+    }, {
+      "description" : "get vars",
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.payload*}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/inventory/v1/nodes",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Patch tags to devices",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "a51ac938-4311-4215-bcf1-2a6394e5ee78"
+} ]

@@ -1,0 +1,93 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Create a new POD / Deployment definition",
+  "executionEnabled" : false,
+  "group" : "CNC/POD",
+  "id" : "00a7b4c3-dc1b-4a1a-b4fd-e1f396281b2f",
+  "loglevel" : "INFO",
+  "name" : "Create POD",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "label" : "Name of the CNC Deployment (Friendly)",
+    "name" : "pod-name",
+    "required" : true
+  }, {
+    "description" : "> Tag (NO SPACES or special characters!) to identify this POD",
+    "label" : "Tag",
+    "name" : "tag",
+    "required" : true
+  }, {
+    "description" : "Virtual IP of POD",
+    "label" : "POD Management VIP",
+    "name" : "cnc-vip",
+    "required" : true
+  }, {
+    "description" : "> The matching entry used in API Gateway. Normally this would be the same as POD Name",
+    "label" : "Proxy Prefix",
+    "name" : "proxy",
+    "required" : true
+  }, {
+    "description" : "- not required, but if present - then will be used",
+    "label" : "Management VIP DNS Name",
+    "name" : "cnc-vip-dns"
+  }, {
+    "description" : "Virtual IP of Data Interface",
+    "label" : "POD Data VIP",
+    "name" : "cnc-data-vip",
+    "required" : true
+  }, {
+    "description" : "- not required, but if present - then will be used",
+    "label" : "Data VIP DNS Name",
+    "name" : "cnc-datavip-dns"
+  }, {
+    "description" : "Default is `admin`",
+    "label" : "Admin User Name",
+    "name" : "pod-username",
+    "required" : true,
+    "value" : "admin"
+  }, {
+    "enforced" : true,
+    "label" : "Set Default",
+    "name" : "default",
+    "required" : true,
+    "value" : "false",
+    "values" : [ "false", "true" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "delimiter" : ",",
+    "label" : "List Current Environments",
+    "multivalued" : true,
+    "name" : "environments-current",
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    }, {
+      "configuration" : {
+        "command" : "bash -c 'if [ \"${option.default}\" == \"false\" ]; then true; else false; fi'"
+      },
+      "description" : "If set to default then clear defaults",
+      "errorhandler" : {
+        "keepgoingOnSuccess" : true,
+        "script" : "jq '.[] += {\"selected\":false}' /opt/cw/options/cw-environments.json > /opt/cw/tmp/cw-environments.tmp\n\\cp /opt/cw/tmp/cw-environments.tmp /opt/cw/options/cw-environments.json"
+      },
+      "nodeStep" : true,
+      "type" : "localexec"
+    }, {
+      "description" : "Add new entry",
+      "script" : "file=/opt/cw/options/cw-environments.json\nfiletmp=/opt/cw/tmp/cw-environments.tmp\necho '[{\"name\":\"@option.pod-name@\",\"value\":\"@option.cnc-vip@\",\"selected\":\"@option.default@\",\"data-vip\":\"@option.cnc-data-vip@\",\"mgt-dns\":\"@option.cnc-vip-dns@\",\"data-dns\":\"@option.cnc-datavip-dns@\",\"tag\":\"@option.tag@\"}]'\nif [ ! -f \"$file\" ]; then echo '[]' > \"$file\"; fi\nif [ ! -f \"$file\" ]; then echo '[]' > \"$filetmp\"; fi\necho 'files created'\njq '. += [{\"name\":\"@option.pod-name@\",\"value\":\"@option.pod-name@\",\"mgt-vip\":\"@option.cnc-vip@\",\"selected\":\"@option.default@\",\"data-vip\":\"@option.cnc-data-vip@\",\"mgt-dns\":\"@option.cnc-vip-dns@\",\"data-dns\":\"@option.cnc-datavip-dns@\",\"tag\":\"@option.tag@\",\"proxy\":\"@option.proxy@\"}]' $file > $filetmp\n\\cp $filetmp $file"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "00a7b4c3-dc1b-4a1a-b4fd-e1f396281b2f"
+} ]

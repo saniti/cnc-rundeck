@@ -1,0 +1,67 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "Kafka",
+  "id" : "bc7452bd-bff1-4463-b8f4-269c3f14c126",
+  "loglevel" : "INFO",
+  "name" : "Kafka - query messages",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "> Create new customer: [Add new Customer](/job/show/69d6030f-0829-48ce-8101-772f2c0a54cc)",
+    "enforced" : true,
+    "label" : "Customer Name",
+    "name" : "key",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/customers.json"
+  }, {
+    "hidden" : true,
+    "name" : "payload",
+    "required" : true,
+    "value" : "{\"json\":\"data\"}"
+  }, {
+    "label" : "Kafka Topic",
+    "name" : "topic",
+    "required" : true,
+    "value" : "demoz",
+    "values" : [ "demoz" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/json\"}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://198.18.133.102:8080/api/clusters/local/topics/${option.topic}/messages?q=${option.key}&filterQueryType=STRING_CONTAINS&attempt=3&limit=100&seekDirection=FORWARD&seekType=OFFSET&seekTo=0::0",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "name" : "data",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "bc7452bd-bff1-4463-b8f4-269c3f14c126"
+} ]

@@ -1,0 +1,219 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Changes the geo location data of the device\n---\n### Prerequisites\n1. [Authenticate with CNC](5fee437d-4fa6-4728-9601-0fac3a061ca9)\n2. [update device list](fe7a67f3-81bf-44c0-9361-fd2d7afb3cab)\n\n### Optional\n1. [Add new location](eb42d81d-db58-427a-b379-ca27b00c7c28)",
+  "executionEnabled" : true,
+  "group" : "-DEMO",
+  "id" : "5d43c89b-fd22-43b0-8a71-bda0085faa92",
+  "loglevel" : "INFO",
+  "name" : "CNC - Modify Geographic ALL [AUSTRALIA]",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "cnc-vip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 1",
+    "name" : "device-1",
+    "required" : true,
+    "value" : "Node-1",
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-vip.value}-devices.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 1 Location",
+    "name" : "location-1",
+    "required" : true,
+    "value" : "AU-BNE-HCO--4000-01",
+    "valuesUrl" : "file:/opt/cw/options/locations.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 2",
+    "name" : "device-2",
+    "required" : true,
+    "value" : "Node-2.demo.dcloud.cisco.com",
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-vip.value}-devices.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 2 Location",
+    "name" : "location-2",
+    "required" : true,
+    "value" : "AU-ADE-HCO--5000-01",
+    "valuesUrl" : "file:/opt/cw/options/locations.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 3",
+    "name" : "device-3",
+    "required" : true,
+    "value" : "Node-3",
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-vip.value}-devices.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 3 Location",
+    "name" : "location-3",
+    "required" : true,
+    "value" : "AU-CAI-HCO--4870-01",
+    "valuesUrl" : "file:/opt/cw/options/locations.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 4",
+    "name" : "device-4",
+    "required" : true,
+    "value" : "Node-4",
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-vip.value}-devices.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 4 Location",
+    "name" : "location-4",
+    "required" : true,
+    "value" : "AU-SYD-HCO--2000-01",
+    "valuesUrl" : "file:/opt/cw/options/locations.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 5",
+    "name" : "device-5",
+    "required" : true,
+    "value" : "Node-5",
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-vip.value}-devices.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 5 Location",
+    "name" : "location-5",
+    "required" : true,
+    "value" : "AU-PER-HCO--6000-01",
+    "valuesUrl" : "file:/opt/cw/options/locations.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 7",
+    "name" : "device-7",
+    "required" : true,
+    "value" : "Node-7",
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-vip.value}-devices.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 7 Location",
+    "name" : "location-7",
+    "required" : true,
+    "value" : "AU-DAR-HCO--0800-01",
+    "valuesUrl" : "file:/opt/cw/options/locations.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 8",
+    "name" : "device-8",
+    "required" : true,
+    "value" : "Node-8",
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-vip.value}-devices.json"
+  }, {
+    "enforced" : true,
+    "label" : "Device 8 Location",
+    "name" : "location-8",
+    "required" : true,
+    "value" : "AU-MEL-HCO--3000-01",
+    "valuesUrl" : "file:/opt/cw/options/locations.json"
+  }, {
+    "description" : "> junos box",
+    "enforced" : true,
+    "label" : "vmx",
+    "name" : "device-vmx",
+    "required" : true,
+    "value" : "vmx99",
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-vip.value}-devices.json"
+  }, {
+    "enforced" : true,
+    "label" : "vmx Location",
+    "name" : "location-vmx",
+    "required" : true,
+    "value" : "AU-NSW-HCO--0870-01",
+    "valuesUrl" : "file:/opt/cw/options/locations.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Modify Node 1 details",
+      "jobref" : {
+        "args" : "-device-name ${option.device-1} -location-data ${option.location-1}",
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "CNC - Modify Device Geographic Location Data",
+        "uuid" : "afdcf182-efbb-44ae-b39d-9166473c6582"
+      }
+    }, {
+      "description" : "Modify Node 2 details",
+      "jobref" : {
+        "args" : "-device-name ${option.device-2} -location-data ${option.location-2}",
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "CNC - Modify Device Geographic Location Data",
+        "uuid" : "afdcf182-efbb-44ae-b39d-9166473c6582"
+      }
+    }, {
+      "description" : "Modify Node 3 details",
+      "jobref" : {
+        "args" : "-device-name ${option.device-3} -location-data ${option.location-3}",
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "CNC - Modify Device Geographic Location Data",
+        "uuid" : "afdcf182-efbb-44ae-b39d-9166473c6582"
+      }
+    }, {
+      "description" : "Modify Node 4 details",
+      "jobref" : {
+        "args" : "-device-name ${option.device-4} -location-data ${option.location-4}",
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "CNC - Modify Device Geographic Location Data",
+        "uuid" : "afdcf182-efbb-44ae-b39d-9166473c6582"
+      }
+    }, {
+      "description" : "Modify Node 5 details",
+      "jobref" : {
+        "args" : "-device-name ${option.device-5} -location-data ${option.location-5}",
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "CNC - Modify Device Geographic Location Data",
+        "uuid" : "afdcf182-efbb-44ae-b39d-9166473c6582"
+      }
+    }, {
+      "description" : "Modify Node 7 details",
+      "jobref" : {
+        "args" : "-device-name ${option.device-7} -location-data ${option.location-7}",
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "CNC - Modify Device Geographic Location Data",
+        "uuid" : "afdcf182-efbb-44ae-b39d-9166473c6582"
+      }
+    }, {
+      "description" : "Modify Node 8 details",
+      "jobref" : {
+        "args" : "-device-name ${option.device-8} -location-data ${option.location-8}",
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "CNC - Modify Device Geographic Location Data",
+        "uuid" : "afdcf182-efbb-44ae-b39d-9166473c6582"
+      }
+    }, {
+      "description" : "Modify device-vmx",
+      "jobref" : {
+        "args" : "-device-name ${option.device-vmx} -location-data ${option.location-vmx}",
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "CNC - Modify Device Geographic Location Data",
+        "uuid" : "afdcf182-efbb-44ae-b39d-9166473c6582"
+      }
+    }, {
+      "configuration" : {
+        "debugOnly" : "true"
+      },
+      "description" : "log data in debug mode",
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "5d43c89b-fd22-43b0-8a71-bda0085faa92"
+} ]

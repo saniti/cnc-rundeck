@@ -1,0 +1,399 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Creates a new VPN service from git hosted template, and publishes to git release repository (customer)\n---\n1. do this\n2. do that\n3. do the other thing\n4. use this ip 10.11.12.23\n5. generate traffic on this interface",
+  "executionEnabled" : true,
+  "group" : "-DEMO",
+  "id" : "1e9a46e6-d3b5-4a5e-a759-fa215e2ed256",
+  "loglevel" : "INFO",
+  "name" : "CNC - L3 Service [Service Designer] (step 1) new L3 VPN and Policy (git version)",
+  "nodeFilterEditable" : false,
+  "notification" : {
+    "onsuccess" : {
+      "email" : {
+        "recipients" : "autoamtion@microlab.dcloud.cisco.com",
+        "subject" : "${notification.eventStatus} :[${job.name}]: New VPN Definition : ${option.customer}-${option.vpn-name}.json"
+      }
+    }
+  },
+  "notifyAvgDurationThreshold" : null,
+  "options" : [ {
+    "enforced" : true,
+    "hidden" : true,
+    "name" : "proxy",
+    "required" : true,
+    "value" : "proxy:3001",
+    "values" : [ "proxy:3001" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "> New customer? [Add new customer](/job/show/8e3b0a1a-421c-4d0d-bb2c-c7d0af07116c)\n## Git Source (Templates)",
+    "enforced" : true,
+    "label" : "Customer",
+    "name" : "customer",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/customers.json"
+  }, {
+    "enforced" : true,
+    "label" : "git namespace",
+    "name" : "git-owners",
+    "required" : true,
+    "value" : "simon",
+    "valuesUrl" : "http://${option.proxy.value}/git/owners"
+  }, {
+    "enforced" : true,
+    "label" : "git repository (source)",
+    "name" : "git-repos",
+    "required" : true,
+    "value" : "service_templates",
+    "valuesUrl" : "http://${option.proxy.value}/git/myrepos/${option.git-owners.value}"
+  }, {
+    "enforced" : true,
+    "label" : "git branch (source)",
+    "name" : "git-branch",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/git/branches/${option.git-owners.value}/${option.git-repos.value}"
+  }, {
+    "enforced" : true,
+    "label" : "service types (source)",
+    "name" : "git-dirs",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/git/content/dir/${option.git-owners.value}/${option.git-repos.value}/${option.git-branch.value}"
+  }, {
+    "description" : "## VPN Policy file",
+    "enforced" : true,
+    "label" : "Template file (source)",
+    "name" : "git-template",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/git/files/${option.git-owners.value}/${option.git-repos.value}/${option.git-branch.value}/${option.git-dirs.value}"
+  }, {
+    "enforced" : true,
+    "label" : "service types (source)",
+    "name" : "git-dirs-policy",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/git/content/dir/${option.git-owners.value}/${option.git-repos.value}/${option.git-branch.value}"
+  }, {
+    "description" : "## VPN Details",
+    "enforced" : true,
+    "label" : "Policy File for VPN service",
+    "name" : "git-template-policy",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/git/files/${option.git-owners.value}/${option.git-repos.value}/${option.git-branch.value}/${option.git-dirs-policy.value}"
+  }, {
+    "label" : "VPN Name",
+    "name" : "vpn-name",
+    "required" : true
+  }, {
+    "description" : "> VLAN from Netbox Pool using `customer` tag",
+    "enforced" : true,
+    "label" : "CE VLAN",
+    "name" : "vlan-id",
+    "required" : true,
+    "value" : "auto-assigned",
+    "values" : [ "auto-assigned" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "> Auto allocation from Pool for IP Addressing using Netbox",
+    "enforced" : true,
+    "name" : "ipv4-addressing",
+    "required" : true,
+    "value" : "auto-assigned",
+    "values" : [ "auto-assigned" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "## Git destination / release repository",
+    "label" : "Peer AS Number",
+    "name" : "peer-as",
+    "required" : true,
+    "value" : "65000"
+  }, {
+    "enforced" : true,
+    "label" : "git namespace (destination)",
+    "name" : "git-owners_1",
+    "required" : true,
+    "value" : "simon",
+    "valuesUrl" : "http://${option.proxy.value}/git/owners"
+  }, {
+    "description" : "[New](ea8132cd-b104-4c31-8028-2d08289fca52)",
+    "enforced" : true,
+    "label" : "git repository (destination)",
+    "name" : "git-repos_1",
+    "required" : true,
+    "value" : "customer",
+    "valuesUrl" : "http://${option.proxy.value}/git/myrepos/${option.git-owners_1.value}"
+  }, {
+    "description" : "[New](c98f93bc-0190-4c04-b135-778db2ec8613)",
+    "enforced" : true,
+    "label" : "git branch (destination)",
+    "name" : "git-branch_1",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/git/branches/${option.git-owners_1.value}/${option.git-repos_1.value}"
+  }, {
+    "description" : "## Endpoint and Interface options",
+    "enforced" : true,
+    "label" : "service types (destination)",
+    "name" : "git-dirs_1",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/git/content/dir/${option.git-owners_1.value}/${option.git-repos_1.value}/${option.git-branch_1.value}"
+  }, {
+    "enforced" : true,
+    "label" : "Endpoint 1",
+    "name" : "device-1",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/devices"
+  }, {
+    "enforced" : true,
+    "label" : "Device 1 interface",
+    "name" : "interface-1",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/interfaces/${option.device-1.value}"
+  }, {
+    "enforced" : true,
+    "label" : "Endpoint 2",
+    "name" : "device-2",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/devices"
+  }, {
+    "enforced" : true,
+    "label" : "Device 2 interface",
+    "name" : "interface-2",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/interfaces/${option.device-2.value}"
+  }, {
+    "enforced" : true,
+    "label" : "Endpoint 3",
+    "name" : "device-3",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/devices"
+  }, {
+    "enforced" : true,
+    "label" : "Device 3 interface",
+    "name" : "interface-3",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/interfaces/${option.device-3.value}"
+  }, {
+    "description" : "> Segment routing Colouring",
+    "label" : "SR Colour",
+    "name" : "sr-colour",
+    "required" : true
+  }, {
+    "hidden" : true,
+    "name" : "token",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/gitea/token",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "git",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/git/repo",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "now",
+    "required" : true,
+    "value" : "${DATE:yyyy-MM-dd-HH-mm-ss}"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "true",
+        "file" : "/opt/cw/tmp/${job.execid}-git-template-options.json",
+        "headers" : "{\"accept\": \"application/json\",\"Authorization\":\"Bearer ${option.token}\"}\n\n",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://198.18.133.102:3001/git/files/${option.git-owners}/${option.git-repos}/${option.git-branch}/${option.git-dirs}",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "get vpn template properties",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "true",
+        "file" : "/opt/cw/tmp/${job.execid}-git-policy-template-options.json",
+        "headers" : "{\"accept\": \"application/json\",\"Authorization\":\"Bearer ${option.token}\"}\n\n",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://198.18.133.102:3001/git/files/${option.git-owners}/${option.git-repos}/${option.git-branch}/${option.git-dirs-policy}",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "get vpn policy template properties",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "retrieve file names of Template and Policy",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "templatefile=/opt/cw/tmp/@job.execid@-git-template-options.json\npolicyfile=/opt/cw/tmp/@job.execid@-git-policy-template-options.json\n\njq -r '.[] | select(.value==\"@option.git-template@\")  | {\"internalname\":.name|split(\".\")[0]} +.|to_entries[] | (\"template-\"+(.key|tostring)+\"=\"+(.value|tostring))' $templatefile\njq -r '.[] | select(.value==\"@option.git-template-policy@\") | {\"internalname\":.name|split(\".\")[0]} +.|to_entries[] | (\"policy-template-\"+(.key|tostring)+\"=\"+(.value|tostring))' $policyfile\n\n\n"
+    }, {
+      "description" : "timestamp",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "echo 'updated='`date`"
+    }, {
+      "exec" : "echo '${option.git}/api/v1/repos/${option.git-owners}/${option.git-repos}/raw/${option.git-dirs_1}/${data.policy-template-name*}?ref=${option.git-branch}'"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "true",
+        "file" : "/opt/cw/tmp/${job.execid}-servicedesign.json",
+        "headers" : "{\"accept\": \"application/json\",\"Authorization\":\"Bearer ${option.token}\"}\n",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "${option.git}/api/v1/repos/${option.git-owners}/${option.git-repos}/raw/${option.git-dirs}/${data.template-name*}?ref=${option.git-branch}",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "get template file as JSON",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "true",
+        "file" : "/opt/cw/tmp/${job.execid}-servicedesign-policy.json",
+        "headers" : "{\"accept\": \"application/json\",\"Authorization\":\"Bearer ${option.token}\"}\n",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "${option.git}/api/v1/repos/${option.git-owners}/${option.git-repos}/raw/${option.git-dirs-policy}/${data.policy-template-name*}?ref=${option.git-branch}",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "get policy file as JSON",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "Reserve VLAN ID",
+      "jobref" : {
+        "args" : "-vlan-name \"${option.customer}-${option.vpn-name} [${data.updated*}]\" -search_tag \"customer\"",
+        "group" : "Netbox",
+        "name" : "GET Next VLAN",
+        "uuid" : "b6b02270-d334-4cfd-8abc-405a59df8657"
+      }
+    }, {
+      "description" : "get ip 1",
+      "jobref" : {
+        "args" : "-ifnum 1",
+        "group" : "Netbox",
+        "name" : "GET Next IP",
+        "uuid" : "143a3064-d5bf-4bee-864c-7269da2db03f"
+      }
+    }, {
+      "description" : "get ip 2",
+      "jobref" : {
+        "args" : "-ifnum 2",
+        "group" : "Netbox",
+        "name" : "GET Next IP",
+        "uuid" : "143a3064-d5bf-4bee-864c-7269da2db03f"
+      }
+    }, {
+      "description" : "get ip 3",
+      "jobref" : {
+        "args" : "-ifnum 3",
+        "group" : "Netbox",
+        "name" : "GET Next IP",
+        "uuid" : "143a3064-d5bf-4bee-864c-7269da2db03f"
+      }
+    }, {
+      "description" : "create replacement variables",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "#nodelist=$(echo '@option.device@' | jq -cR 'split(\",\")')\n\n# Create node variables data.ne-1*\n#echo $nodelist | jq -r '.[0] | \"ne-id-1=\"+.'\n#echo $nodelist | jq -r '.[1] | \"ne-id-2=\"+.'\n#echo $nodelist | jq -r '.[2] | \"ne-id-3=\"+.'\necho ne-id-1=@option.device-1@\necho ne-id-2=@option.device-2@\necho ne-id-3=@option.device-3@\n\n# Create interface variables\necho ne-id-1-iface=@option.interface-1@\necho ne-id-2-iface=@option.interface-2@\necho ne-id-3-iface=@option.interface-3@\n\n# Create VPN variables\necho vpn-id=@option.vpn-name@\n\n# Create VLAN vpn-id\necho cvlan-id=@export.vlanid@\n\n# Create IP Addresses \necho provider-address-1=@export.ip-1@\necho provider-address-2=@export.ip-2@\necho provider-address-3=@export.ip-3@\n\n# Create Peer AS \necho peer-autonomous-system=@option.peer-as@\n\n"
+    }, {
+      "description" : "Update policy info",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "policyjson=/opt/cw/tmp/@job.execid@-servicedesign-policy.json\npolicytmp=/opt/cw/tmp/@job.execid@-servicedesign-policy.tmp.json\npolicytmp1=/opt/cw/tmp/@job.execid@-servicedesign-policy.tmp1.json\n# change policy name\njq '.[][].name=\"L3VPN-@data.cvlan-id*@-@data.vpn-id*@-@option.customer@-ROUTE-POLICY\"' $policyjson > $policytmp\njq 'del(.[][].color)  | .[][].color[0]|={\"id\":@option.sr-colour@,\"ipv4\":{\"prefix\":[\"@data.provider-address-1*@/24\",\"@data.provider-address-2*@/24\",\"@data.provider-address-3*@/24\"]}}' $policytmp > $policytmp1\njq -c . $policytmp1 > $policyjson\njq -c . $policytmp1 \n"
+    }, {
+      "description" : "update template file",
+      "script" : "file=/opt/cw/tmp/@job.execid@-servicedesign.json\nres=$(jq -c '.' $file)\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[0].\"vpn-network-accesses\".\"vpn-network-access\"[].id=\"@data.ne-id-1*@-@data.vpn-id*@\"')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[1].\"vpn-network-accesses\".\"vpn-network-access\"[].id=\"@data.ne-id-2*@-@data.vpn-id*@\"')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[2].\"vpn-network-accesses\".\"vpn-network-access\"[].id=\"@data.ne-id-3*@-@data.vpn-id*@\"')\n\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[0].\"vpn-network-accesses\".\"vpn-network-access\"[].\"ip-connection\".ipv4.\"static-addresses\".address[].\"address-id\"=\"@data.ne-id-1*@-@data.cvlan-id*@-ipv4-address\"')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[1].\"vpn-network-accesses\".\"vpn-network-access\"[].\"ip-connection\".ipv4.\"static-addresses\".address[].\"address-id\"=\"@data.ne-id-2*@-@data.cvlan-id*@-ipv4-address\"')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[2].\"vpn-network-accesses\".\"vpn-network-access\"[].\"ip-connection\".ipv4.\"static-addresses\".address[].\"address-id\"=\"@data.ne-id-3*@-@data.cvlan-id*@-ipv4-address\"')\n\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[0].\"vpn-network-accesses\".\"vpn-network-access\"[].\"ip-connection\".ipv4.\"static-addresses\".address[].\"provider-address\"=\"@data.provider-address-1*@\"')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[1].\"vpn-network-accesses\".\"vpn-network-access\"[].\"ip-connection\".ipv4.\"static-addresses\".address[].\"provider-address\"=\"@data.provider-address-2*@\"')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[2].\"vpn-network-accesses\".\"vpn-network-access\"[].\"ip-connection\".ipv4.\"static-addresses\".address[].\"provider-address\"=\"@data.provider-address-3*@\"')\n\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[0].\"vpn-network-accesses\".\"vpn-network-access\"[].\"ip-connection\".ipv4.\"static-addresses\".\"primary-address\"=\"@data.ne-id-1*@-@data.cvlan-id*@-ipv4-address\"')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[1].\"vpn-network-accesses\".\"vpn-network-access\"[].\"ip-connection\".ipv4.\"static-addresses\".\"primary-address\"=\"@data.ne-id-2*@-@data.cvlan-id*@-ipv4-address\"')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[2].\"vpn-network-accesses\".\"vpn-network-access\"[].\"ip-connection\".ipv4.\"static-addresses\".\"primary-address\"=\"@data.ne-id-3*@-@data.cvlan-id*@-ipv4-address\"')\n\n# Update AS \n\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[0].\"vpn-network-accesses\".\"vpn-network-access\"[].\"routing-protocols\".\"routing-protocol\"[].bgp.\"peer-autonomous-system\"=@data.peer-autonomous-system*@')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[1].\"vpn-network-accesses\".\"vpn-network-access\"[].\"routing-protocols\".\"routing-protocol\"[].bgp.\"peer-autonomous-system\"=@data.peer-autonomous-system*@')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[2].\"vpn-network-accesses\".\"vpn-network-access\"[].\"routing-protocols\".\"routing-protocol\"[].bgp.\"peer-autonomous-system\"=@data.peer-autonomous-system*@')\n\n\n# Update interfaces\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[0].\"vpn-network-accesses\".\"vpn-network-access\"[].\"port-id\"=\"@data.ne-id-1-iface*@\"')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[1].\"vpn-network-accesses\".\"vpn-network-access\"[].\"port-id\"=\"@data.ne-id-2-iface*@\"')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[2].\"vpn-network-accesses\".\"vpn-network-access\"[].\"port-id\"=\"@data.ne-id-3-iface*@\"')\n\nres=$(echo $res | jq '(..|objects|select(has(\"node-ie-profile\"))).\"node-ie-profile\"=\"@data.vpn-id*@-profile\"')\n\nres=$(echo $res | jq '(..|objects|select(has(\"cvlan-id\"))).\"cvlan-id\"=@data.cvlan-id*@')\nres=$(echo $res | jq '(..|objects|select(has(\"vpn-id\"))).\"vpn-id\"=\"L3VPN-@data.cvlan-id*@-@data.vpn-id*@-@option.customer@\"')\n\nres=$(echo $res | jq '(..|objects|select(has(\"ie-profile-id\"))).\"ie-profile-id\"=\"@data.vpn-id*@-profile\"')\n#res=$(echo $res | jq '(..|objects|select(has(\"export-policy\"))).\"export-policy\"=\"@data.vpn-id*@-route-policy\"')\nres=$(echo $res | jq '(..|objects|select(has(\"export-policy\"))).\"export-policy\"=\"L3VPN-@data.cvlan-id*@-@data.vpn-id*@-@option.customer@-ROUTE-POLICY\"')\n\nres=$(echo $res | jq '(..|objects|select(has(\"rd\"))).\"rd\"=\"0:@data.peer-autonomous-system*@:@data.cvlan-id*@\"')\n\n\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[0].\"ne-id\"=\"@data.ne-id-1*@\"')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[1].\"ne-id\"=\"@data.ne-id-2*@\"')\nres=$(echo $res | jq '. | .[][][].\"vpn-nodes\".\"vpn-node\"[2].\"ne-id\"=\"@data.ne-id-3*@\"')\n\necho $res | jq .\necho $res | jq . > /opt/cw/tmp/@job.execid@-new-service.json\n\n"
+    }, {
+      "description" : "get service template definition",
+      "script" : "file=/opt/cw/tmp/@job.execid@-servicedesign.json\n#echo '@option.device@'\n#outfile=/opt/cw/options/git/@option.repo@/@option.branch@-files.json\n#dir=$(dirname $outfile)\n#mkdir -p $dir\n#jq '[.[] | {\"name\":.name,\"value\":.path}]' $file > $outfile\n# find first @node.description@\n\nnodelist=$(echo '@option.device@' | jq -cR 'split(\",\")')\necho $nodelist"
+    }, {
+      "description" : "upload file to customer repo",
+      "jobref" : {
+        "args" : "-repo ${option.git-owners_1}/${option.git-repos_1} -branch ${option.git-branch_1} -file-name \"${option.customer}-${option.vpn-name}.json\" -file-path /opt/cw/tmp/${job.execid}-new-service.json -message \"Project : ${job.execid},Date : ${option.now}\"",
+        "group" : "git",
+        "name" : "git - upload file",
+        "uuid" : "1fe8267f-0bb6-426d-849b-868b06a97950"
+      }
+    }, {
+      "description" : "upload route policy to custom repository",
+      "jobref" : {
+        "args" : "-repo ${option.git-owners_1}/${option.git-repos_1} -branch ${option.git-branch_1} -file-name \"${option.customer}-${option.vpn-name}-route-policy.json\" -file-path /opt/cw/tmp/${job.execid}-servicedesign-policy.json -message \"Project : ${job.execid},Date : ${option.now}\"",
+        "group" : "git",
+        "name" : "git - upload file",
+        "uuid" : "1fe8267f-0bb6-426d-849b-868b06a97950"
+      }
+    }, {
+      "configuration" : {
+        "fail" : "false",
+        "halt" : "true"
+      },
+      "description" : "success",
+      "nodeStep" : false,
+      "type" : "flow-control"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "1e9a46e6-d3b5-4a5e-a759-fa215e2ed256"
+} ]

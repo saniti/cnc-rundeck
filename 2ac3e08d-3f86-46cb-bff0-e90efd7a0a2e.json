@@ -1,0 +1,40 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Show mappings of respective CNC version releases\n---\n## Expectations\n### Images\n- Relevant images located under `/opt/cw/images` as OVA files\n### Applications\n- Relevant applications located under `/opt/cw/install` as .tar.tz files",
+  "executionEnabled" : true,
+  "group" : "CNC/Setup",
+  "id" : "2ac3e08d-3f86-46cb-bff0-e90efd7a0a2e",
+  "loglevel" : "INFO",
+  "name" : "CNC Application Management - SHOW",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "> cw-versions.json",
+    "enforced" : true,
+    "label" : "CW Version",
+    "name" : "cw-version",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-versions.json"
+  }, {
+    "delimiter" : ",",
+    "description" : "> Choose all applications and patches related to the Crosswork Version",
+    "enforced" : true,
+    "label" : "CNC Applications",
+    "multivalued" : true,
+    "name" : "cnc-apps",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-packages-${option.cw-version.value}.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "show details",
+      "exec" : "jq . ${option.cnc-apps}"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "2ac3e08d-3f86-46cb-bff0-e90efd7a0a2e"
+} ]

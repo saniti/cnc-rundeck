@@ -1,0 +1,67 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Locates all the relevant infrastructure paths within the connected vCenter or ESX environment\n---\n## Requirements\n### Credentials\n* `keys/vmware/vc-address` - FQDN or IP address of the vCenter server\n* `keys/vmware/vc-user` - User associated with `vc-address`\n* `keys/vmware/vc-password` - Password for vCenter user account\n### Tooling\n* `govc` command line tool\n\n\n## Functionality\n```\n- use `govc` to discover all hosts, datastores and networks within the vCenter environment\n- store these as JSON files, to be used as inputs into other services such as provisioning\n```",
+  "executionEnabled" : true,
+  "group" : "CNC/Setup",
+  "id" : "49bfae6a-1210-45e3-8c88-7534d4467199",
+  "loglevel" : "INFO",
+  "name" : "Discovery vCenter Paths [ BHP ]",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "vCenter Server",
+    "name" : "scope",
+    "required" : true,
+    "value" : "home",
+    "values" : [ "home", "dcloud", "bhp" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "VMware Type",
+    "name" : "type",
+    "required" : true,
+    "value" : "vc",
+    "values" : [ "esx", "vc" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "label" : "Output Directory",
+    "name" : "outputDir",
+    "required" : true,
+    "value" : "/tmp"
+  }, {
+    "enforced" : true,
+    "hidden" : true,
+    "name" : "path",
+    "required" : true,
+    "value" : "/backup/keys/keys/vmware",
+    "values" : [ "/backup/keys/keys/vmware" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "GOVC variables",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "echo GOVC_URL=$(cat @option.path@/vc-address-@option.scope@)\necho GOVC_USERNAME=$(cat @option.path@/vc-user-@option.scope@)\necho GOVC_PASSWORD=$(cat @option.path@/vc-password-@option.scope@)\necho GOVC_INSECURE=1"
+    }, {
+      "description" : "Create files",
+      "script" : "export GOVC_URL=@data.GOVC_URL*@\nexport GOVC_USERNAME=@data.GOVC_USERNAME*@\nexport GOVC_PASSWORD=@data.GOVC_PASSWORD*@\nexport GOVC_INSECURE=@data.GOVC_INSECURE*@\nenv | grep -i GOVC\n\ngovc find -k -json -type h > @option.outputDir@/hosts-@option.scope@.json\ngovc find -k -json -type d > @option.outputDir@/dcs-@option.scope@.json\ngovc find -k -json -type s > @option.outputDir@/datastores-@option.scope@.json\ngovc find -k -json -type n > @option.outputDir@/networks-@option.scope@.json\n\necho @option.type@ >  @option.outputDir@/@option.scope@-vmwaretype.json"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "49bfae6a-1210-45e3-8c88-7534d4467199"
+} ]

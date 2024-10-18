@@ -1,0 +1,43 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "test",
+  "executionEnabled" : true,
+  "id" : "1b8e9251-f18a-4765-9f20-9c56c91f2a43",
+  "loglevel" : "INFO",
+  "name" : "test",
+  "nodeFilterEditable" : false,
+  "notification" : {
+    "onstart" : {
+      "email" : {
+        "recipients" : "cw-poc@telstra.com",
+        "subject" : "Dry-run output"
+      }
+    },
+    "onsuccess" : {
+      "email" : {
+        "recipients" : "cw-poc@telstra.com",
+        "subject" : "CWM Test"
+      }
+    }
+  },
+  "notifyAvgDurationThreshold" : null,
+  "options" : [ {
+    "dateFormat" : "YYYY-MM-DDThh:mm:ss",
+    "description" : "2023-07-21T01:28:03Z",
+    "isDate" : true,
+    "name" : "date",
+    "required" : true
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "script" : "dttm=@option.date@Z\necho $dttm\necho $dttm | jq --raw-input '. | fromdateiso8601'"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "1b8e9251-f18a-4765-9f20-9c56c91f2a43"
+} ]

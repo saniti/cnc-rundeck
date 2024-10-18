@@ -1,0 +1,30 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "_SYSTEM",
+  "id" : "581615a8-e736-4408-ae3e-4a98d0e77599",
+  "loglevel" : "INFO",
+  "name" : "Serve CNC data",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "label" : "Web Port",
+    "name" : "port",
+    "required" : true,
+    "value" : "8002"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "args" : " pm2 start python -- -m http.server 8002p",
+      "description" : "Run server via PM2",
+      "script" : "# Find PM2 binary\npm2=$(find /root/.nvm -type f -iname pm2 | grep -i bin)\nnode=$(find /root/.nvm/versions/node -maxdepth 2 | grep -i bin)\n\n# Update path\nPATH=\"$node:$PATH\"\n\nexport PM2_HOME=/source\ncd /opt/cw/images\n\necho $pm2 start python --name cncserver -- -m http.server @option.port@"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "581615a8-e736-4408-ae3e-4a98d0e77599"
+} ]

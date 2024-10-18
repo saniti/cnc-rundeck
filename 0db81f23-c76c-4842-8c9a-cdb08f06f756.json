@@ -1,0 +1,34 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Backup running docker and export to 10.0.0.102 linux host",
+  "executionEnabled" : true,
+  "group" : "_SYSTEM",
+  "id" : "0db81f23-c76c-4842-8c9a-cdb08f06f756",
+  "loglevel" : "INFO",
+  "name" : "System Backup",
+  "nodeFilterEditable" : false,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : false,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "1"
+    },
+    "filter" : "name: gitbox "
+  },
+  "nodesSelectedByDefault" : true,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "backup",
+      "script" : "cd /backup\npwd\nsh ./backup.sh"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "0db81f23-c76c-4842-8c9a-cdb08f06f756"
+} ]

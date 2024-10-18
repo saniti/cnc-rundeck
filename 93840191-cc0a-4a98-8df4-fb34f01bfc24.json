@@ -1,0 +1,38 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "CNC/Deploy/CNC",
+  "id" : "93840191-cc0a-4a98-8df4-fb34f01bfc24",
+  "loglevel" : "INFO",
+  "name" : "- Delete CNC release",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "Deployment type",
+    "name" : "type",
+    "required" : true,
+    "value" : "cnc",
+    "values" : [ "cnc", "cdg" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "Deployment",
+    "name" : "deployment",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/deploy/${option.type.value}-deployments.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "delete entry",
+      "script" : "infile=/opt/cw/deploy/@option.type@-deployments.json\n\ningest=$(jq . $infile)\n\necho $ingest | jq 'del(..|objects|select(has(\"value\") and .value==\"@option.deployment@\"))' > $infile"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "93840191-cc0a-4a98-8df4-fb34f01bfc24"
+} ]

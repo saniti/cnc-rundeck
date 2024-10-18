@@ -1,0 +1,26 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Shortcut steps to locate, upload, deploy and configure an NSO TSDN instance\n---\n1. [Discover VMware paths](63ea1c17-56d8-4f9e-bb94-e6983f8db3e1)\n2. [Locate Images on the file system](3ace6b49-f8c9-46f5-acac-8313ca5aa086)\n2. [Upload Image to VMware](dd4941bf-ef54-4d18-9c00-1974215d62b2)\n3. [Create NSO VM](93ca464b-ac76-44fe-b4b3-3efa9632345a)\n4. [Configure NSO VM](4b421d01-d046-4c2e-9e9b-fe61fb925117)",
+  "executionEnabled" : true,
+  "group" : "Shortcut",
+  "id" : "9a4267d5-271d-4fb4-916c-afec803a99e2",
+  "loglevel" : "INFO",
+  "name" : "Create and deploy NSO",
+  "nodeFilterEditable" : false,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "9a4267d5-271d-4fb4-916c-afec803a99e2"
+} ]

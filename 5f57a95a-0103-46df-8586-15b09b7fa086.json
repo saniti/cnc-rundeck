@@ -1,0 +1,22 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "id" : "5f57a95a-0103-46df-8586-15b09b7fa086",
+  "loglevel" : "INFO",
+  "name" : "local stuff only",
+  "nodeFilterEditable" : false,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "aaaa",
+      "script" : "whoami"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "5f57a95a-0103-46df-8586-15b09b7fa086"
+} ]

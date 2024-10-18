@@ -1,0 +1,67 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Locate and list ISO images within the file system\n",
+  "executionEnabled" : true,
+  "group" : "CNC/ZTP",
+  "id" : "0ea95de1-47f5-4ccc-8c7d-42671356d3c8",
+  "loglevel" : "INFO",
+  "name" : "Locate images on file system",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "> Choose starting location to search for .iso and .ova files",
+    "label" : "Location to start looking for files",
+    "name" : "local-path",
+    "required" : true,
+    "value" : "/opt/cw",
+    "values" : [ "/opt/cw" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "> Simply displays the existing ISO files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "Detected ISO files",
+    "name" : "image-files-iso",
+    "valuesUrl" : "file:/opt/cw/options/images-files-iso.json"
+  }, {
+    "description" : "> Simply displays the existing OVA/OVF files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "Detected OVA/OVF files",
+    "name" : "image-files-ova",
+    "valuesUrl" : "file:/opt/cw/options/images-files-ova.json"
+  }, {
+    "description" : "> Simply displays the existing .bin files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "Detected executable files",
+    "name" : "image-files-bin",
+    "valuesUrl" : "file:/opt/cw/options/images-files-bin.json"
+  }, {
+    "description" : "> Simply displays the existing .tar.gz files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "CNC Installation files",
+    "name" : "install-files",
+    "valuesUrl" : "file:/opt/cw/options/images-files-cnc-install.json"
+  }, {
+    "description" : "> Simply displays the existing .tar.gz files. Will be updated after each run.",
+    "enforced" : true,
+    "label" : "CNC patches",
+    "name" : "cnc-patches",
+    "valuesUrl" : "file:/opt/cw/options/images-files-cnc-patches.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "update list",
+      "jobref" : {
+        "group" : "CNC/Setup",
+        "importOptions" : true,
+        "name" : "Locate images on file system",
+        "uuid" : "3ace6b49-f8c9-46f5-acac-8313ca5aa086"
+      }
+    } ],
+    "keepgoing" : false,
+    "strategy" : "sequential"
+  },
+  "uuid" : "0ea95de1-47f5-4ccc-8c7d-42671356d3c8"
+} ]

@@ -1,0 +1,85 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Synchronises the device roles in netbox. This updated list will appear as inputs into the relevant process where it is used.",
+  "executionEnabled" : true,
+  "group" : "Netbox",
+  "id" : "269bdf0e-0943-43c1-ae40-0c26ba8aba6c",
+  "loglevel" : "INFO",
+  "name" : "Update Sites",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "hidden" : true,
+    "name" : "netbox-server",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/netbox/netbox-host",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "api-token",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/netbox/netbox-token",
+    "valueExposed" : true
+  }, {
+    "delimiter" : ",",
+    "description" : "Simply listing the 'current' sites. Run this process again to verify that any new rolese appear in this list.",
+    "enforced" : true,
+    "multivalued" : true,
+    "name" : "sites",
+    "valuesUrl" : "file:/opt/cw/options/netbox-sites.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "true",
+        "file" : "/opt/cw/options/netbox-sites.tmp.json",
+        "headers" : "{\"Content-Type\":\"application/json\",\"Authorization\":\"${option.api-token}\"}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "${option.netbox-server}/dcim/sites",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Get Current roles",
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "roles",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "script" : "jq '[.results[] | .[\"value\"] = .id | .[\"name\"] = .display| {name,value} | .value = (.value | tostring)]'  /opt/cw/options/netbox-sites.tmp.json > /opt/cw/options/netbox-sites.json"
+    }, {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "269bdf0e-0943-43c1-ae40-0c26ba8aba6c"
+} ]

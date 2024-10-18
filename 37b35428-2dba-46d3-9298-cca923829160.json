@@ -1,0 +1,41 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Update the current node list",
+  "executionEnabled" : true,
+  "group" : "Rundeck Nodes",
+  "id" : "37b35428-2dba-46d3-9298-cca923829160",
+  "loglevel" : "INFO",
+  "name" : "Delete a node",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "THe node list from last time this was run. Expect to be updated",
+    "enforced" : true,
+    "label" : "List of current nodes",
+    "name" : "current-node-list",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/nodes.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "command" : "rm -f /opt/cw/nodes/${option.current-node-list}.json"
+      },
+      "description" : "delete node",
+      "nodeStep" : true,
+      "type" : "localexec"
+    }, {
+      "jobref" : {
+        "group" : "Rundeck Nodes",
+        "name" : "Create Node List",
+        "uuid" : "3bb2f61a-d50f-49c3-b670-a320ea35f8d3"
+      }
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "37b35428-2dba-46d3-9298-cca923829160"
+} ]

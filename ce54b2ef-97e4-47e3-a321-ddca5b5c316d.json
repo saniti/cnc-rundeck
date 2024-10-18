@@ -1,0 +1,61 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Start NodeJS microservice layer via PM2",
+  "executionEnabled" : true,
+  "group" : "-DEMO/Setup",
+  "id" : "ce54b2ef-97e4-47e3-a321-ddca5b5c316d",
+  "loglevel" : "INFO",
+  "name" : "START : Microservices",
+  "nodeFilterEditable" : false,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : false,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "1"
+    },
+    "filter" : "name: gitbox "
+  },
+  "nodesSelectedByDefault" : true,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Current date time",
+      "exec" : "echo $(date +\"%Y-%m-%d-%H-%M-%S\")",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "now",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      }
+    }, {
+      "description" : "terminate and restart",
+      "script" : "cd /source\npm2 delete all\npm2 flush\npm2 start /source/web/web.js\n#pm2 start /source/kong/run.sh\nsleep 5\n\n\n\n\n"
+    }, {
+      "description" : "pm2 show",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "script" : "cd /source\npm2 jlist | jq '.[].pm2_env | .pm_exec_path'\n\n\n\n\n"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "sequential"
+  },
+  "uuid" : "ce54b2ef-97e4-47e3-a321-ddca5b5c316d"
+} ]

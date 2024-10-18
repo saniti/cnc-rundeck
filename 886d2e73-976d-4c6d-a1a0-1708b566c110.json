@@ -1,0 +1,79 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "id" : "886d2e73-976d-4c6d-a1a0-1708b566c110",
+  "loglevel" : "INFO",
+  "name" : "json-upload-cnc",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "> [Authenticate](96e872a2-5704-4af6-96dc-47758e6049d9)",
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "enforced" : true,
+    "label" : "Commit Options",
+    "name" : "dry-run-options",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/nso-commit-options.json"
+  }, {
+    "name" : "file",
+    "required" : true,
+    "type" : "file"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : " Dry run options",
+      "script" : "if [ \"@option.dry-run-options@\" = \"commit\" ]\nthen\n    echo DRY_RUN_COMMAND=\"?async-commit-queue=@option.sync-option@\"\n    echo RUN_EXPORT=false    \nelse\n    echo DRY_RUN_COMMAND=\"@option.dry-run-options@\"\n    echo RUN_EXPORT=true\nfi"
+    }, {
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get key vars v3",
+        "nodeStep" : "true",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "payload",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "cat \"@file.file@\" | jq -c ."
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.payload*}",
+        "checkResponseCode" : "false",
+        "headers" : "{'Authorization': 'Bearer ${export.cwtoken}','Content-Type': 'application/yang-data+json'}\n\n\n",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/proxy/nso/restconf/data/ietf-network-slice-service:network-slice-services${data.DRY_RUN_COMMAND*}",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "create or test service",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "886d2e73-976d-4c6d-a1a0-1708b566c110"
+} ]

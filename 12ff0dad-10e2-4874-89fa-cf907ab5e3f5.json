@@ -1,0 +1,34 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Prepare for shutdown - stop running docker instances",
+  "executionEnabled" : true,
+  "group" : "_SYSTEM",
+  "id" : "12ff0dad-10e2-4874-89fa-cf907ab5e3f5",
+  "loglevel" : "INFO",
+  "name" : "System Shutdown Prepare",
+  "nodeFilterEditable" : false,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : false,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "1"
+    },
+    "filter" : "name: gitbox "
+  },
+  "nodesSelectedByDefault" : true,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "prepare for shutdown",
+      "script" : "cd /source\nfor dockers in `ls -d ./*`; do pushd $dockers; docker compose down; popd; done\n"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "12ff0dad-10e2-4874-89fa-cf907ab5e3f5"
+} ]

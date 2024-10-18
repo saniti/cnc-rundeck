@@ -1,0 +1,56 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "Kafka",
+  "id" : "5ec91234-f2cd-4dab-9d4e-b2900a15f7c1",
+  "loglevel" : "INFO",
+  "multipleExecutions" : true,
+  "name" : "Start Consumer",
+  "nodeFilterEditable" : false,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : false,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "1"
+    },
+    "filter" : "name: gitbox "
+  },
+  "nodesSelectedByDefault" : true,
+  "options" : [ {
+    "label" : "Consumer Group",
+    "name" : "consumer-group",
+    "required" : true,
+    "value" : "1",
+    "values" : [ "1", "2", "3", "4" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "label" : "Kafka Topic",
+    "name" : "topic",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/customers.json"
+  }, {
+    "description" : "> `earliest` or `latest`",
+    "enforced" : true,
+    "name" : "offset",
+    "required" : true,
+    "value" : "latest",
+    "values" : [ "earliest", "latest" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "start consumer",
+      "script" : "pushd /source/kafka-python > /dev/null\necho starting Kafka Consumer .. \npython3 example1.py -t @option.topic@ -c @option.consumer-group@ -o @option.offset@"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "5ec91234-f2cd-4dab-9d4e-b2900a15f7c1"
+} ]

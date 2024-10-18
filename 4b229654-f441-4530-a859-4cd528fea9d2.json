@@ -1,0 +1,24 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "id" : "4b229654-f441-4530-a859-4cd528fea9d2",
+  "loglevel" : "INFO",
+  "name" : "JobB",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "name" : "optb"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "exec" : "echo ${option.optb}"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "4b229654-f441-4530-a859-4cd528fea9d2"
+} ]

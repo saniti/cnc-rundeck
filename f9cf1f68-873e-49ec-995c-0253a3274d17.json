@@ -1,0 +1,32 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "UC",
+  "id" : "f9cf1f68-873e-49ec-995c-0253a3274d17",
+  "loglevel" : "INFO",
+  "name" : "git demo",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "Git Branch",
+    "name" : "branch",
+    "required" : true,
+    "value" : "develop",
+    "values" : [ "master", "develop" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "checkout repo",
+      "script" : "cd /opt/source\nif [ -d \"/opt/source/l3vpn\" ]; then\n    cd l3vpn\n    git fetch --force\nelse\n    git clone auto@198.18.133.102:dcloud/l3vpn.git -b @option.branch@\nfi\n#git remote add origin http://198.18.133.102:3000/dcloud/l3vpn.git\n#git fetch origin\n#git checkout -b @option.branch@ --track origin/@option.branch@ # origin/@option.branch@ is clone's default"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "f9cf1f68-873e-49ec-995c-0253a3274d17"
+} ]

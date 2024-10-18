@@ -1,0 +1,308 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "CNC/Configuration",
+  "id" : "cafaf305-2bf6-436d-bd39-2c04ea2a3a58",
+  "loglevel" : "INFO",
+  "name" : "CNC - Onboard Device (with CDG) v3 [dCloud]",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "cnc-vip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "description" : "> required",
+    "label" : "Device Name (short)",
+    "name" : "device-name",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-vip.value}-devices.json"
+  }, {
+    "description" : "> required",
+    "label" : "Device IPv4 Address",
+    "name" : "device-ip",
+    "required" : true
+  }, {
+    "description" : "> [Update CDG list](c3010b1d-86cf-45a7-9b72-62d2de835ab6)",
+    "enforced" : true,
+    "label" : "Data Gateway Pool",
+    "name" : "cdg",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cdg.json"
+  }, {
+    "description" : "> required",
+    "enforced" : true,
+    "name" : "location-data",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/locations.json"
+  }, {
+    "label" : "Device subnet mask",
+    "name" : "device-mask",
+    "required" : true,
+    "value" : "32"
+  }, {
+    "label" : "SSH Port",
+    "name" : "device-ssh-port",
+    "required" : true,
+    "value" : "22"
+  }, {
+    "label" : "SNMP Port",
+    "name" : "device-snmp-port",
+    "required" : true,
+    "value" : "161"
+  }, {
+    "description" : "- optional",
+    "label" : "Telemetry VRF",
+    "name" : "telemetry_intf_src_vrf"
+  }, {
+    "description" : "- optional",
+    "label" : "Router ID",
+    "name" : "te_router_id"
+  }, {
+    "hidden" : true,
+    "name" : "cnc-password",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/cw/admin",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "label" : "CNC User Name",
+    "name" : "cnc-user",
+    "required" : true,
+    "value" : "admin"
+  }, {
+    "description" : "This should be hidden",
+    "hidden" : true,
+    "name" : "provider-schema",
+    "value" : "{\"data\":[{\"host_name\":\"\",\"profile\":\"demo\",\"reachability_check\":\"REACH_CHECK_ENABLE\",\"admin_state\":\"ROBOT_ADMIN_STATE_UP\",\"connectivity_info\":[{\"type\":\"ROBOT_MSVC_TRANS_SSH\",\"ipaddrs\":[{\"inet_af\":0,\"inet_addr\":\"220.11.2.3\",\"mask\":\"32\"}],\"port\":22,\"timeout\":\"120\"},{\"type\":\"ROBOT_MSVC_TRANS_SNMP\",\"ipaddrs\":[{\"inet_af\":0,\"inet_addr\":\"220.11.2.3\",\"mask\":\"32\"}],\"port\":161,\"timeout\":\"120\"},{\"type\":\"ROBOT_MSVC_TRANS_NETCONF\",\"ipaddrs\":[{\"inet_af\":0,\"inet_addr\":\"220.11.2.3\",\"mask\":\"32\"}],\"port\":830,\"timeout\":\"120\"},{\"type\":\"ROBOT_MSVC_TRANS_GNMI\",\"ipaddrs\":[{\"inet_af\":0,\"inet_addr\":\"220.11.2.3\",\"mask\":\"32\"}],\"port\":57400,\"timeout\":\"120\",\"encoding_type\":\"PROTO\"}],\"tags\":[],\"product_info\":{\"software_type\":\"\",\"software_version\":\"\",\"product_type\":\"\",\"product_family\":\"\",\"product_series\":\"\",\"manufacturer\":\"\",\"capability\":[\"SNMP\",\"GNMI\",\"YANG_MDT\",\"YANG_CLI\"]},\"geo_info\":{\"coordinates\":{},\"building\":\"\",\"street\":\"\",\"city\":\"\",\"state\":\"\",\"country\":\"\",\"region\":\"\",\"zip\":\"\",\"range_incr\":{}},\"routing_info\":{\"global_isis_system_id\":\"\",\"global_ospf_router_id\":\"\",\"te_router_id\":\"\",\"ipv6_router_id\":\"\",\"telemetry_intf_src_vrf\":\"\",\"is_opt_out_of_mdt_collection_config_enabled\":false,\"telemetry_intf_src_name\":\"\"},\"providers_family\":{\"ROBOT_PROVIDER_NSO\":{\"providers\":{\"nso201\":{\"provider_name\":\"nso201\",\"provider_node_id\":\"testxx\"}}}}}]}"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "get device details",
+      "jobref" : {
+        "args" : "-cnc-pod ${option.cnc-vip}",
+        "group" : "CNC/Services",
+        "importOptions" : true,
+        "name" : "CNC - Get Device Details",
+        "uuid" : "23d13185-8891-4031-9eea-580f733a346c"
+      }
+    }, {
+      "configuration" : {
+        "command" : "cat /opt/cw/tmp/${option.cnc-vip}.cwvip"
+      },
+      "description" : "get vip",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "vip",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "cat /opt/cw/tmp/${option.cnc-vip}.cwtoken"
+      },
+      "description" : "get token",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "token",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "jq '.[] | select(.name==\"${option.location-data}\").\"Longitude\"' /opt/cw/options/locations.json"
+      },
+      "description" : "get long",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "longitude",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "jq '.[] | select(.name==\"${option.location-data}\").\"Latitude\"' /opt/cw/options/locations.json"
+      },
+      "description" : "get lat",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "latitude",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "jq '.[] | select(.name==\"${option.location-data}\").\"Country\"' /opt/cw/options/locations.json"
+      },
+      "description" : "get country",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "country",
+            "regex" : ".([A-Z,a-z]+).+"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "description" : "reconfigure JSON object",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "payload",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "file=/tmp/@job.execid@.json\ntmpfile=/tmp/@job.execid@.json.tmp\n\necho '@option.provider-schema@' > $file\njq '( .data[].geo_info.coordinates.longitude.value)|=\"@data.longitude*@\"' $file > $tmpfile\njq '( .data[].geo_info.coordinates.latitude.value)|=\"@data.latitude*@\"' $tmpfile > $file\njq '( .data[].geo_info.country)|=\"@data.country*@\"' $file > $tmpfile\njq '(..|objects|select(has(\"inet_addr\"))).\"inet_addr\"|= \"@option.device-ip@\"' $tmpfile > $file\njq '(..|objects|select(has(\"host_name\"))).\"host_name\"|= \"@option.device-name@\"' $file > $tmpfile\njq '(..|objects|select(has(\"mask\"))).\"mask\"|= \"@option.device-mask@\"' $tmpfile > $file\njq '(..|objects|select(has(\"provider_node_id\"))).\"provider_node_id\"|= \"@option.device-name@\"' $file > $tmpfile\njq '(..|objects|select(has(\"te_router_id\"))).\"te_router_id\"|= \"@option.te_router_id@\"' $tmpfile > $file\njq '(..|objects|select(has(\"telemetry_intf_src_vrf\"))).\"telemetry_intf_src_vrf\"|= \"@option.telemetry_intf_src_vrf@\"' $file > $tmpfile\njq '(..|objects|select(has(\"telemetry_intf_src_name\"))).\"telemetry_intf_src_name\"|= \"@option.telemetry_intf_src_name@\"' $tmpfile > $file\njq '( .data[].connectivity_info[]|select(.type==\"ROBOT_MSVC_TRANS_SNMP\") ).port|=\"@option.device-snmp-port@\"' $file > $tmpfile\njq '( .data[].connectivity_info[]|select(.type==\"ROBOT_MSVC_TRANS_SSH\") ).port|=\"@option.device-ssh-port@\"' $tmpfile > $file\njq '.data[].uuid|=\"@export.device-uuid@\"' $file > $tmpfile\njq -c . $tmpfile"
+    }, {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.payload*}",
+        "checkResponseCode" : "true",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${data.token*}\"}",
+        "method" : "PUT",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${data.vip*}:30603/crosswork/inventory/v1/nodes",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "add device",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "get device details",
+      "jobref" : {
+        "args" : "-cnc-pod ${option.cnc-vip}",
+        "group" : "CNC/Services",
+        "importOptions" : true,
+        "name" : "CNC - Get Device Details",
+        "uuid" : "23d13185-8891-4031-9eea-580f733a346c"
+      }
+    }, {
+      "configuration" : {
+        "data" : "{\"dgDeviceMappings\":[{\"cdg_duuid\":\"${option.cdg}\",\"device_uuid\":[\"${export.device-uuid}\"],\"mapping_oper\":\"ADD_OPER\"}]}",
+        "format" : "json"
+      },
+      "description" : "create payload",
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "payload",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "stub-data-step"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.payload}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${data.token*}\"}",
+        "method" : "PUT",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${data.vip*}:30603/crosswork/inventory/v1/dg/devicemapping",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "add to CDG",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\"filter\":{\"uuid\":\"${export.device-uuid}\"}}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${data.token*}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${data.vip*}:30603/crosswork/inventory/v1/nso/fetch-ssh-keys",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "fetch SSH keys",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\"filter\":{\"uuid\":\"${export.device-uuid}\"}}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${data.token*}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${data.vip*}:30603/crosswork/inventory/v1/nso/sync-from",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Sync from",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "cafaf305-2bf6-436d-bd39-2c04ea2a3a58"
+} ]

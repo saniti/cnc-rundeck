@@ -1,0 +1,381 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Deploys OVF files for Cisco Crosswork\n## Features\n- Deploy a 3 Node Cluster with 2 vNIC",
+  "executionEnabled" : true,
+  "group" : "CNC/Deploy/CNC",
+  "id" : "4a46d5c2-3a32-4684-803c-d264a1eb3019",
+  "loglevel" : "INFO",
+  "maxMultipleExecutions" : "0",
+  "multipleExecutions" : true,
+  "name" : "CNC - Cluster (2 vNIC)",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "Execute command or just generate it.\n- Generate (default) Show the command line that needs to be run, but the user\n- Execute - Generate the command line and run it on the local system",
+    "enforced" : true,
+    "name" : "Option",
+    "required" : true,
+    "value" : "Execute",
+    "values" : [ "Execute", "Generate" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "name" : "image-file",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-images.json"
+  }, {
+    "enforced" : true,
+    "label" : "Deployment Size",
+    "name" : "deployment-size",
+    "required" : true,
+    "value" : "large",
+    "values" : [ "large", "small" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "Memory",
+    "name" : "deployment-size-mem",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-deployment-${option.deployment-size.value}-mem.json"
+  }, {
+    "enforced" : true,
+    "label" : "CPU",
+    "name" : "deployment-size-cpu",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-deployment-${option.deployment-size.value}-cpu.json"
+  }, {
+    "description" : "`True` if this is first node, `False` for all other nodes",
+    "enforced" : true,
+    "hidden" : true,
+    "label" : "Seed Node?",
+    "name" : "seed-node",
+    "required" : true,
+    "value" : "True",
+    "values" : [ "False", "True" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "`Hybrid`, Master or Worker",
+    "enforced" : true,
+    "hidden" : true,
+    "name" : "node-type",
+    "required" : true,
+    "value" : "Hybrid",
+    "values" : [ "Hybrid", "Master", "Standalone", "Worker" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "- thin - lab only, meaning disk is thin provisioned\n- thick - production, meaning disk is fully allocated before usage",
+    "enforced" : true,
+    "label" : "Virtual Disk Mode",
+    "name" : "disk-mode",
+    "required" : true,
+    "value" : "thick",
+    "values" : [ "thick", "thin" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "- IPv4 Network (2 vNIC)\n- IPv4 Network on a Single Interface (1 vNIC) - LAB only.",
+    "enforced" : true,
+    "label" : "Deployment Type",
+    "name" : "deployment-option",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-deployment-option.json"
+  }, {
+    "description" : "default is `50`",
+    "label" : "% Reserved for backup",
+    "name" : "backup-percentage",
+    "required" : true,
+    "value" : "50",
+    "values" : [ "20", "50" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "delimiter" : ",",
+    "description" : "If planning to change the VM resources, ensure \"PowerON\" is not selected. After deployment, govc will modify the resources.",
+    "multivalued" : true,
+    "name" : "ovf-options",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/ovf-deploy-options.json"
+  }, {
+    "label" : "OVF Extra Configuration Options",
+    "name" : "ovf-extra-config",
+    "required" : true,
+    "value" : "default",
+    "values" : [ "advanced", "default" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "delimiter" : ",",
+    "enforced" : true,
+    "multivalued" : true,
+    "name" : "ovf-extra-config-options",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/extra-config-options.${option.ovf-extra-config.value}.json"
+  }, {
+    "enforced" : true,
+    "label" : "Role for Netbox",
+    "name" : "vm-role",
+    "required" : true,
+    "value" : "1",
+    "valuesUrl" : "file:/opt/cw/options/roles.json"
+  }, {
+    "description" : "DNS Domain name as defined in DNS. This should be pre-existing",
+    "label" : "Domain Name",
+    "name" : "domain-name",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/domains.json"
+  }, {
+    "delimiter" : ",",
+    "description" : "> /opt/cw/dns-server.json\nSelect `new value` to add entry",
+    "label" : "DNS Server",
+    "multivalued" : true,
+    "name" : "dns-server",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/dns-servers.json"
+  }, {
+    "delimiter" : ",",
+    "description" : "> /opt/cw/ntp-servers.json\nSelect `new value` to add entry",
+    "label" : "NTP Server",
+    "multivalued" : true,
+    "name" : "ntp-server",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/ntp-servers.json"
+  }, {
+    "description" : "If present, it must be existing and resolvable. Otherwise keep blank to use by IP\n> If it does not exist then the deployment will fail.",
+    "label" : "Controller IP DNS Name",
+    "name" : "controller-vip-name"
+  }, {
+    "description" : "If present, it must be existing and resolvable. Otherwise keep blank to use by IP\n> If it does not exist then the deployment will fail.",
+    "label" : "Data VIP DNS Name",
+    "name" : "data-vip-name"
+  }, {
+    "description" : "> If no options present, create the POD definiting using Job `Create POD`",
+    "enforced" : true,
+    "label" : "Controller VIP",
+    "name" : "controller-vip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "label" : "Data VIP",
+    "name" : "data-vip",
+    "required" : true
+  }, {
+    "label" : "CNC Host 1",
+    "name" : "host-name_1",
+    "required" : true,
+    "value" : "cw01"
+  }, {
+    "label" : "CNC Host 2",
+    "name" : "host-name_2",
+    "required" : true,
+    "value" : "cw02"
+  }, {
+    "label" : "CNC Host 3",
+    "name" : "host-name_3",
+    "required" : true,
+    "value" : "cw03"
+  }, {
+    "delimiter" : ",",
+    "enforced" : true,
+    "hidden" : true,
+    "label" : "Virtual Networking Options",
+    "multivalued" : true,
+    "name" : "vnic-options",
+    "required" : true,
+    "value" : "vNIC0,vNIC1",
+    "valuesUrl" : "file:/opt/cw/options/vnic-options.json"
+  }, {
+    "label" : "VM Datastore for node 2",
+    "name" : "datastore-1",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/datastores.json"
+  }, {
+    "label" : "VM Datastore for node 2",
+    "name" : "datastore-2",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/datastores.json"
+  }, {
+    "label" : "VM Datastore for node 3",
+    "name" : "datastore-3",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/datastores.json"
+  }, {
+    "label" : "ESX host for node 1",
+    "name" : "vmware-esx-host_1",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/hosts.json"
+  }, {
+    "label" : "ESX host for node 2",
+    "name" : "vmware-esx-host_2",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/hosts.json"
+  }, {
+    "label" : "ESX host for node 3",
+    "name" : "vmware-esx-host_3",
+    "required" : true,
+    "valuesUrl" : "file:/tmp/hosts.json"
+  }, {
+    "label" : "Management Network",
+    "name" : "vnic-1-network",
+    "value" : "/HX-cluster/network/vm-network-411",
+    "valuesUrl" : "file:/tmp/networks.json"
+  }, {
+    "label" : "Data / Device Network",
+    "name" : "vnic-2-network",
+    "value" : "/HX-cluster/network/vm-network-413",
+    "valuesUrl" : "file:/tmp/networks.json"
+  }, {
+    "hidden" : true,
+    "name" : "cw-admin-password",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/cw/cw-admin",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "admin-password",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/cw/admin",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "vcenter-host",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/vmware/vc-address",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "vcenter-password",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/vmware/vc-password",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "vcenter-username",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/vmware/vc-user",
+    "valueExposed" : true
+  }, {
+    "description" : "***Dynamic*** - IP Addressing from Netbox\n***Static*** - IP Addressing entered by user",
+    "enforced" : true,
+    "label" : "Network Options for Management Network",
+    "name" : "vnic-0-static",
+    "required" : true,
+    "value" : "static",
+    "values" : [ "dynamic", "static" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "IP Address for Management Interface",
+    "label" : "Management IP - Node 1",
+    "name" : "vnic-0-ip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-0-static.value}-ip.json"
+  }, {
+    "description" : "IP Address for Management Interface",
+    "label" : "Management IP - Node 2",
+    "name" : "vnic-0-ip_2",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-0-static.value}-ip.json"
+  }, {
+    "description" : "IP Address for Management Interface",
+    "label" : "Management IP - Node 3",
+    "name" : "vnic-0-ip_3",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-0-static.value}-ip.json"
+  }, {
+    "description" : "Subnet Mask",
+    "label" : "Management - Mask",
+    "name" : "vnic-0-mask",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-0-static.value}-mask.json"
+  }, {
+    "description" : "Gateway IP",
+    "label" : "Management - Gateway",
+    "name" : "vnic-0-gateway",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-0-static.value}-gw.json"
+  }, {
+    "description" : "***Dynamic*** - IP Addressing from Netbox\n***Static*** - IP Addressing entered by user",
+    "enforced" : true,
+    "label" : "Network Options for Data Network",
+    "name" : "vnic-1-static",
+    "required" : true,
+    "value" : "static",
+    "values" : [ "dynamic", "notused", "static" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "IP Address for Data Interface",
+    "label" : "Data IP - Node 1",
+    "name" : "vnic-1-ip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-1-static.value}-1-ip.json"
+  }, {
+    "description" : "IP Address for Data Interface",
+    "label" : "Data IP - Node 2",
+    "name" : "vnic-1-ip_2",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-1-static.value}-1-ip.json"
+  }, {
+    "description" : "IP Address for Data Interface",
+    "label" : "Data IP - Node 3",
+    "name" : "vnic-1-ip_3",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-1-static.value}-1-ip.json"
+  }, {
+    "description" : "Subnet Mask",
+    "label" : "DATA - Mask",
+    "name" : "vnic-1-mask",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-1-static.value}-1-mask.json"
+  }, {
+    "description" : "Gateway IP",
+    "label" : "DATA - Gateway",
+    "name" : "vnic-1-gateway",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vnic-${option.vnic-1-static.value}-1-gw.json"
+  }, {
+    "label" : "User Disclaimer",
+    "name" : "disclaimer",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/disclaimers.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Deploy Node 1 (seed node)",
+      "jobref" : {
+        "args" : "-seed-node True -host-name ${option.host-name_1} -datastore-1 ${option.datastore-1} -vmware-esx-host ${option.vmware-esx-host_1} -vnic-0-ip ${option.vnic-0-ip}  -vnic-1-ip ${option.vnic-1-ip}",
+        "group" : "CNC/Deploy/CNC",
+        "importOptions" : true,
+        "name" : "CNC - Single Node",
+        "nodeStep" : "true",
+        "useName" : "true"
+      }
+    }, {
+      "description" : "Deploy Node 2 (second node)",
+      "jobref" : {
+        "args" : "-seed-node False -host-name ${option.host-name_2} -datastore-1 ${option.datastore-2} -vmware-esx-host ${option.vmware-esx-host_2} -vnic-0-ip ${option.vnic-0-ip_2}  -vnic-1-ip ${option.vnic-1-ip_2}",
+        "group" : "CNC/Deploy/CNC",
+        "importOptions" : true,
+        "name" : "CNC - Single Node",
+        "nodeStep" : "true",
+        "useName" : "true"
+      }
+    }, {
+      "description" : "Deploy Node 3 (thrid node)",
+      "jobref" : {
+        "args" : "-seed-node False -host-name ${option.host-name_3} -datastore-1 ${option.datastore-3} -vmware-esx-host ${option.vmware-esx-host_3} -vnic-0-ip ${option.vnic-0-ip_3}  -vnic-1-ip ${option.vnic-1-ip_3}",
+        "group" : "CNC/Deploy/CNC",
+        "importOptions" : true,
+        "name" : "CNC - Single Node",
+        "nodeStep" : "true",
+        "useName" : "true"
+      }
+    } ],
+    "keepgoing" : false,
+    "strategy" : "sequential"
+  },
+  "uuid" : "4a46d5c2-3a32-4684-803c-d264a1eb3019"
+} ]

@@ -1,0 +1,50 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "Kafka",
+  "id" : "c6e3950b-333f-4bbf-b71d-86d604ffde04",
+  "loglevel" : "INFO",
+  "name" : "taiga - update message",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "name" : "message",
+    "required" : true,
+    "value" : "no message"
+  }, {
+    "name" : "taskid",
+    "required" : true
+  }, {
+    "name" : "token",
+    "required" : true
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\"comment\":\"${option.message}\",\"version\":2}",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-project-id.json",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${option.token}\"}",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://198.18.133.102:9001/api/v1/userstories/${option.taskid}",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "add comment",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "c6e3950b-333f-4bbf-b71d-86d604ffde04"
+} ]

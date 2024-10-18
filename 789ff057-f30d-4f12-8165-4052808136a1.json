@@ -1,0 +1,765 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Create a L3VPN service with 3 endpoints",
+  "executionEnabled" : true,
+  "group" : "-DEMO/L3VPN",
+  "id" : "789ff057-f30d-4f12-8165-4052808136a1",
+  "loglevel" : "INFO",
+  "name" : "CNC - L3 Service (step 2)",
+  "nodeFilterEditable" : false,
+  "notification" : {
+    "onsuccess" : {
+      "email" : {
+        "recipients" : "device-details@necehealthpoc.local",
+        "subject" : "${notification.eventStatus} ${job.name}"
+      }
+    }
+  },
+  "notifyAvgDurationThreshold" : null,
+  "options" : [ {
+    "enforced" : true,
+    "hidden" : true,
+    "name" : "proxy",
+    "required" : true,
+    "value" : "proxy:3001",
+    "values" : [ "proxy:3001" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "hidden" : true,
+    "label" : "Allocation (netbox)",
+    "name" : "scope",
+    "required" : true,
+    "value" : "l3vpn",
+    "valuesUrl" : "http://${option.proxy.value}/netbox/tags"
+  }, {
+    "enforced" : true,
+    "label" : "vlan groups",
+    "name" : "scope_1",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/vlangroups/${option.scope.value}"
+  }, {
+    "description" : "> [Authenticate](96e872a2-5704-4af6-96dc-47758e6049d9)",
+    "enforced" : true,
+    "label" : "CW POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "description" : "> [Add](8e3b0a1a-421c-4d0d-bb2c-c7d0af07116c)|[Remove](eec83222-22a5-46b9-9712-0b869442c27d)",
+    "enforced" : true,
+    "name" : "customer",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/customers.json"
+  }, {
+    "description" : "## VPN Details",
+    "enforced" : true,
+    "label" : "Commit Options",
+    "name" : "dry-run-options",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/nso-commit-options.json"
+  }, {
+    "description" : "VPN prefix. Appended with `vlan-id`. With defaults",
+    "enforced" : true,
+    "name" : "vpn-id",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vpn-temp.json"
+  }, {
+    "description" : "## VPN Endpoints / SDPs\n### VPN Endpoint 1\n> [Reconcile Network to Inventory](34683f66-c826-46e2-8531-9eb3b67dfb44)",
+    "name" : "vlan-id",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/vlans/${option.scope_1.value}"
+  }, {
+    "enforced" : true,
+    "label" : "Location for Device (netbox)",
+    "name" : "netbox-location-1",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/locationswithdevices"
+  }, {
+    "enforced" : true,
+    "label" : "Device (netbox)",
+    "name" : "netbox-device-1",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/devices/${option.netbox-location-1.value}"
+  }, {
+    "enforced" : true,
+    "name" : "device-1-interface",
+    "required" : true,
+    "value" : "GigabitEthernet0/0/0/1",
+    "valuesUrl" : "http://${option.proxy.value}/netbox/deviceinterfaces/${option.netbox-device-1.value}"
+  }, {
+    "enforced" : true,
+    "label" : "IP Prefix and Subnet",
+    "name" : "ip-network-1",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/prefixes/${option.scope.value}"
+  }, {
+    "enforced" : true,
+    "label" : "Colour for prefix",
+    "name" : "ip-network-1-colour",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/${option.vpn-id.value}-colours.json"
+  }, {
+    "enforced" : true,
+    "label" : "IP Address",
+    "name" : "ip-1",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/ips/${option.ip-network-1.value}"
+  }, {
+    "label" : "Neighbour IP address",
+    "name" : "neighbour-1",
+    "required" : true
+  }, {
+    "description" : "### VPN Endpoint 2",
+    "label" : "Node 1 Neighbour AS",
+    "name" : "device-1-peer-as",
+    "required" : true,
+    "value" : "65003"
+  }, {
+    "enforced" : true,
+    "label" : "Location for Device (netbox)",
+    "name" : "netbox-location-2",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/locationswithdevices"
+  }, {
+    "enforced" : true,
+    "label" : "Device (netbox)",
+    "name" : "netbox-device-2",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/devices/${option.netbox-location-2.value}"
+  }, {
+    "enforced" : true,
+    "name" : "device-2-interface",
+    "required" : true,
+    "value" : "GigabitEthernet0/0/0/1",
+    "valuesUrl" : "http://${option.proxy.value}/netbox/deviceinterfaces/${option.netbox-device-2.value}"
+  }, {
+    "enforced" : true,
+    "label" : "IP Prefix and Subnet",
+    "name" : "ip-network-2",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/prefixes/${option.scope.value}"
+  }, {
+    "enforced" : true,
+    "label" : "Colour for prefix",
+    "name" : "ip-network-2-colour",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/${option.vpn-id.value}-colours.json"
+  }, {
+    "enforced" : true,
+    "label" : "IP Address",
+    "name" : "ip-2",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/ips/${option.ip-network-2.value}"
+  }, {
+    "label" : "Neighbour IP address",
+    "name" : "neighbour-2",
+    "required" : true
+  }, {
+    "description" : "### VPN Endpoint 3",
+    "label" : "Node 2 Neighbour AS",
+    "name" : "device-2-peer-as",
+    "required" : true,
+    "value" : "65003"
+  }, {
+    "enforced" : true,
+    "label" : "Location for Device (netbox)",
+    "name" : "netbox-location-3",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/locationswithdevices"
+  }, {
+    "enforced" : true,
+    "label" : "Device (netbox)",
+    "name" : "netbox-device-3",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/devices/${option.netbox-location-3.value}"
+  }, {
+    "enforced" : true,
+    "name" : "device-3-interface",
+    "required" : true,
+    "value" : "GigabitEthernet0/0/0/1",
+    "valuesUrl" : "http://${option.proxy.value}/netbox/deviceinterfaces/${option.netbox-device-3.value}"
+  }, {
+    "enforced" : true,
+    "label" : "IP Prefix and Subnet",
+    "name" : "ip-network-3",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/prefixes/${option.scope.value}"
+  }, {
+    "enforced" : true,
+    "label" : "Colour for prefix",
+    "name" : "ip-network-3-colour",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/${option.vpn-id.value}-colours.json"
+  }, {
+    "enforced" : true,
+    "label" : "IP Address",
+    "name" : "ip-3",
+    "required" : true,
+    "valuesUrl" : "http://${option.proxy.value}/netbox/ips/${option.ip-network-3.value}"
+  }, {
+    "label" : "Neighbour IP address",
+    "name" : "neighbour-3",
+    "required" : true
+  }, {
+    "label" : "Node 3 Neighbour AS",
+    "name" : "device-3-peer-as",
+    "required" : true,
+    "value" : "65003"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Get prefix mappings",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "PREFIX-MAP",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "fileout=/opt/cw/tmp/@job.execid@-prefixmaps1.json\nenv | grep -i RD_OPTION_IP_NETWORK_ | jq --raw-input --raw-output '(split(\"=\") | map(.) | to_entries[1]) | .value' | jq -c --raw-input -s 'split(\"\\n\")|.[0:-1]' | jq '(.[:3]|{\"colours\":.}) as $colours|(.[3:]|{\"prefix\":.}) as $prefix | $colours,$prefix' | jq -s | jq -c 'add|[.\"colours\",.\"prefix\"]|transpose|map({\"id\":(.[1]|tostring),\"value\": .[0]})' | jq '.|{\"mapping\":.}'\n"
+    }, {
+      "description" : "Get prefix mappings 2",
+      "script" : "fileout=/opt/cw/tmp/@job.execid@-prefixmaps1.json\n#env | grep -i RD_OPTION_IP_NETWORK_\n#env | grep -i RD_OPTION_IP_NETWORK_ | jq --raw-input --raw-output '(split(\"=\") | map(.) | to_entries[1]) | .value' | jq -c --raw-input -s 'split(\"\\n\")|.[0:-1]' | jq '(.[:3]|{\"colours\":.}) as $colours|(.[3:]|{\"prefix\":.}) as $prefix | $colours,$prefix' | jq -s | jq -c 'add|[.\"colours\",.\"prefix\"]|transpose|map({\"id\":(.[1]|tostring),\"value\": .[0]})' | jq '.|{\"mapping\":.}' > $fileout\necho @option.ip-network-1@\necho @option.ip-network-1-colour@\necho @option.ip-network-2@\necho @option.ip-network-2-colour@\necho @option.ip-network-3@\necho @option.ip-network-3-colour@\necho @option.ip-network-1-colour@~@option.ip-network-2-colour@~@option.ip-network-3-colour@~@option.ip-network-1@~@option.ip-network-2@~@option.ip-network-3@ | jq --raw-input -r 'split(\"~\")|(.[:3]|{\"colours\":.}) as $colours|(.[3:]|{\"prefix\":.}) as $prefix|$colours,$prefix' | jq -s | jq -c 'add|[.\"colours\",.\"prefix\"]|transpose|map({\"id\":(.[1]|tostring),\"value\": .[0]})' | jq '.|{\"mapping\":.}' > $fileout\n"
+    }, {
+      "description" : "Dry run options",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "echo DRY_RUN=false\nif [ \"@option.dry-run-options@\" == \"implementation-plan\" ]\nthen\n    echo DRY_RUN_COMMAND=\"?dry-run=native\"\n    echo RUN_IMPLEMENTATION_PLAN=false\n    echo DRY_RUN=true\nelif [ \"@option.dry-run-options@\" == \"commit\" ]\n    then\n        echo DRY_RUN_COMMAND=\nelif [ \"@option.dry-run-options@\" == \"?async-commit-queue=true\" ]\n    then\n        echo DRY_RUN_COMMAND=\nelse\n    echo DRY_RUN_COMMAND=\"@option.dry-run-options@\"\n    echo DRY_RUN=true  \n    \nfi\n\n\n"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-dev1.json",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://${option.proxy}/netbox/devicebyid/${option.netbox-device-1}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Get Device 1",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-dev2.json",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://${option.proxy}/netbox/devicebyid/${option.netbox-device-2}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Get Device 2",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-dev3.json",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://${option.proxy}/netbox/devicebyid/${option.netbox-device-3}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Get Device 3",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "get VPN properties",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file=/opt/cw/options/@option.vpn-id@.json\n\njq -r '..|objects|select(has(\"colours\")).colours | \"COLOURS=\"+(.|tostring)' $file\n\n\n\n"
+    }, {
+      "description" : "device names",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file1=/opt/cw/tmp/@job.execid@-dev1.json\nfile2=/opt/cw/tmp/@job.execid@-dev2.json\nfile3=/opt/cw/tmp/@job.execid@-dev3.json\njq -r '.[]|select(has(\"device-name\")).\"device-name\" | \"device-1=\"+.' $file1\njq -r '.[]|select(has(\"device-name\")).\"device-name\" | \"device-2=\"+.' $file2\njq -r '.[]|select(has(\"device-name\")).\"device-name\" | \"device-3=\"+.' $file3\n\n\n"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-dev1-ip.json",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://${option.proxy}/nso/device/${data.device-1*}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Get Device 1 IP",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-dev2-ip.json",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://${option.proxy}/nso/device/${data.device-2*}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Get Device 2 IP",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-dev3-ip.json",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://${option.proxy}/nso/device/${data.device-3*}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Get Device 3 IP",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "device 1 IPs",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file1=/opt/cw/tmp/@job.execid@-dev1-ip.json\nfile2=/opt/cw/tmp/@job.execid@-dev1-ip.json\nfile3=/opt/cw/tmp/@job.execid@-dev1-ip.json\n\njq -r '.[][] |to_entries[] | (\"node-1-\"+(.key|tostring)+\"=\"+(.value|tostring))' $file1\njq -r '.[][] |to_entries[] | (\"node-2-\"+(.key|tostring)+\"=\"+(.value|tostring))' $file2\njq -r '.[][] |to_entries[] | (\"node-3-\"+(.key|tostring)+\"=\"+(.value|tostring))' $file3\n\n\n"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-prefix1.json",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://${option.proxy}/netbox/prefixesbyid/${option.ip-network-1}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Get Prefix 1",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-prefix2.json",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://${option.proxy}/netbox/prefixesbyid/${option.ip-network-2}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Get Prefix 2",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-prefix3.json",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://${option.proxy}/netbox/prefixesbyid/${option.ip-network-3}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Get Prefix 3",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "Prefix Payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "PREFIXMAP",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "fileout=/opt/cw/tmp/@job.execid@-prefixmaps.json\njq -s '[..|objects|select(has(\"prefix\"))  | {\"id\":.id|tostring,\"prefix\":.prefix}]' /opt/cw/tmp/@job.execid@-prefix*.json | jq '.|{\"routemaps\":.}' > $fileout\n\njq -s '.|add' /opt/cw/tmp/@job.execid@-prefixmaps*.json | jq -c '[INDEX(.mapping[]; .id) as $maps| JOIN($maps; .routemaps[]; .id; add)] | {\"results\":.}|[INDEX(.results[]; [.value,.id]|join(\"-\")) | del(.[].id) | to_entries as $refactored | $refactored[] | {(.value.value|tostring):{(.value.prefix|tostring):{\"prefix\":.value.prefix,\"value\":.value.value}}}]|[reduce .[] as $item ({}; . *= $item) | to_entries[] |(.value|keys) as $key | {\"name\":.key,\"mode\":\"ipv4\",\"prefixes\":[{\"prefix-list\":$key|.[]|{\"ip-prefix\":.}}]}]|{\"dest-prefix-set\":.}|{\"prefix-sets\":.}|{\"defined-sets\":.}|{\"cisco-l3vpn-routing-policy:l3vpn-routing-policy\":.}'\n\n#[reduce .[] as $item ({}; . *= $item) | to_entries[] |(.value|keys) as $key | {\"name\":.key,\"mode\":\"ipv4\",\"prefixes\":[{\"prefix-list\":$key|.[]|{\"ip-prefix\":.}}]}]"
+    }, {
+      "description" : "TAG Payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "TAGSET",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo '@data.PREFIXMAP*@' | jq -cr '[..|objects|select(has(\"name\")).name | {\"tag-value\":.,\"name\":([\"VPN\",\"@option.vpn-id@\",\"EXTCOMM-SET-C\",.]|join(\"-\"))}|[.]|{\"tag-set\":.}|{\"tag-sets\":.}|{\"defined-sets\":.}]|{\"cisco-l3vpn-routing-policy:l3vpn-routing-policy\":.}'"
+    }, {
+      "description" : "Policy Payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "POLICY",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo '@data.TAGSET*@' | jq -csr '[..|objects|select(has(\"name\")) | [.name,.\"tag-value\"] | .[1] as $colour | {\"name\":[\"stmnt\",$colour]|join(\"-\"),\"conditions\":{\"match-dest-prefix-set\":{\"prefix-set\":.[1]}},\"actions\":{\"bgp-actions\":{\"set-ext-community\":{\"ext-community-set-ref\":.[0]}}}}] |{\"name\":[\"VPN\",\"@option.vlan-id@\",\"POLICY\"]|join(\"-\"),\"statements\":.|{\"statement\":.}}|{\"policy-definition\":[.]} | {\"policy-definitions\":.}|{\"cisco-l3vpn-routing-policy:l3vpn-routing-policy\":.}'"
+    }, {
+      "description" : "Get Policy Name",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "POLICYNAME",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo '@data.POLICY*@'| jq -r '..|objects|select(has(\"policy-definition\")).\"policy-definition\"[].name'\n"
+    }, {
+      "description" : "Profile Payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "PROFILE",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "jq -n -c '{\"id\":\"@data.POLICYNAME*@\"}|{\"routing-profile-identifier\":[.]}|{\"valid-provider-identifiers\":.}|{\"vpn-profiles\":.}|{\"ietf-l3vpn-ntw:l3vpn-ntw\":.}'\n"
+    }, {
+      "description" : "node profiles",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "SEED",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo '[{\"node\":\"@data.device-1*@\",\"vlan\":@option.vlan-id@,\"interface\":\"@option.device-1-interface@\",\"peeras\":@option.device-1-peer-as@,\"neighbor\":\"@option.neighbour-1@\",\"address\":\"@option.ip-1@\",\"prefixlength\":24,\"exportpolicy\":\"@data.POLICYNAME@\"},{\"node\":\"@data.device-2*@\",\"vlan\":@option.vlan-id@,\"interface\":\"@option.device-2-interface@\",\"peeras\":@option.device-2-peer-as@,\"neighbor\":\"@option.neighbour-2@\",\"address\":\"@option.ip-2@\",\"prefixlength\":24,\"exportpolicy\":\"@data.POLICYNAME@\"},{\"node\":\"@data.device-3*@\",\"vlan\":@option.vlan-id@,\"interface\":\"@option.device-3-interface@\",\"peeras\":@option.device-3-peer-as@,\"neighbor\":\"@option.neighbour-3@\",\"address\":\"@option.ip-3@\",\"prefixlength\":24,\"exportpolicy\":\"@data.POLICYNAME@\"}]'\n\n"
+    }, {
+      "description" : "VPN Payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "payload",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "jq -n --argjson seed '@data.SEED*@' '$seed|to_entries[]|{\"vpn-node-id\":.value.node,\"vpn-network-accesses\":{\"vpn-network-access\":[{\"id\":[\"ac\",.key]|join(\"-\"),\"connection\":{\"encapsulation\":{\"type\":\"ietf-vpn-common:dot1q\",\"dot1q\":{\"cvlan-id\":.value.vlan}}},\"interface-id\":.value.interface,\"ip-connection\":{\"ipv4\":{\"local-address\":.value.address,\"prefix-length\":.value.prefixlength}},\"routing-protocols\":{\"routing-protocol\":[{\"id\":\"0\",\"bgp\":{\"peer-as\":.value.peeras,\"neighbor\":.value.neighbor,\"address-family\":\"ipv4\",\"redistribute-connected\":[{\"enable\":true,\"address-family\":\"ietf-vpn-common:ipv4\"}],\"cisco-l3vpn-ntw:mpls-deactivation\":false},\"type\":\"ietf-vpn-common:bgp-routing\"}]}}]},\"active-vpn-instance-profiles\":{\"vpn-instance-profile\":[{\"profile-id\":\"default\",\"address-family\":[{\"vpn-targets\":{\"vpn-policies\":{\"export-policy\":.value.exportpolicy}},\"address-family\":\"ietf-vpn-common:ipv4\"}]}]}}' | jq -sc . | jq -c '{\"vpn-service\":{\"vpn-id\":\"@option.vpn-id@\",\"vpn-nodes\":{\"vpn-node\":.},\"vpn-service-topology\":\"ietf-vpn-common:any-to-any\",\"vpn-instance-profiles\":{\"vpn-instance-profile\":[{\"profile-id\":\"default\"}]},\"cisco-l3vpn-ntw:vpn-target\":{\"hub-rt-value\":[0,\"@option.vlan-id@\",\"@option.vlan-id@\"]|join(\":\")}}}|{\"vpn-services\":.}|{\"ietf-l3vpn-ntw:l3vpn-ntw\":.}'"
+    }, {
+      "description" : "get service properties",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "true",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "res=$(echo '@data.payload*@')\n\necho $res | jq -r '.|keys[0] | \"service-type=\"+(.|tostring)'\necho $res | jq -r '(if .[]|type==\"object\" then \"yes\" else \"no\" end) as $x | if $x==\"yes\" then (.[]| leaf_paths as $path | ($path|join(\"|\")|tostring)+\"=\"+(getpath($path)|tostring) ) else (.| leaf_paths as $path | ($path|join(\"|\")|tostring)+\"=\"+(getpath($path)|tostring) ) end'\n\n"
+    }, {
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "description" : "generate implementation plan?",
+      "errorhandler" : {
+        "jobref" : {
+          "args" : "-friendly-name L3VPN -payload ${data.payload-import*} -service-type ${data.service-type*} -name ${data.vpn-services|vpn-service|0|vpn-id*}",
+          "group" : "-DEMO",
+          "importOptions" : true,
+          "name" : "Create dry run exports",
+          "nodeStep" : "true",
+          "uuid" : "f3176d98-5e8b-4c7b-bc55-e918addca4ee"
+        },
+        "keepgoingOnSuccess" : true
+      },
+      "script" : "@data.RUN_IMPLEMENTATION_PLAN*@"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.TAGSET*}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/yang-data+json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data/${data.DRY_RUN_COMMAND*}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Create TAG Set",
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.PREFIXMAP*}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/yang-data+json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data/${data.DRY_RUN_COMMAND*}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Create Prefix Map",
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.POLICY*}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/yang-data+json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data/${data.DRY_RUN_COMMAND*}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Create Policy",
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.PROFILE*}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/yang-data+json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data/${data.DRY_RUN_COMMAND*}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Create Profile",
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.payload*}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/yang-data+json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data/${data.DRY_RUN_COMMAND*}",
+        "sslVerify" : "false",
+        "timeout" : "60000"
+      },
+      "description" : "Create VPN Service",
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "Reserve VLAN",
+      "errorhandler" : {
+        "jobref" : {
+          "args" : "-customer ${option.customer} -name ${option.vpn-id} -status \"reserved\" -vlan ${option.vlan-id} -group ${option.scope_1}",
+          "group" : "-DEMO/Slicing",
+          "name" : "NETBOX - Reserve VLAN [Kafka]",
+          "nodeStep" : "true",
+          "uuid" : "59c76172-0154-4c3c-8139-2b1ed50fae58"
+        },
+        "keepgoingOnSuccess" : true
+      },
+      "script" : "@data.DRY_RUN*@"
+    }, {
+      "description" : "Reserve IP 1",
+      "errorhandler" : {
+        "jobref" : {
+          "args" : "-customer ${option.customer} -name ${option.vpn-id} -status \"reserved\" -ip \"${option.ip-1}/24\"",
+          "group" : "-DEMO/Slicing",
+          "name" : "NETBOX - Reserve IP [Kafka]",
+          "nodeStep" : "true",
+          "uuid" : "588d214d-eac6-474d-b5b4-1d51f8e06ead"
+        },
+        "keepgoingOnSuccess" : true
+      },
+      "script" : "@data.DRY_RUN*@"
+    }, {
+      "description" : "Reserve IP 2",
+      "errorhandler" : {
+        "jobref" : {
+          "args" : "-customer ${option.customer} -name ${option.vpn-id} -status \"reserved\" -ip \"${option.ip-2}/24\"",
+          "group" : "-DEMO/Slicing",
+          "name" : "NETBOX - Reserve IP [Kafka]",
+          "nodeStep" : "true",
+          "uuid" : "588d214d-eac6-474d-b5b4-1d51f8e06ead"
+        },
+        "keepgoingOnSuccess" : true
+      },
+      "script" : "@data.DRY_RUN*@"
+    }, {
+      "description" : "Reserve IP 3",
+      "errorhandler" : {
+        "jobref" : {
+          "args" : "-customer ${option.customer} -name ${option.vpn-id} -status \"reserved\" -ip \"${option.ip-3}/24\"",
+          "group" : "-DEMO/Slicing",
+          "name" : "NETBOX - Reserve IP [Kafka]",
+          "nodeStep" : "true",
+          "uuid" : "588d214d-eac6-474d-b5b4-1d51f8e06ead"
+        },
+        "keepgoingOnSuccess" : true
+      },
+      "script" : "@data.DRY_RUN*@"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "sequential"
+  },
+  "uuid" : "789ff057-f30d-4f12-8165-4052808136a1"
+} ]

@@ -1,0 +1,189 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "CNC Patch Uploader\n\n# Overview\nThis will allow the user to choose a patch file from the list for CNC, and the script will upload it to CNC ready for installation.\n\n## Files\n\n| File    | Product    | Version                | \n| ------------ | ------------ | -------------------|\n| australia-oceania-geomaps-1.0.0-Crosswork-4.1.0-signed.tar.gz  | Offline Maps    | 1.0.0 |     \n| cw-na-coe-3.0.1-4-release-211216.tar.gz      | Optimisation Engine | 3.0.1 release 4            |      \n| cw-na-infra-patch-4.1.2-31-release-220210.tar.gz | Core Infra | 4.1.2 release 32 |      \n| cw-na-ztp-3.0.1-4-release-211217.tar.gz | Zero Touch Provisioning | 3.0.1 release 4 |\n| cw-na-cat-3.0.1-4-release-211221.tar.gz | Active Topology | 3.0.1 release 4 |\n\n",
+  "executionEnabled" : false,
+  "group" : "CNC/Update",
+  "id" : "48ca659e-8689-44e0-b05e-95149fd87d55",
+  "loglevel" : "INFO",
+  "name" : "CNC-01 - File Uploader",
+  "nodeFilterEditable" : true,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : false,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "1"
+    },
+    "filter" : "name: 10.66.182.68 "
+  },
+  "nodesSelectedByDefault" : true,
+  "options" : [ {
+    "description" : "## Allowed file that can be uploaded to crosswork, used for patching and upgrades.",
+    "enforced" : true,
+    "label" : "File to Upload",
+    "name" : "app-file",
+    "required" : true,
+    "values" : [ "australia-oceania-geomaps-1.0.0-Crosswork-4.1.0-signed.tar.gz,cw-na-cat-3.0.1-4-release-211221.tar.gz,cw-na-coe-3.0.1-4-release-211216.tar.gz,cw-na-infra-patch-4.1.2-31-release-220210.tar.gz,cw-na-ztp-3.0.1-4-release-211217.tar.gz" ],
+    "valuesListDelimiter" : ";"
+  }, {
+    "hidden" : true,
+    "name" : "remote_ssh_pass",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/useraccounts/siprice",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "remote_ssh_user",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/useraccounts/jumphost-user-siprice",
+    "valueExposed" : true
+  }, {
+    "label" : "VIP for CNC",
+    "name" : "cnc-vip",
+    "required" : true,
+    "value" : "192.168.226.xxx"
+  }, {
+    "name" : "cw-admin-password",
+    "secure" : true,
+    "storagePath" : "keys/cw/cw-admin",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "cw-port",
+    "required" : true,
+    "value" : "30603"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "get images",
+      "exec" : "ls -latrh /opt/cw/images/*.gz"
+    }, {
+      "configuration" : {
+        "command" : "curl -k --location --request POST 'https://${option.cnc-vip}:${option.cw-port}/crosswork/sso/v1/tickets?username=admin&password=${option.cw-admin-password}'  --header 'Content-Type: application/x-www-form-urlencoded'  --header 'Accept: text/plain'  --header 'Cache-Control: no-cache' --data-raw ''"
+      },
+      "description" : "Get-TICKET",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "TICKET",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "curl -k --location --request POST 'https://${option.cnc-vip}:${option.cw-port}/crosswork/sso/v1/tickets/${data.TICKET}' --header 'Content-Type: application/x-www-form-urlencoded' --header 'Accept: text/plain' --header 'Cache-Control: no-cache' --data-urlencode 'service=https://198.18.134.219:30603/app-dashboard'"
+      },
+      "description" : "Get TOKEN",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "TOKEN",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "curl -k --location --request POST 'https://${option.cnc-vip}:${option.cw-port}/crosswork/platform/v2/capp/repository/packagedata' --header 'Content-Type: application/x-www-form-urlencoded' --header 'Accept: text/plain' --header 'Cache-Control: no-cache' --header 'Authorization: Bearer ${data.TOKEN}' --data-raw '{\"remote_file\":\"/opt/cw/images/${option.app-file}\",\"ssh_config\":{\"remote_host\":\"10.66.182.68\",\"username\":\"${option.remote_ssh_user}\",\"password\":\"${option.remote_ssh_pass}\",\"port\":22}}'"
+      },
+      "description" : "POST Update File",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "jobid",
+            "regex" : "^.*\"(\\S+\\d+).*$"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "curl -k --location --request POST 'https://${option.cnc-vip}:${option.cw-port}/crosswork/platform/v2/capp/applicationsummary/query' --header 'Content-Type: application/x-www-form-urlencoded' --header 'Accept: text/plain' --header 'Cache-Control: no-cache' --header 'Authorization: Bearer ${data.TOKEN}' --data-raw  '{}'"
+      },
+      "description" : "Get Product Versions",
+      "nodeStep" : true,
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "sleep 5"
+      },
+      "description" : "sleep",
+      "nodeStep" : true,
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "curl -k --location --request POST 'https://${option.cnc-vip}:${option.cw-port}/crosswork/platform/v2/capp/events/query' --header 'Content-Type: application/x-www-form-urlencoded' --header 'Accept: text/plain' --header 'Cache-Control: no-cache' --header 'Authorization: Bearer ${data.TOKEN}' --data-raw  '{\"event_tags\":[{\"tag_type\":\"JOB_ID_EVENT\",\"tag_value\":\"${data.jobid}\"}],\"query_options\":{\"pagination\":{\"page_size\":200}}}'"
+      },
+      "description" : "Get JOB Status",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "curl -k --location --request POST 'https://${option.cnc-vip}:${option.cw-port}/crosswork/platform/v2/capp/applicationsummary/query' --header 'Content-Type: application/x-www-form-urlencoded' --header 'Accept: text/plain' --header 'Cache-Control: no-cache' --header 'Authorization: Bearer ${data.TOKEN}' --data-raw  '{}'"
+      },
+      "description" : "Get Product Versions",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "test",
+            "regex" : "((?:\"name\":\")(.*?)(?:\"))"
+          },
+          "type" : "key-value-data"
+        }, {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "false"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "description" : "log data",
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "48ca659e-8689-44e0-b05e-95149fd87d55"
+} ]

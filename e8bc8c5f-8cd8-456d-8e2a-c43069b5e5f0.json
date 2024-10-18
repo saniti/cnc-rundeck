@@ -1,0 +1,25 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "id" : "e8bc8c5f-8cd8-456d-8e2a-c43069b5e5f0",
+  "loglevel" : "INFO",
+  "name" : "docker",
+  "nodeFilterEditable" : false,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "command" : "sudo docker ps"
+      },
+      "nodeStep" : true,
+      "type" : "localexec"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "e8bc8c5f-8cd8-456d-8e2a-c43069b5e5f0"
+} ]

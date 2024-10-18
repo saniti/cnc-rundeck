@@ -1,0 +1,101 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "CNC/Configuration/alarms",
+  "id" : "01a0f52a-2c15-4fc4-b6d5-81ef4b8bda74",
+  "loglevel" : "INFO",
+  "name" : "CNC - Add REST endpoint",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "label" : "Host IP",
+    "name" : "host-ip",
+    "required" : true,
+    "value" : "198.18.133.102"
+  }, {
+    "label" : "host path",
+    "name" : "host-path",
+    "required" : true,
+    "value" : "/alarms"
+  }, {
+    "label" : "host port",
+    "name" : "host-port",
+    "required" : true,
+    "value" : "9000"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "payload",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "template='{\"host\":\"@option.host-ip@\",\"port\":@option.host-port@,\"url\":\"@option.host-path@\",\"username\":\"user\",\"password\":\"pass\"}'\necho $template | jq -c ."
+    }, {
+      "description" : "CNC properties",
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.payload*}",
+        "checkResponseCode" : "true",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/alarms/v1/rest-dest",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Create REST endpoint for alarms",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.payload*}",
+        "checkResponseCode" : "true",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/alarms/v1/rest-dest",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "GET REST endpoint for alarms",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "01a0f52a-2c15-4fc4-b6d5-81ef4b8bda74"
+} ]

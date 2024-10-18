@@ -1,0 +1,48 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "CNC/Setup",
+  "id" : "bb36317f-5f3d-4f76-b58e-f7a27821ac7f",
+  "loglevel" : "INFO",
+  "name" : "NSO environment - ADD",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "> nso-environment.json",
+    "enforced" : true,
+    "label" : "NSO environments",
+    "name" : "nso-env",
+    "valuesUrl" : "file:/opt/cw/options/nso-environment.json"
+  }, {
+    "label" : "friendly name the user will see",
+    "name" : "friendly-name",
+    "required" : true
+  }, {
+    "description" : "> This should match the prefix on the API Gateway",
+    "label" : "New Environment",
+    "name" : "env",
+    "required" : true
+  }, {
+    "description" : "Selected by default? `true` = yes, `false` = no.",
+    "enforced" : true,
+    "label" : "Set Default",
+    "name" : "selected",
+    "required" : true,
+    "value" : "false",
+    "values" : [ "false", "true" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Add new entry",
+      "script" : "file=/opt/cw/options/nso-environment.json\nfiletmp=/opt/cw/tmp/nso-environment.tmp\nif [ ! -f \"$file\" ]; then echo \"[]\" > \"$file\"; fi\njq '. += [{\"name\":\"@option.friendly-name@\",\"value\":\"@option.env@\",\"selected\":@option.selected@}]' $file > $filetmp\n\\cp $filetmp $file\n\n"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "bb36317f-5f3d-4f76-b58e-f7a27821ac7f"
+} ]

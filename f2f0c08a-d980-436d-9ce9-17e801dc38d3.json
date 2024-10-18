@@ -1,0 +1,50 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Add new NTP entries",
+  "executionEnabled" : true,
+  "group" : "CNC/Setup",
+  "id" : "f2f0c08a-d980-436d-9ce9-17e801dc38d3",
+  "loglevel" : "INFO",
+  "name" : "NTP - Add Option",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "label" : "User friendly name of NTP Server entry",
+    "name" : "ntp-name",
+    "required" : true
+  }, {
+    "label" : "IP or DNS name of NTP Server",
+    "name" : "ntp-server",
+    "required" : true
+  }, {
+    "description" : "Selected by default? `true` = yes, `false` = no.",
+    "enforced" : true,
+    "label" : "Set Default",
+    "name" : "default",
+    "required" : true,
+    "value" : "false",
+    "values" : [ "false", "true" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "delimiter" : ",",
+    "description" : "> Current NTP Server list, as shown in provisioning screens",
+    "enforced" : true,
+    "label" : "Current NTPServer Entries",
+    "multivalueAllSelected" : true,
+    "multivalued" : true,
+    "name" : "ntp-servers-current",
+    "valuesUrl" : "file:/opt/cw/options/ntp-servers.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "Add new entry",
+      "script" : "file=/opt/cw/options/ntp-servers.json\nfiletmp=/opt/cw/tmp/ntp-servers.tmp\nif [ ! -f \"$file\" ]; then echo \"[]\" > \"$file\"; fi\njq '. += [{\"name\":\"@option.ntp-name@\",\"value\":\"@option.ntp-server@\",\"selected\":@option.default@}]' $file > $filetmp\n\\cp $filetmp $file"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "f2f0c08a-d980-436d-9ce9-17e801dc38d3"
+} ]

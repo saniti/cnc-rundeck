@@ -1,0 +1,60 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Start all the Taiga kafka consumers\n- base consumer (base)\n- message consumer (detecting messages)\n- action consumer (running orchestrations)",
+  "executionEnabled" : true,
+  "group" : "Kafka/Consumers",
+  "id" : "526acfcf-fabb-4ca1-97da-145cd9d814b9",
+  "loglevel" : "INFO",
+  "maxMultipleExecutions" : "5",
+  "multipleExecutions" : true,
+  "name" : "Start CNC Consumers - [ALL]",
+  "nodeFilterEditable" : false,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : false,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "1"
+    },
+    "filter" : "name: gitbox "
+  },
+  "nodesSelectedByDefault" : true,
+  "options" : [ {
+    "label" : "Consumer Group",
+    "name" : "consumer-group",
+    "required" : true,
+    "value" : "1",
+    "values" : [ "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "delimiter" : ",",
+    "label" : "Kafka Topic",
+    "multivalued" : true,
+    "name" : "topic",
+    "required" : true,
+    "value" : "service_provisioning",
+    "valuesUrl" : "file:/opt/cw/options/customers.json"
+  }, {
+    "description" : "> `earliest` or `latest`",
+    "enforced" : true,
+    "name" : "offset",
+    "required" : true,
+    "value" : "latest",
+    "values" : [ "earliest", "latest" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "base consumer [cnc services actions]",
+      "script" : "pushd /source/code/kafka-consumers > /dev/null\necho starting Kafka Consumer .. \npython3 cnc-services-v01.py -c @option.consumer-group@ -t @option.topic@ -o @option.offset@"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "parallel"
+  },
+  "uuid" : "526acfcf-fabb-4ca1-97da-145cd9d814b9"
+} ]

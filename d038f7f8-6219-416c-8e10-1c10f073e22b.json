@@ -1,0 +1,194 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "Kafka",
+  "id" : "d038f7f8-6219-416c-8e10-1c10f073e22b",
+  "loglevel" : "INFO",
+  "name" : "Create Release Project",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "- Add new customer record [Add new Customer](/job/show/69d6030f-0829-48ce-8101-772f2c0a54cc)",
+    "label" : "Project Name",
+    "name" : "project-name",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/customers.json"
+  }, {
+    "label" : "Description",
+    "name" : "description",
+    "required" : true
+  }, {
+    "hidden" : true,
+    "label" : "Release",
+    "name" : "swimlane",
+    "required" : true,
+    "value" : "${DATE:yyyy-MM-dd HHmmss}"
+  }, {
+    "delimiter" : ",",
+    "multivalueAllSelected" : true,
+    "multivalued" : true,
+    "name" : "tasks",
+    "values" : [ "Verify Environment readiness", "Execute Test harness", "Provide in MODEL", "Verify Production" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "auth",
+      "jobref" : {
+        "group" : "Kafka",
+        "name" : "taiga - auth",
+        "uuid" : "18f1cfcf-0cc7-4ed3-b29d-d0600a425e7f"
+      }
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "true",
+        "file" : "/opt/cw/tmp/${job.execid}-project.json",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.token}\"}",
+        "method" : "GET",
+        "printResponse" : "false",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://198.18.133.102:9001/api/v1/projects/by_slug?slug=${option.project-name}",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Check for Project",
+      "errorhandler" : {
+        "jobref" : {
+          "args" : "-token ${export.token}",
+          "group" : "Kafka",
+          "importOptions" : true,
+          "name" : "taiga - create project",
+          "uuid" : "950554fc-e7e9-4bc7-84ef-9e60ed8ff089"
+        },
+        "keepgoingOnSuccess" : true
+      },
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "get project ID",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "project-id",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "id=$(jq '.id' /opt/cw/tmp/@job.execid@-project.json)\nif [ \"$id\" == \"null\" ]; then pid=@export.project-id@; else pid=$id; fi\necho $pid"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-project.json",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.token}\"}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://198.18.133.102:9001/api/v1/userstories/filters_data?project=${data.project-id*}",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Retrieve project",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "create list",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "list",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "line='@option.tasks@'\necho ${line//,/\\\\n}"
+    }, {
+      "description" : "get card IDs",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-project.json\njq -r '.statuses[] |.name+ \"=\" +(.id|tostring)' $file"
+    }, {
+      "description" : "get card IDs",
+      "script" : "file=/opt/cw/tmp/@job.execid@-project-id.json\noutfile=/opt/cw/tmp/@job.execid@-card-id.json\njq '[.epic_statuses[] | {\"name\":.name,\"id\":.id}]' $file > $outfile\nnew=$(jq -r '.[] | select(.name==\"New\") | \"new\" + \"=\" +(.id|tostring)' $outfile)\nready=$(jq -r '.[] | select(.name==\"Ready\") | \"ready\" + \"=\" +(.id|tostring)' $outfile)\ninprogress=$(jq -r '.[] | select(.name==\"In progress\") | \"inprogress\" + \"=\" +(.id|tostring)' $outfile)\necho $new\necho $ready\necho $inprogress"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\"project\":${data.project-id*},\"name\":\"${option.swimlane} - ${option.description}\"}",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-swimlane.json",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.token}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://198.18.133.102:9001/api/v1/swimlanes",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "create swimlane",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "get swimlane ID",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-swimlane.json\nslid=$(jq -r '. | \"swimlaneid\" + \"=\"+(.id|tostring)' $file)\necho $slid"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\"project_id\":${data.project-id*},\"status_id\":${data.New*},\"bulk_stories\":\"${data.list*}\",\"swimlane_id\":${data.swimlaneid*}}",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/token.json",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.token}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://198.18.133.102:9001/api/v1/userstories/bulk_create",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "create card",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "d038f7f8-6219-416c-8e10-1c10f073e22b"
+} ]

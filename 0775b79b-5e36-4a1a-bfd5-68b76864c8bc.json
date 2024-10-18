@@ -1,0 +1,63 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Manage CNC version info, but writing to this file. View readme for more info\n---\n- Choose the list of Application / Installation files to map to the release\n- During installation, you can choose one or all of the files to upload\n- If the correct version does not exist, create the definition using \n### If application files are not listed\n- Ensure the files are located somewhere under `/opt/cw` on the rundeck server\n- Discover files using [CNC/Setup/Locate images on file system ](/project/CNC/job/show/3ace6b49-f8c9-46f5-acac-8313ca5aa086) job\n- Relevant images located under `/opt/cw/images` as OVA files\n### Application Location\n- Recommended to be `/opt/cw/install`, but no issue if in different directories. \n- All files should be `.tar.gz`",
+  "executionEnabled" : true,
+  "group" : "CNC/Setup",
+  "id" : "0775b79b-5e36-4a1a-bfd5-68b76864c8bc",
+  "loglevel" : "INFO",
+  "name" : "CNC Application Management - add",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "> cw-versions.json",
+    "enforced" : true,
+    "label" : "CW Version",
+    "name" : "cw-version",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-versions.json"
+  }, {
+    "delimiter" : ",",
+    "description" : "> Choose all applications and patches related to the Crosswork Version\n> [CNC/Setup/Locate images on file system ](/project/CNC/job/show/3ace6b49-f8c9-46f5-acac-8313ca5aa086) job",
+    "enforced" : true,
+    "label" : "Available Patches",
+    "multivalued" : true,
+    "name" : "cnc-patches",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/images-files-cnc-fp.json"
+  }, {
+    "description" : "Selected by default? `true` = yes, `false` = no.",
+    "enforced" : true,
+    "label" : "Set Default",
+    "name" : "selected",
+    "required" : true,
+    "value" : "false",
+    "values" : [ "false", "true" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "get version properties",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "true",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "versionfile=/opt/cw/options/cw-versions.json\njq --raw-output '..|objects|select(has(\"value\") and .value==\"@option.cw-version@\") | to_entries[] | [((\"version-\"+.key)|tostring),(.value|tostring)]|join(\"=\")' $versionfile"
+    }, {
+      "description" : "Add new entry",
+      "script" : "#file=/opt/cw/options/cw-packages-@option.cw-version@.json\nversionfile=/opt/cw/options/cw-packages-@data.version-value*@.json\n\ndt=$(date +\"%Y-%m-%d-%H-%M-%S\")\nd=$(date +\"%Y-%m-%d\")\n\nif [ ! -f $versionfile ]; then jq -n '[]' >  $versionfile;  fi\n\nexisting=$(jq . $versionfile)\n\ndata=$(echo '@option.cnc-patches@' | jq --raw-input '[split(\",\")[] as $filepath | $filepath|split(\"/\")[-1] as $file | {\"name\":$file,\"value\":$file,\"version\":\"@data.version-cnc-version*@\"}]')\n\necho $data $existing | jq -s 'flatten(1)' > $versionfile\n"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "0775b79b-5e36-4a1a-bfd5-68b76864c8bc"
+} ]

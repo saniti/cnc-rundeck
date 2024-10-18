@@ -1,0 +1,148 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Create a new POD / Deployment definition",
+  "executionEnabled" : true,
+  "group" : "CNC/POD",
+  "id" : "87656cba-09fa-4671-8ed1-83a6e120780d",
+  "loglevel" : "INFO",
+  "name" : "Create POD v2",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "Human readable name",
+    "label" : "Friendly name",
+    "name" : "pod-name-friendly",
+    "required" : true
+  }, {
+    "description" : "* internal name, numbers,letters, hyphens and underscore with no space.",
+    "label" : "Deployment name",
+    "name" : "pod-name",
+    "regex" : "^[a-z0-9\\-\\_]+$",
+    "required" : true
+  }, {
+    "description" : "* Standard CNC\n* Unified EMS",
+    "enforced" : true,
+    "label" : "Type of POD",
+    "name" : "pod-type",
+    "required" : true,
+    "value" : "standard",
+    "values" : [ "standard", "unified" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "Virtual IP of POD",
+    "label" : "POD Management VIP",
+    "name" : "cnc-vip",
+    "required" : true
+  }, {
+    "description" : "- not required, but if present - then will be used",
+    "label" : "POD Management VIP DNS",
+    "name" : "cnc-vip-dns"
+  }, {
+    "description" : "Virtual IP of Data Interface",
+    "label" : "POD Data VIP",
+    "name" : "cnc-data-vip",
+    "required" : true
+  }, {
+    "description" : "- not required, but if present - then will be used",
+    "label" : "POD Data VIP DNS",
+    "name" : "cnc-datavip-dns"
+  }, {
+    "enforced" : true,
+    "label" : "VMware / Hosting Environment",
+    "name" : "hosting",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/vmw-environments.json"
+  }, {
+    "description" : "[Create](678c8725-fd1d-4849-b7dd-787aa192563a) | [Delete](e206dab8-cf07-459a-accd-37156c9537d6)",
+    "enforced" : true,
+    "label" : "DNS Servers",
+    "name" : "dns",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/dns-servers.json"
+  }, {
+    "description" : "[Create](f2f0c08a-d980-436d-9ce9-17e801dc38d3) | [Delete](e1c8ea96-3470-4ff6-8ed5-4d88d576df50)",
+    "enforced" : true,
+    "label" : "NTP Servers",
+    "name" : "ntp",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/ntp-servers.json"
+  }, {
+    "description" : "[Create](6efb3fef-2883-4fc8-b78a-3661bad4fca33) | [Delete]()",
+    "enforced" : true,
+    "label" : "Search Domain",
+    "name" : "domain",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/domains.json"
+  }, {
+    "description" : "[Create](be73cb22-c982-4c92-b174-94adc223498a) | [Delete](599a8731-26e5-4504-b412-1dcb27422c5f)",
+    "enforced" : true,
+    "label" : "Disclaimer",
+    "name" : "disclaimer",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/disclaimers.json"
+  }, {
+    "description" : "Default is `admin`",
+    "label" : "Admin User Name",
+    "name" : "pod-username",
+    "required" : true,
+    "value" : "admin"
+  }, {
+    "description" : "* leave blank for default",
+    "label" : "Password for POD",
+    "name" : "pod-password",
+    "secure" : true,
+    "storagePath" : "keys/cw/cw-admin",
+    "valueExposed" : true
+  }, {
+    "enforced" : true,
+    "label" : "Set Default",
+    "name" : "default",
+    "required" : true,
+    "value" : "false",
+    "values" : [ "false", "true" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "delimiter" : ",",
+    "label" : "List Current Environments",
+    "multivalued" : true,
+    "name" : "environments-current",
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "enforced" : true,
+    "hidden" : true,
+    "name" : "credpath",
+    "required" : true,
+    "value" : "/backup/keys/keys/cw",
+    "values" : [ "/backup/keys/keys/cw" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    }, {
+      "configuration" : {
+        "command" : "bash -c 'if [ \"${option.default}\" == \"false\" ]; then true; else false; fi'"
+      },
+      "description" : "If set to default then clear defaults",
+      "errorhandler" : {
+        "keepgoingOnSuccess" : true,
+        "script" : "jq '.[] += {\"selected\":false}' /opt/cw/options/cw-environments.json > /opt/cw/tmp/cw-environments.tmp\n\\cp /opt/cw/tmp/cw-environments.tmp /opt/cw/options/cw-environments.json"
+      },
+      "nodeStep" : true,
+      "type" : "localexec"
+    }, {
+      "description" : "Add new entry",
+      "script" : "file=/opt/cw/options/cw-environments.json\nfiletmp=/opt/cw/tmp/cw-environments.tmp\n\necho '[{\"name\":\"@option.pod-name@\",\"pod-type\":\"@option.pod-type@\",\"value\":\"@option.cnc-vip@\",\"selected\":\"@option.default@\",\"hosting\":\"@option.hosting@\",\"dns\":\"@option.dns@\",\"ntp\":\"@option.ntp@\",\"domain\":\"@option.domain@\",\"disclaimer\":\"@option.disclaimer@\",\"data-vip\":\"@option.cnc-data-vip@\",\"mgt-dns\":\"@option.cnc-vip-dns@\",\"data-dns\":\"@option.cnc-datavip-dns@\",\"tag\":\"@option.tag@\"}]'\nif [ ! -f \"$file\" ]; then echo '[]' > \"$file\"; fi\nif [ ! -f \"$file\" ]; then echo '[]' > \"$filetmp\"; fi\necho 'files created'\n\n\n\necho '@option.pod-username@' > @option.credpath@/@option.pod-name@-user\necho '@option.pod-password@' > @option.credpath@/@option.pod-name@-pass\njq '. += [{\"name\":(\"@option.pod-name-friendly@\"+ \" (\"+\"@option.pod-type@\"+\")\"),\"value\":\"@option.pod-name@\",\"pod-type\":\"@option.pod-type@\",\"mgt-vip\":\"@option.cnc-vip@\",\"selected\":\"@option.default@\",\"pod-user\":\"@option.credpath@/@option.pod-name@-user\",\"pod-pass\":\"@option.credpath@/@option.pod-name@-pass\",\"hosting\":\"@option.hosting@\",\"dns\":\"@option.dns@\",\"ntp\":\"@option.ntp@\",\"domain\":\"@option.domain@\",\"disclaimer\":\"@option.disclaimer@\",\"data-vip\":\"@option.cnc-data-vip@\",\"mgt-dns\":\"@option.cnc-vip-dns@\",\"data-dns\":\"@option.cnc-datavip-dns@\",\"tag\":\"@option.pod-name@\",\"proxy\":\"@option.pod-name@\"}]' $file > $filetmp\n\\cp $filetmp $file"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "87656cba-09fa-4671-8ed1-83a6e120780d"
+} ]

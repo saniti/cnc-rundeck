@@ -1,0 +1,385 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Creates the profiles and configuration for ZTP. \n---\n[Refresh Image List](3ace6b49-f8c9-46f5-acac-8313ca5aa086#runjob)",
+  "executionEnabled" : true,
+  "group" : "CNC/Configuration/ZTP",
+  "id" : "acaebce4-e647-48f8-abac-2b69b21e2211",
+  "loglevel" : "INFO",
+  "name" : "ZTP Create profile and config",
+  "nodeFilterEditable" : false,
+  "notification" : {
+    "onsuccess" : {
+      "email" : {
+        "recipients" : "device-details@necehealthpoc.local",
+        "subject" : "${notification.eventStatus} ${job.name}"
+      }
+    }
+  },
+  "notifyAvgDurationThreshold" : null,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CW POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "description" : "> Device ISO build file, from the discovery process.",
+    "enforced" : true,
+    "label" : "ISO File",
+    "name" : "iso-file",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/images-files-iso.json"
+  }, {
+    "description" : "> Name of the Image. This is mapped against the Image Type (XR/XE)",
+    "label" : "Image Title",
+    "name" : "image-title",
+    "required" : true,
+    "value" : "NCS-540-01"
+  }, {
+    "description" : "> Configuration or installable (python, shell or txt) from discovery.",
+    "enforced" : true,
+    "label" : "ZTP Configuration Files",
+    "name" : "ztp-config-file",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/ztp-config-files.json"
+  }, {
+    "description" : "> XR or XE, and needs to match the image type",
+    "enforced" : true,
+    "label" : "Image Name",
+    "name" : "image-platform",
+    "required" : true,
+    "value" : "IOS XR",
+    "values" : [ "IOS XR", "IOS XE" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "Image Family",
+    "name" : "image-family",
+    "required" : true,
+    "value" : "CISCO NCS540",
+    "values" : [ "CISCO NCS540", "CISCO NCS5500", "CISCO NCS560", "CISCO ASR9000", "CISCO ASR9900" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "> The OS image version attached to the ISO",
+    "label" : "Image Version",
+    "name" : "image-version",
+    "required" : true,
+    "value" : "7.3.1"
+  }, {
+    "description" : "> NSO credential profile",
+    "label" : "NSO Credential Profile",
+    "name" : "credential-profile",
+    "required" : true,
+    "value" : "nso1",
+    "values" : [ "nso1" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "description" : "> IPv4 Address of the device, reachable from NSO",
+    "label" : "Device IPv4 Address",
+    "name" : "device-ip-address",
+    "required" : true,
+    "value" : "198.19.1.109",
+    "values" : [ "node-909" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "label" : "Device Name (new)",
+    "name" : "device-name",
+    "required" : true,
+    "value" : "node-909",
+    "values" : [ "node-909" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "hidden" : true,
+    "name" : "now",
+    "required" : true,
+    "value" : "${DATE:yyyy-MM-dd}"
+  }, {
+    "description" : "> Crosswork NSO provider",
+    "label" : "NSO Provider",
+    "name" : "provider",
+    "required" : true,
+    "value" : "nso201",
+    "values" : [ "nso201" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "label" : "Device Serial Number",
+    "name" : "serial-number",
+    "required" : true,
+    "value" : "F1ZCHE2BC4"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "generate MD5 sum",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "md5",
+            "regex" : "(.*)\\s.*"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "md5sum '@option.iso-file@'"
+    }, {
+      "description" : "encode URL",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "echo 'image-family=@option.image-family@' | sed -e  's/ /%20/g'\necho 'image-platform=@option.image-platform@' | sed -e  's/ /%20/g'"
+    }, {
+      "description" : "determine config file name",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "config-file",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "basename '@option.ztp-config-file@' | cut -d '.' -f1"
+    }, {
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "description" : "generate cmdlet",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "cmdlet",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo 'configFile=@@\"@option.ztp-config-file@\"'\n\n"
+    }, {
+      "description" : "upload configuration file",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "uri",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo curl -k --location --request POST 'https://@export.cwvip@:30603/crosswork/configsvc/v1/configs/upload?confname=@data.config-file*@&osname=@option.image-platform@&version=@option.image-version@&devicefamily=@data.image-family*@' --header 'Authorization: Bearer @export.cwtoken@' --header 'Content-Type: multipart/form-data' --form '@data.cmdlet*@'\n\ncurl -k --location --request POST 'https://@export.cwvip@:30603/crosswork/configsvc/v1/configs/upload?confname=@data.config-file*@&osname=@data.image-platform*@&version=@option.image-version@&devicefamily=@data.image-family*@' --header 'Authorization: Bearer @export.cwtoken@' --header 'Content-Type: multipart/form-data' --form '@data.cmdlet*@'\n\n#echo '/crosswork/configsvc/v1/configs/upload?confname=@data.config-file*@&osname=@option.image-platform@&version=@option.image-version@&devicefamily=@option.image-family@'\n\n"
+    }, {
+      "description" : "get",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "uri",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "curl -k --location --request GET 'https://@export.cwvip@:30603/crosswork/configsvc/v1/configs' --header 'Authorization: Bearer @export.cwtoken@' --header 'Content-Type: application/json' \n\n\n"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-cnc-ztp-configs.json",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/configsvc/v1/configs",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "retrieve configurations",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-cnc-ztp-images.json",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "GET",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/imagesvc/v1/images",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "retrieve images",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "get configs entry",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-cnc-ztp-configs.json\n\nres=$(jq -c '.content[] | select(.confName==\"@data.config-file*@\")' $file)\necho $res | jq -r 'to_entries[] | \"ztp-configs-\"+(.key|tostring) + \"=\" + (.value|tostring)'\n\n\n"
+    }, {
+      "description" : "get image entry",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-cnc-ztp-images.json\nres=$(jq -c '.content[] | select(.imageTitle==\"@option.image-title@\")' $file)\necho $res | jq -r 'to_entries[] | \"ztp-images-\"+(.key|tostring) + \"=\" + (.value|tostring)'\n\n\n"
+    }, {
+      "description" : "generate payload for profile",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "ztp-profile",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "profiletemplate='{\"profiles\":[{\"profileName\":\"@data.ztp-configs-confName*@-@data.ztp-configs-osName*@-@option.now@\",\"image\":\"@data.ztp-images-id*@\",\"profileDescription\":\"@data.ztp-configs-confName*@-@data.ztp-configs-osName*@-@option.now@\",\"profileCategory\":\"Base Build\",\"osPlatform\":\"@option.image-platform@\",\"deviceFamily\":\"@option.image-family@\",\"version\":\"@option.image-version@\",\"isSecureZtp\":\"false\",\"preConfig\":\"\",\"postConfig\":\"\",\"config\":\"@data.ztp-configs-confId*@\"}]}'\necho $profiletemplate | jq -c ."
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.ztp-profile*}",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-cnc-ztp-configs.json",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/ztp/v1/profiles",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "create profile",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\n    \"filter\": {\n    }\n}\n",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-cnc-ztp-profiles.json",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/ztp/v1/profiles/query",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "retrieve profiles",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "get profile entry",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-cnc-ztp-profiles.json\nres=$(jq -c '.ztpProfiles[] | select(.profileName==\"@data.ztp-configs-confName*@-@data.ztp-configs-osName*@\")' $file)\necho $res | jq -r 'to_entries[] | \"ztp-profile-\"+(.key|tostring) + \"=\" + (.value|tostring)'\n"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\"data\":[{\"serialNumber\":\"${option.serial-number}\"}]}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/ztp/v1/serialnumbers",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "create serial number entry",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "create device payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "device-payload",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "config='{\"nodes\":[{\"uuid\":\"\",\"hostName\":\"@option.device-name@\",\"macAddress\":\"\",\"inventoryId\":\"\",\"ipAddress\":{},\"credentialProfile\":\"@option.credential-profile@\",\"status\":\"Unprovisioned\",\"secureZtpInfo\":{\"postConfig\":null,\"preConfig\":null,\"configMode\":null},\"osPlatform\":\"@data.ztp-profile-osPlatform*@\",\"deviceFamily\":\"\",\"image\":\"\",\"config\":\"\",\"version\":\"\",\"productId\":\"\",\"versionId\":\"\",\"profileName\":\"@data.ztp-profile-profileName*@\",\"configAttributes\":{\"NETMASK\":\"255.255.255.0\",\"VRF\":\"mgmt\",\"DOMAIN_NAME\":\"sydcpoc.local\",\"INTERFACE\":\"TenGigE0/0/0/8\",\"LOOPBACK1_ADDRESS\":\"10.0.0.5\",\"LWR_IP\":\"1.2.3.4\"},\"isSecureZtp\":\"false\",\"additionalAttributes\":{\"routingInfo.globalisissystemid\":\"\",\"routingInfo.globalospfrouterid\":\"\",\"routingInfo.ipv6routerid\":\"\",\"routingInfo.teRouterid\":\"\"},\"enableOption82\":\"false\",\"providerInfo\":{\"providerName\":\"@option.provider@\"},\"connectivityDetails\":[{\"protocol\":\"SSH\",\"inetAddr\":[{\"inetAddressFamily\":\"IPV4\",\"ipaddrs\":\"@option.device-ip-address@\",\"mask\":32}],\"port\":22,\"timeout\":120}],\"serialNumber\":[\"@option.serial-number@\"]}]}'\n\necho $config | jq -c .\n"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.device-payload}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/ztp/v1/devices",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "add device",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "acaebce4-e647-48f8-abac-2b69b21e2211"
+} ]

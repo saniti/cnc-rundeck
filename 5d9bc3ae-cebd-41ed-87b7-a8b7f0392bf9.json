@@ -1,0 +1,80 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Show out of sync configuration (configuration drift)",
+  "executionEnabled" : true,
+  "group" : "-DEMO/2-CNC Device",
+  "id" : "5d9bc3ae-cebd-41ed-87b7-a8b7f0392bf9",
+  "loglevel" : "INFO",
+  "maxMultipleExecutions" : "5",
+  "multipleExecutions" : true,
+  "name" : "NSO - Config Compliance",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CW POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "value" : "R1R2",
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "enforced" : true,
+    "label" : "Rogue Config",
+    "name" : "device",
+    "valuesUrl" : "file:/opt/cw/tmp/out-of-sync.json"
+  }, {
+    "enforced" : true,
+    "label" : "Format",
+    "name" : "outformat",
+    "required" : true,
+    "value" : "cli-c",
+    "values" : [ "cli", "cli-c", "xml" ],
+    "valuesListDelimiter" : ","
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "get cnc token",
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "ignoreNotifications" : true,
+        "importOptions" : true,
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\"outformat\":\"${option.outformat}\"}\n",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-sync-from.json",
+        "headers" : "{\"Content-Type\": \"application/yang-data+json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:30603/crosswork/proxy/nso/restconf/data/tailf-ncs:devices/device=${option.device}/compare-config",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "compare configuration",
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "false"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "5d9bc3ae-cebd-41ed-87b7-a8b7f0392bf9"
+} ]

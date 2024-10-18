@@ -1,0 +1,321 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Export CSV data",
+  "executionEnabled" : true,
+  "group" : "-DEMO",
+  "id" : "959f81c1-3640-4765-a15c-e1f2a300f0f2",
+  "loglevel" : "INFO",
+  "name" : "Create dry run exports v2",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "description" : "> [Authenticate](96e872a2-5704-4af6-96dc-47758e6049d9)",
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "cnc-pod",
+    "value" : "dcloud-orig",
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "name" : "name",
+    "required" : true
+  }, {
+    "name" : "friendly-name",
+    "required" : true
+  }, {
+    "name" : "payload",
+    "required" : true
+  }, {
+    "name" : "service-type",
+    "required" : true
+  }, {
+    "name" : "endpoint"
+  }, {
+    "hidden" : true,
+    "name" : "nso-host",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/nso/nso-local",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "nso-pass",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/nso/nso-local-pass",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "nso-user",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/nso/nso-local-user",
+    "valueExposed" : true
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "description" : "log data",
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    }, {
+      "description" : "create basic auth",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "basic-auth",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo -n @option.nso-user@:@option.nso-pass@ | base64\n\n"
+    }, {
+      "description" : "get CNC properties",
+      "jobref" : {
+        "group" : "CNC/Configuration",
+        "importOptions" : true,
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "description" : "showback",
+      "script" : "echo --ENDPOINT--\necho https://@export.cwvip@:30603/crosswork/proxy/nso/restconf/data/@option.endpoint@?dry-run=native\necho --BODY--\necho @option.payload@"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${option.payload}",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-dry-run.json",
+        "headers" : "{'Authorization': 'Bearer ${export.cwtoken}','Content-Type': 'application/yang-data+json'}\n",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/proxy/nso/restconf/data/${option.endpoint}?dry-run=native",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Dry-run service",
+      "errorhandler" : {
+        "configuration" : {
+          "fail" : "false",
+          "halt" : "false"
+        },
+        "keepgoingOnSuccess" : true,
+        "nodeStep" : false,
+        "type" : "flow-control"
+      },
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${option.payload}",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-dry-run-cli-c.json",
+        "headers" : "{'Authorization': 'Bearer ${export.cwtoken}','Content-Type': 'application/yang-data+json'}",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/proxy/nso/restconf/data/${option.endpoint}?dry-run=cli-c",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Dry-run service in cli",
+      "errorhandler" : {
+        "configuration" : {
+          "fail" : "false",
+          "halt" : "false",
+          "status" : "keepgoing"
+        },
+        "keepgoingOnSuccess" : true,
+        "nodeStep" : false,
+        "type" : "flow-control"
+      },
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${option.payload}",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-dry-run-reverse.json",
+        "headers" : "{'Authorization': 'Bearer ${export.cwtoken}','Content-Type': 'application/yang-data+json'}",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/proxy/nso/restconf/data/${option.endpoint}?dry-run=native&dry-run-reverse",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Reverse Dry-run service",
+      "errorhandler" : {
+        "configuration" : {
+          "fail" : "false",
+          "halt" : "false"
+        },
+        "keepgoingOnSuccess" : true,
+        "nodeStep" : false,
+        "type" : "flow-control"
+      },
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${option.payload}",
+        "checkResponseCode" : "false",
+        "file" : "/opt/cw/tmp/${job.execid}-dry-run-reverse-cli-c.json",
+        "headers" : "{'Authorization': 'Bearer ${export.cwtoken}','Content-Type': 'application/yang-data+json'}",
+        "method" : "PATCH",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.cwvip}:30603/crosswork/proxy/nso/restconf/data/${option.endpoint}?dry-run=cli-c&dry-run-reverse",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Reverse Dry-run service in NSO CLI format",
+      "errorhandler" : {
+        "configuration" : {
+          "fail" : "false",
+          "halt" : "false"
+        },
+        "keepgoingOnSuccess" : true,
+        "nodeStep" : false,
+        "type" : "flow-control"
+      },
+      "nodeStep" : false,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "Show configuration changes  - Device Native format",
+      "errorhandler" : {
+        "exec" : "true",
+        "keepgoingOnSuccess" : true
+      },
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-dry-run.json\nfile1=/opt/cw/tmp/@job.execid@-dry-run-cli-c.json\nfileout=/opt/cw/tmp/@job.execid@-dry-run-results.json\nif [ -f $file ]\nthen\n    jq '[.  |(..|select(has(\"dry-run-result\"))?).\"dry-run-result\".native.device | .[] | {\"1.impacted-device\":.name,\"2.impacted-config\":.data}]' $file\n    jq '[.  |(..|select(has(\"dry-run-result\"))?).\"dry-run-result\".native.device | .[] | {\"1.impacted-device\":.name,\"2.impacted-config\":.data}]' $file > $fileout\n    jq -r '(..|select(has(\"2.impacted-config\"))?).\"2.impacted-config\"|=(.|tostring)|[.[]|[leaf_paths as $path | {\"key\": $path | join(\"_\"), \"value\": getpath($path)}] | from_entries]  |  (.[0] | keys_unsorted) as $keys |   ([$keys] + map([.[ $keys[] ]])) [] | @csv# |gsub(\"[\\\\n\\\\t]\";\" \\\\ \")##| gsub(\"[\\\\n\\\\t]\";\"\\n\") #|  gsub(\"[\\\"]\";\" \")#' $fileout > /opt/cw/tmp/@option.name@.csv\n    jq -r '[{\"Service Type\":\"@option.name@\",\"Service Instance\":\"@option.friendly-name@\",\"Requesting User\":\"admin\",\"Dry run time\":now|(.| gmtime| strflocaltime (\"%Y-%m-%dT%H:%M:%SZ\")),\"#Devices\":([(.|(..|select(has(\"1.impacted-device\"))?).\"1.impacted-device\")] | length),\"devices\":([(.|(..|select(has(\"1.impacted-device\"))?).\"1.impacted-device\")] )|@csv}]|[.[]|[leaf_paths as $path | {\"key\": $path | join(\"_\"), \"value\": getpath($path)}] | from_entries]  |  (.[0] | keys_unsorted) as $keys |   ([$keys] + map([.[ $keys[] ]])) [] | @csv' $fileout > /opt/cw/tmp/@option.name@-overview.csv\n    jq -r '.\"dry-run-result\".\"cli-c\".\"local-node\" += {\"other\":\"field\"}|[.\"dry-run-result\".\"cli-c\".\"local-node\"  ] | [.[]|[leaf_paths as $path | {\"key\": $path | join(\"_\"), \"value\": getpath($path)}] | from_entries]  |  (.[0] | keys_unsorted) as $keys |   ([$keys] + map([.[ $keys[] ]])) [] | @csv' $file1 > /opt/cw/tmp/@option.name@-clic.csv \nelse\n    true\nfi"
+    }, {
+      "description" : "Show rollback process - Device native format",
+      "errorhandler" : {
+        "exec" : "true",
+        "keepgoingOnSuccess" : true
+      },
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-dry-run-reverse.json\nfileout=/opt/cw/tmp/@job.execid@-dry-run-reverse-results.json\nif [ -f $file ]\nthen\n    jq '[.  |(..|select(has(\"dry-run-result\"))?).\"dry-run-result\".native.device | .[] | {\"1.impacted-device\":.name,\"2.impacted-config\":.data}]' $file\n    jq '[.  |(..|select(has(\"dry-run-result\"))?).\"dry-run-result\".native.device | .[] | {\"device\":.name,\"device cli/api\":.data}]' $file > $fileout\n    jq -r '(..|select(has(\"device cli/api\"))?).\"device cli/api\"|=(.|tostring)|[.[]|[leaf_paths as $path | {\"key\": $path | join(\"_\"), \"value\": getpath($path)}] | from_entries]  |  (.[0] | keys_unsorted) as $keys |   ([$keys] + map([.[ $keys[] ]])) [] | @csv #|gsub(\"[\\\\n\\\\t]\";\" \\\\ \")##| gsub(\"[\\\\n\\\\t]\";\"\\n\") #|  gsub(\"[\\\"]\";\" \")#' $fileout > /opt/cw/tmp/@option.name@-rollback.csv\nelse\n    true\nfi"
+    }, {
+      "description" : "Show Implementation Steps - NSO CLI",
+      "errorhandler" : {
+        "exec" : "true",
+        "keepgoingOnSuccess" : true
+      },
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-dry-run-cli-c.json\njq '..|select(has(\"local-node\")).\"local-node\".data | {\"NSO Cli\":.}' $file"
+    }, {
+      "description" : "Show Rollback Steps - NSO CLI",
+      "errorhandler" : {
+        "exec" : "true",
+        "keepgoingOnSuccess" : true
+      },
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "script" : "file=/opt/cw/tmp/@job.execid@-dry-run-reverse-cli-c.json\njq '..|select(has(\"local-node\")).\"local-node\".data | {\"NSO Cli\":.}' $file"
+    }, {
+      "configuration" : {
+        "fail" : "false",
+        "halt" : "false",
+        "status" : "keepgoing"
+      },
+      "description" : "always succeed",
+      "nodeStep" : false,
+      "type" : "flow-control"
+    } ],
+    "keepgoing" : true,
+    "strategy" : "node-first"
+  },
+  "uuid" : "959f81c1-3640-4765-a15c-e1f2a300f0f2"
+} ]

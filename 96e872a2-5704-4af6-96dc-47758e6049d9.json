@@ -1,0 +1,34 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Provides CNC authentication towards a nominated host, and returns the token as `export.cnc-token`",
+  "executionEnabled" : true,
+  "group" : "-DEMO",
+  "id" : "96e872a2-5704-4af6-96dc-47758e6049d9",
+  "loglevel" : "INFO",
+  "name" : ".CNC - Auth",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "cnc-vip",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "jobref" : {
+        "group" : ".Auth",
+        "importOptions" : true,
+        "name" : "CNC - Auth v2",
+        "uuid" : "dc1ad0cc-965d-4d8a-a1a7-fd04a3553cc2"
+      }
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "96e872a2-5704-4af6-96dc-47758e6049d9"
+} ]

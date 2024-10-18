@@ -1,0 +1,50 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "ZTP",
+  "id" : "952c19e6-b326-4ec4-86db-05b42802fae0",
+  "loglevel" : "INFO",
+  "name" : "ZTP test123",
+  "nodeFilterEditable" : true,
+  "nodefilters" : {
+    "dispatch" : {
+      "excludePrecedence" : true,
+      "keepgoing" : true,
+      "rankOrder" : "ascending",
+      "successOnEmptyNodeFilter" : false,
+      "threadcount" : "1"
+    },
+    "filter" : "tags: swr"
+  },
+  "nodesSelectedByDefault" : false,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : false,
+  "sequence" : {
+    "commands" : [ {
+      "exec" : "show version",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "false",
+            "name" : "swr-output",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      }
+    }, {
+      "configuration" : {
+        "debugOnly" : "false"
+      },
+      "nodeStep" : false,
+      "type" : "log-data-step"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "952c19e6-b326-4ec4-86db-05b42802fae0"
+} ]

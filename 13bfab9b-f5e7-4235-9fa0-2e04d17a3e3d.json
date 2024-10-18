@@ -1,0 +1,73 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "CNC ZTP Devices\n# Overview\nThis will display CNN ZTP Device for all ZTP devices",
+  "executionEnabled" : true,
+  "group" : "CNC/ZTP",
+  "id" : "13bfab9b-f5e7-4235-9fa0-2e04d17a3e3d",
+  "loglevel" : "INFO",
+  "name" : "ZTP - Get Devices INFO",
+  "nodeFilterEditable" : true,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "command" : "curl -k --location --request POST 'https://192.168.226.111:30603/crosswork/sso/v1/tickets?username=admin&password=Cisco!123'  --header 'Content-Type: application/x-www-form-urlencoded'  --header 'Accept: text/plain'  --header 'Cache-Control: no-cache' --data-raw ''"
+      },
+      "description" : "Get-TICKET",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "TICKET",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "curl -k --location --request POST 'https://192.168.226.111:30603/crosswork/sso/v1/tickets/${data.TICKET}' --header 'Content-Type: application/x-www-form-urlencoded' --header 'Accept: text/plain' --header 'Cache-Control: no-cache' --data-urlencode 'service=https://198.18.134.219:30603/app-dashboard'"
+      },
+      "description" : "Get TOKEN",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "TOKEN",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "configuration" : {
+        "command" : "curl -k --location --request POST 'https://192.168.226.111:30603/crosswork/ztp/v1/devices/query' --header 'Authorization: Bearer ${data.TOKEN}' --header 'Content-Type: application/json' --data-raw '{\"filter\":{},\"filterData\":{\"PageSize\":30,\"PageNum\":0}}'"
+      },
+      "description" : "GET Device Data",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "datatype" : "application/json",
+            "sanitizeHtml" : "true",
+            "striped" : "true"
+          },
+          "type" : "render-datatype"
+        } ]
+      },
+      "type" : "localexec"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "13bfab9b-f5e7-4235-9fa0-2e04d17a3e3d"
+} ]

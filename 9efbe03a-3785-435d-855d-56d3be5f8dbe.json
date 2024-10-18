@@ -1,0 +1,158 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "Get key variables in a job and export",
+  "executionEnabled" : true,
+  "group" : "CNC/Configuration",
+  "id" : "9efbe03a-3785-435d-855d-56d3be5f8dbe",
+  "loglevel" : "INFO",
+  "name" : "get key vars backup",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "get vars",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "mgtdns=$(jq -r '.[] | select(.name==\"@option.cnc-pod@\").\"mgt-dns\"' /opt/cw/options/cw-environments.json)\ndatadns=$(jq -r '.[] | select(.name==\"@option.cnc-pod@\").\"data-dns\"' /opt/cw/options/cw-environments.json)\ndatavip=$(jq -r '.[] | select(.name==\"@option.cnc-pod@\").\"data-vip\"' /opt/cw/options/cw-environments.json)\nmgtvip=$(jq -r '.[] | select(.name==\"@option.cnc-pod@\").\"mgt-vip\"' /opt/cw/options/cw-environments.json)\n\nif [ -f \"/opt/cw/tmp/@option.cnc-pod@.cwtoken\" ]; then cwtoken=$(cat /opt/cw/tmp/@option.cnc-pod@.cwtoken); else cwtoken=\"none\"; fi\nif [ -f \"/opt/cw/tmp/@option.cnc-pod@.cwticket\" ]; then cwticket=$(cat /opt/cw/tmp/@option.cnc-pod@.cwticket); else cwticket=\"none\"; fi\nif [ \"$mgtdns\" == \"\" ]; then echo mgtdns=none; else echo mgtdns=$mgtdns;  fi\nif [ \"$datadns\" == \"\" ]; then echo datadns=none; else echo datadns=$datadns;  fi\nif [ \"$datavip\" == \"\" ]; then echo datavip=none; else echo datavip=$datavip;  fi\nif [ \"$mgtvip\" == \"\" ]; then echo mgtvip=none; else echo mgtvip=$mgtvip;  fi\nif [ \"$mgtvip\" == \"\" ]; then echo cwvip=none; else echo cwvip=$mgtvip;  fi\necho cwtoken=${cwtoken}\necho cwticket=${cwticket}\n"
+    }, {
+      "description" : "decode token",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "out=$(echo '@data.cwtoken*@' | base64 -d -i)\ntrue\necho DECODED=$out\n"
+    }, {
+      "description" : "check for expiry",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "token-active",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "tokenjson=$(echo '@data.DECODED*@' | jq --raw-input --raw-output '. | split(\"}\")[1]+\"}\"')\necho $tokenjson |jq -r 'if (.exp > now) then \"true\" else \"false\" end'\n"
+    }, {
+      "description" : "refresh token if required",
+      "errorhandler" : {
+        "jobref" : {
+          "args" : "-cnc-vip ${option.cnc-pod}",
+          "group" : "-DEMO",
+          "name" : ".CNC - Auth",
+          "nodeStep" : "true",
+          "uuid" : "96e872a2-5704-4af6-96dc-47758e6049d9"
+        },
+        "keepgoingOnSuccess" : true
+      },
+      "script" : "if [ \"@data.token-active*@\" = \"true\" ]\nthen\n    true\nelse\n    false\nfi"
+    }, {
+      "description" : "get vars",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "captureMultipleKeysValues" : "true",
+            "hideOutput" : "false",
+            "logData" : "true",
+            "regex" : "^(.+?)\\s*=\\s*(.+)"
+          },
+          "type" : "key-value-data-multilines"
+        } ]
+      },
+      "script" : "mgtdns=$(jq -r '.[] | select(.name==\"@option.cnc-pod@\").\"mgt-dns\"' /opt/cw/options/cw-environments.json)\ndatadns=$(jq -r '.[] | select(.name==\"@option.cnc-pod@\").\"data-dns\"' /opt/cw/options/cw-environments.json)\ndatavip=$(jq -r '.[] | select(.name==\"@option.cnc-pod@\").\"data-vip\"' /opt/cw/options/cw-environments.json)\nmgtvip=$(jq -r '.[] | select(.name==\"@option.cnc-pod@\").\"mgt-vip\"' /opt/cw/options/cw-environments.json)\n\nif [ -f \"/opt/cw/tmp/@option.cnc-pod@.cwtoken\" ]; then cwtoken=$(cat /opt/cw/tmp/@option.cnc-pod@.cwtoken); else cwtoken=\"none\"; fi\nif [ -f \"/opt/cw/tmp/@option.cnc-pod@.cwticket\" ]; then cwticket=$(cat /opt/cw/tmp/@option.cnc-pod@.cwticket); else cwticket=\"none\"; fi\nif [ \"$mgtdns\" == \"\" ]; then echo mgtdns=none; else echo mgtdns=$mgtdns;  fi\nif [ \"$datadns\" == \"\" ]; then echo datadns=none; else echo datadns=$datadns;  fi\nif [ \"$datavip\" == \"\" ]; then echo datavip=none; else echo datavip=$datavip;  fi\nif [ \"$mgtvip\" == \"\" ]; then echo mgtvip=none; else echo mgtvip=$mgtvip;  fi\nif [ \"$mgtvip\" == \"\" ]; then echo cwvip=none; else echo cwvip=$mgtvip;  fi\necho cwtoken=${cwtoken}\necho cwticket=${cwticket}\n"
+    }, {
+      "configuration" : {
+        "export" : "mgtdns",
+        "group" : "export",
+        "value" : "${data.mgtdns*}"
+      },
+      "nodeStep" : false,
+      "type" : "export-var"
+    }, {
+      "configuration" : {
+        "export" : "datadns",
+        "group" : "export",
+        "value" : "${data.datadns*}"
+      },
+      "nodeStep" : false,
+      "type" : "export-var"
+    }, {
+      "configuration" : {
+        "export" : "datavip",
+        "group" : "export",
+        "value" : "${data.datavip*}"
+      },
+      "description" : "datavip",
+      "nodeStep" : false,
+      "type" : "export-var"
+    }, {
+      "configuration" : {
+        "export" : "mgtvip",
+        "group" : "export",
+        "value" : "${data.mgtvip*}"
+      },
+      "description" : "mgtvip",
+      "nodeStep" : false,
+      "type" : "export-var"
+    }, {
+      "configuration" : {
+        "export" : "cwvip",
+        "group" : "export",
+        "value" : "${data.cwvip*}"
+      },
+      "description" : "cwvip",
+      "nodeStep" : false,
+      "type" : "export-var"
+    }, {
+      "configuration" : {
+        "export" : "cwtoken",
+        "group" : "export",
+        "value" : "${data.cwtoken*}"
+      },
+      "description" : "cwtoken",
+      "nodeStep" : false,
+      "type" : "export-var"
+    }, {
+      "configuration" : {
+        "export" : "cwticket",
+        "group" : "export",
+        "value" : "${data.cwticket*}"
+      },
+      "description" : "cwticket",
+      "nodeStep" : false,
+      "type" : "export-var"
+    } ],
+    "keepgoing" : true,
+    "strategy" : "node-first"
+  },
+  "uuid" : "9efbe03a-3785-435d-855d-56d3be5f8dbe"
+} ]

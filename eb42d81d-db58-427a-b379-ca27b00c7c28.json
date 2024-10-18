@@ -1,0 +1,102 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "CNC/Setup",
+  "id" : "eb42d81d-db58-427a-b379-ca27b00c7c28",
+  "loglevel" : "INFO",
+  "name" : "CNC - Locations - ADD",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "Country",
+    "name" : "country",
+    "required" : true,
+    "value" : "AU",
+    "valuesUrl" : "file:/opt/cw/options/countries.json"
+  }, {
+    "description" : "> Uppercase string only",
+    "label" : "State",
+    "name" : "state",
+    "regex" : "[A-Z]+",
+    "required" : true
+  }, {
+    "label" : "Post / ZIP code",
+    "name" : "code",
+    "regex" : "\\d+",
+    "required" : true
+  }, {
+    "description" : "***Usage*** - normally `01`, but if there are multiple then index them as `02`, `03` etc",
+    "label" : "Index / Sequence",
+    "name" : "index",
+    "regex" : "\\d+",
+    "required" : true,
+    "value" : "01"
+  }, {
+    "description" : "***Usage*** - upper case, less than 20 characters",
+    "label" : "Short description",
+    "name" : "descr",
+    "regex" : "(^[\\dA-Z\\s?]{1,20}$)"
+  }, {
+    "description" : "A code that is meaningful to you.",
+    "label" : "Code",
+    "name" : "site",
+    "regex" : "[A-Z,0-9]+",
+    "required" : true
+  }, {
+    "label" : "Latitude",
+    "name" : "latitude",
+    "regex" : "[+-]?([0-9]*[.])?[0-9]+",
+    "required" : true
+  }, {
+    "label" : "Longitude",
+    "name" : "longitude",
+    "regex" : "[+-]?([0-9]*[.])?[0-9]+",
+    "required" : true
+  }, {
+    "delimiter" : ",",
+    "description" : "> Existing list of location data",
+    "enforced" : true,
+    "label" : "Location Data (existing, for reference)",
+    "multivalued" : true,
+    "name" : "location-data",
+    "valuesUrl" : "file:/opt/cw/options/locations.json"
+  }, {
+    "hidden" : true,
+    "label" : "Name (key)",
+    "name" : "name",
+    "required" : true,
+    "value" : "${option.country}-${option.state}-${option.site}-${option.descr}-${option.code}-${option.index}"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "command" : "echo ${option.name}"
+      },
+      "description" : "capture name",
+      "nodeStep" : true,
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "name",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "type" : "localexec"
+    }, {
+      "description" : "Update List",
+      "script" : "infile=/opt/cw/options/locations.json\ninfiletmp=/opt/cw/tmp/locations.json\njq '. += [{\"name\":\"@data.name*@\",\"value\":\"@data.name*@\",\"Country\":\"@option.country@\",\"Site\":\"@option.site@\",\"State\":\"@option.state@\",\"Description\":\"@option.descr@\",\"Latitude\":@option.latitude@,\"Longitude\":@option.longitude@}]' $infile > $infiletmp\n\\cp $infiletmp $infile"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "eb42d81d-db58-427a-b379-ca27b00c7c28"
+} ]

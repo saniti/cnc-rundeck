@@ -1,0 +1,88 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "-DEMO/Slicing",
+  "id" : "588d214d-eac6-474d-b5b4-1d51f8e06ead",
+  "loglevel" : "INFO",
+  "name" : "NETBOX - Reserve IP [Kafka]",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "hidden" : true,
+    "name" : "netbox-server",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/netbox/netbox-host",
+    "valueExposed" : true
+  }, {
+    "hidden" : true,
+    "name" : "api-token",
+    "required" : true,
+    "secure" : true,
+    "storagePath" : "keys/netbox/netbox-token",
+    "valueExposed" : true
+  }, {
+    "name" : "customer",
+    "required" : true
+  }, {
+    "name" : "name",
+    "required" : true
+  }, {
+    "name" : "ip",
+    "required" : true
+  }, {
+    "name" : "group"
+  }, {
+    "name" : "status",
+    "required" : true
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "now",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "now",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo $(date +\"%Y-%m-%d-%H-%M-%S\")"
+    }, {
+      "description" : "payload",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "payload",
+            "regex" : "(.*)",
+            "replaceFilteredResult" : "false"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "echo '{\"address\":\"@option.ip@\",\"name\":\"@option.customer@ [@data.now*@]\",\"status\":\"@option.status@\",\"description\":\"@option.customer@|@option.name@|@data.now*@\"}' | jq -c ."
+    }, {
+      "description" : "enque to kafka",
+      "jobref" : {
+        "args" : "-input ${data.payload} -customer netbox-updates -key ip -release 1702682752",
+        "group" : "Kafka/99 - Callbacks",
+        "name" : "Kafka enque",
+        "nodeStep" : "true",
+        "uuid" : "cdfdb3e7-cdbd-4d93-a8c0-5ec68acbb139"
+      }
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "588d214d-eac6-474d-b5b4-1d51f8e06ead"
+} ]

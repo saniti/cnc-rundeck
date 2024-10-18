@@ -1,0 +1,62 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "Kafka",
+  "id" : "18f1cfcf-0cc7-4ed3-b29d-d0600a425e7f",
+  "loglevel" : "INFO",
+  "name" : "taiga - auth",
+  "nodeFilterEditable" : false,
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "{\"username\":\"simon\",\"password\":\"cisco.123\",\"type\":\"normal\"}",
+        "checkResponseCode" : "true",
+        "file" : "/opt/cw/tmp/token.json",
+        "headers" : "{'Content-type': 'application/json'}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "true",
+        "proxySettings" : "false",
+        "remoteUrl" : "http://198.18.133.102:9001/api/v1/auth",
+        "responseCode" : "200",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "description" : "Authenticate",
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    }, {
+      "description" : "get token",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "token",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "jq -r '.auth_token' /opt/cw/tmp/token.json"
+    }, {
+      "configuration" : {
+        "export" : "token",
+        "group" : "export",
+        "value" : "${data.token*}"
+      },
+      "description" : "export.token",
+      "nodeStep" : false,
+      "type" : "export-var"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "18f1cfcf-0cc7-4ed3-b29d-d0600a425e7f"
+} ]

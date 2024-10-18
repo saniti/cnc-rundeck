@@ -1,0 +1,120 @@
+[ {
+  "defaultTab" : "nodes",
+  "description" : "",
+  "executionEnabled" : true,
+  "group" : "CNC/Devices",
+  "id" : "710b7eda-b490-4a57-88d0-2d111956c191",
+  "loglevel" : "INFO",
+  "name" : "CNC - ZTP Device - ADD",
+  "nodeFilterEditable" : false,
+  "options" : [ {
+    "enforced" : true,
+    "label" : "CNC POD",
+    "name" : "cnc-pod",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/cw-environments.json"
+  }, {
+    "enforced" : true,
+    "name" : "credential-profile",
+    "required" : true,
+    "value" : "nso1",
+    "values" : [ "nso1" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "Device",
+    "name" : "device",
+    "required" : true,
+    "valuesUrl" : "file:/opt/cw/options/${option.cnc-pod.value}-devices.json"
+  }, {
+    "enforced" : true,
+    "label" : "IP Address",
+    "name" : "ip-address",
+    "required" : true,
+    "value" : "dynamic",
+    "values" : [ "dynamic", "static" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "label" : "IP Address",
+    "name" : "ip-address-static",
+    "required" : true,
+    "values" : [ "dynamic", "static" ],
+    "valuesListDelimiter" : ",",
+    "valuesUrl" : "file:/opt/cw/options/ztp-ip-${option.ip-address.value}.json"
+  }, {
+    "enforced" : true,
+    "name" : "profile",
+    "required" : true,
+    "value" : "NCS-540",
+    "values" : [ "NCS-540", "NCS560", "NCS5500", "ASR9900", "ASR9000" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "enforced" : true,
+    "label" : "NSO Provider",
+    "name" : "provider",
+    "required" : true,
+    "value" : "nso201",
+    "values" : [ "nso201" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "label" : "Device Serial",
+    "name" : "serial",
+    "required" : true,
+    "value" : "FF123456",
+    "values" : [ "FF123456" ],
+    "valuesListDelimiter" : ","
+  }, {
+    "hidden" : true,
+    "name" : "template",
+    "required" : true,
+    "value" : "{\"nodes\":[{\"uuid\":\"\",\"hostName\":\"PE1.sydcpoc.local\",\"macAddress\":\"\",\"inventoryId\":\"\",\"ipAddress\":{},\"credentialProfile\":\"device_profile\",\"status\":\"Unprovisioned\",\"secureZtpInfo\":{\"postConfig\":null,\"preConfig\":null,\"configMode\":null},\"osPlatform\":\"IOS XR\",\"deviceFamily\":\"\",\"image\":\"\",\"config\":\"\",\"version\":\"\",\"productId\":\"\",\"versionId\":\"\",\"profileName\":\"NCS540-BASE\",\"configAttributes\":{\"NETMASK\":\"255.255.255.0\",\"LDAP_IP\":\"100.64.55.56\",\"DESIRED_VER\":\"7.5.2\",\"IMAGE_CHECKSUM\":\"f1830abcd31119555ac472bd83f2f646\",\"CROSSWORK_PORT\":\"30603\",\"VRF\":\"mgmt\",\"CW_CONFIG_UUID\":\"56aa9e76-2a08-40cd-ab42-924aaa79c9a6\",\"DOMAIN_NAME\":\"sydcpoc.local\",\"INTERFACE\":\"TenGigE0/0/0/8\",\"LOOPBACK1_ADDRESS\":\"10.0.0.5\",\"LABEL\":\"7.5.2\",\"CW_IMAGE_UUID\":\"2b330971-05d8-41db-b669-c3179e3bb0f2\",\"TOKEN\":\"56aa9e76-2a08-40cd-ab42-924aaa79c9a6\",\"CROSSWORK_VIP\":\"100.64.55.233\"},\"isSecureZtp\":\"false\",\"additionalAttributes\":{\"routingInfo.globalisissystemid\":\"\",\"routingInfo.globalospfrouterid\":\"\",\"routingInfo.ipv6routerid\":\"\",\"routingInfo.teRouterid\":\"\"},\"enableOption82\":\"false\",\"providerInfo\":{\"providerName\":\"NSO_CNC\"},\"connectivityDetails\":[{\"protocol\":\"SSH\",\"inetAddr\":[{\"inetAddressFamily\":\"IPV4\",\"ipaddrs\":\"100.64.55.163\",\"mask\":32}],\"port\":22,\"timeout\":120}],\"serialNumber\":[\"FOC2415P141\"]}]}"
+  } ],
+  "plugins" : {
+    "ExecutionLifecycle" : null
+  },
+  "scheduleEnabled" : true,
+  "sequence" : {
+    "commands" : [ {
+      "description" : "update config",
+      "plugins" : {
+        "LogFilter" : [ {
+          "config" : {
+            "invalidKeyPattern" : "\\s|\\$|\\{|\\}|\\\\",
+            "logData" : "true",
+            "name" : "data",
+            "regex" : "(.*)"
+          },
+          "type" : "key-value-data"
+        } ]
+      },
+      "script" : "config=$(echo '@option.template@' | jq -c '(..|objects|select(has(\"serialNumber\"))).\"serialNumber\"  |= [\"@option.serial@\"]')\nconfig=$(echo $config | jq -c '(..|objects|select(has(\"hostName\"))).\"hostName\"  |= \"@option.device@\"')\nconfig=$(echo $config | jq -c '(..|objects|select(has(\"providerName\"))).\"providerName\"  |= \"@option.provider@\"')\nconfig=$(echo $config | jq -c '(..|objects|select(has(\"profileName\"))).\"profileName\"  |= \"@option.profile@\"')\nconfig=$(echo $config | jq -c '(..|objects|select(has(\"credentialProfile\"))).\"credentialProfile\"  |= \"@option.credential-profile@\"')\n\necho $config"
+    }, {
+      "description" : "get key vars",
+      "jobref" : {
+        "args" : "-cnc-pod ${option.cnc-pod}",
+        "group" : "CNC/Configuration",
+        "name" : "get key vars",
+        "uuid" : "c3b0db66-3fdd-49b7-a5b5-4261a0ff3463"
+      }
+    }, {
+      "configuration" : {
+        "authentication" : "None",
+        "body" : "${data.data*}",
+        "checkResponseCode" : "false",
+        "headers" : "{\"Content-Type\": \"application/json\",\"Authorization\": \"Bearer ${export.cwtoken}\"}",
+        "method" : "POST",
+        "printResponse" : "true",
+        "printResponseToFile" : "false",
+        "proxySettings" : "false",
+        "remoteUrl" : "https://${export.mgtvip}:30603/crosswork/ztp/v1/devices",
+        "sslVerify" : "false",
+        "timeout" : "30000"
+      },
+      "nodeStep" : false,
+      "type" : "edu.ohio.ais.rundeck.HttpWorkflowStepPlugin"
+    } ],
+    "keepgoing" : false,
+    "strategy" : "node-first"
+  },
+  "uuid" : "710b7eda-b490-4a57-88d0-2d111956c191"
+} ]
