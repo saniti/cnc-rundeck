@@ -12,16 +12,24 @@
     "name" : "port",
     "required" : true,
     "value" : "8002"
+  }, {
+    "enforced" : true,
+    "label" : "option",
+    "name" : "option",
+    "required" : true,
+    "value" : "show",
+    "values" : [ "run", "show" ],
+    "valuesListDelimiter" : ","
   } ],
   "plugins" : {
-    "ExecutionLifecycle" : null
+    "ExecutionLifecycle" : { }
   },
   "scheduleEnabled" : true,
   "sequence" : {
     "commands" : [ {
       "args" : " pm2 start python -- -m http.server 8002p",
       "description" : "Run server via PM2",
-      "script" : "# Find PM2 binary\npm2=$(find /root/.nvm -type f -iname pm2 | grep -i bin)\nnode=$(find /root/.nvm/versions/node -maxdepth 2 | grep -i bin)\n\n# Update path\nPATH=\"$node:$PATH\"\n\nexport PM2_HOME=/source\ncd /opt/cw/images\n\necho $pm2 start python --name cncserver -- -m http.server @option.port@"
+      "script" : "# Find PM2 binary\npm2=$(find /root/.nvm -type f -iname pm2 | grep -i bin)\nnode=$(find /root/.nvm/versions/node -maxdepth 2 | grep -i bin)\n\n# Update path\nPATH=\"$node:$PATH\"\n\nexport PM2_HOME=/source\ncd /opt/cw/images\n\nif [ \"@option.option@\" == \"show\" ]\nthen \n    echo $pm2 start python3 --name cncserver -- -m http.server @option.port@\nelif [ \"@option.option@\" == \"run\" ]\nthen \n    $pm2 start python3 --name cncserver -- -m http.server @option.port@\n    firewall-cmd --zone=public --add-port=@option.port@/tcp\nfi\n    "
     } ],
     "keepgoing" : false,
     "strategy" : "node-first"
